@@ -29,19 +29,25 @@ div {
   background-color: #eeeeee; /*gray*/
 }
 
-#sam_input {
+textarea { /*#sam_input */
   padding: 2vmin 2vmin 2vmin 2vmin;
   overflow-y: scroll;
   resize: none;
+  white-space: nowrap;/* overflow: auto;.*/
 }
 
 table, th, td {
-   border: 0.1px solid black;
+  text-align: center;
+  padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+  border: 0.1px solid black;
+}
+th {
+  font-weight: 900;
 }
 
 #sam_table {
   background-color: #ffffff;
-  font-size:0.9vmin;
+  font-size:1.4vmin;
 }
 
 text {

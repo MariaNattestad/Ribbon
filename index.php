@@ -6,7 +6,7 @@
 <?php include "header.html";?>
 
 <link href="css/custom.css" rel="stylesheet">
-<link href='https://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
 <script src="js/d3.v3.min.js"></script>
 <script src="js/d3.tip.v0.6.3.js"></script>
 <script src="js/jquery.min.js"></script>
