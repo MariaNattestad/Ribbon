@@ -1,0 +1,47 @@
+body {
+  padding-top: 70px;
+  padding-bottom: 30px;
+  font-family: 'Lato', sans-serif;
+  font-size: 2vmin;
+}
+
+div {
+  display: inline-block;
+}
+
+#left_panel {
+  float:left;
+}
+
+#sam_input_panel {
+  background-color: #ffcccc; /*red*/
+  display: block;
+}
+
+#visualization_panel {
+  padding: 2vmin 2vmin 2vmin 2vmin;
+  background-color: #ccffcc; /*green*/
+  display: block;
+}
+#sam_table_panel {
+  padding: 2vmin 2vmin 2vmin 2vmin;
+  display: inline-block;
+  background-color: #ccccff; /*blue*/
+}
+
+#sam_input {
+  padding: 2vmin 2vmin 2vmin 2vmin;
+  overflow-y: scroll;
+  resize: none;
+}
+
+
+table, th, td {
+   border: 1px solid black;
+}
+
+
+
+#sam_table {
+  background-color: #ffffff;
+}
