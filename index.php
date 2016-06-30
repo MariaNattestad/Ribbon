@@ -17,7 +17,7 @@
 <div id="left_panel">
 <div id="sam_input_panel">
 	
- <textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
+<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
 
 </div>
 <div id="visualization_panel"></div>
