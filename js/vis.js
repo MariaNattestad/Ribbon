@@ -44,13 +44,16 @@ function responsive_sizing() {
   layout.canvas_width = layout.left_width - padding.between;
   layout.canvas_height = layout.vis_height - padding.between;
 
+  layout.input_margin = padding.between;
+
 
   d3.select("#sam_input_panel")
     .style("width",layout.left_width + "px")
-    .style("height",layout.input_height + "px");
+    .style("height",layout.input_height + "px")
+    .style("padding",layout.input_margin + "px")
 
     d3.select("#sam_input")
-      .style("height",layout.input_height + "px");
+      .style("height",(layout.input_height-layout.input_margin*2) + "px");
 
   d3.select("#visualization_panel")
     .style("width",layout.left_width + "px")
@@ -78,10 +81,14 @@ $('#sam_input').bind('input propertychange', function() {
   }
 
   table.selectAll("tr").remove();
-  table.selectAll("tr").data(sam_data).enter()
-    .append("tr")
-      .selectAll("td").data(function(line){return line.split(/[ \t]+/); }).enter()
-        .append("td").text(function(d){return d;});
+  var rows = table.selectAll("tr").data(sam_data).enter()
+    .append("tr");
+  
+  rows.append("td").text(">").on("click",select_read);
+  //rows.append("td").append("input").attr("type","radio");
+
+  rows.selectAll("td.data").data(function(line){return line.split(/[ \t]+/); }).enter()
+        .append("td").text(function(d){return d;}).attr("class","data");
 });
 
 function run() {
@@ -91,7 +98,11 @@ function run() {
 	// Run when all data loaded
 }
 
+function select_read(d) {
+  console.log(d);
+  svg.append("text").text(d).attr("width",100).attr("height",100).attr("x",100).attr("y",100);
 
+}
 // ===========================================================================
 // == Responsiveness
 // ===========================================================================
@@ -105,4 +116,3 @@ function resizeWindow() {
 }
 
 run();
-

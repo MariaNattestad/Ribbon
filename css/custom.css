@@ -14,7 +14,7 @@ div {
 }
 
 #sam_input_panel {
-  background-color: #ffcccc; /*red*/
+  background-color: #eeeeee; /*gray*/
   display: block;
 }
 
@@ -26,7 +26,7 @@ div {
 #sam_table_panel {
   padding: 2vmin 2vmin 2vmin 2vmin;
   display: inline-block;
-  background-color: #ccccff; /*blue*/
+  background-color: #eeeeee; /*gray*/
 }
 
 #sam_input {
@@ -35,13 +35,16 @@ div {
   resize: none;
 }
 
-
 table, th, td {
-   border: 1px solid black;
+   border: 0.1px solid black;
 }
-
-
 
 #sam_table {
   background-color: #ffffff;
+  font-size:0.9vmin;
+}
+
+text {
+  font: 10vmin;
+  font-family: 'Lato', sans-serif;
 }

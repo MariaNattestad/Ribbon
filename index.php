@@ -20,10 +20,10 @@
  <textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
 
 </div>
-<div id="visualization_panel"><p>visualization panel</p></div>
+<div id="visualization_panel"></div>
 </div>
 <div id="sam_table_panel">
-	<p>sam table panel</p>
+	<p>Select reads</p>
 	<table id="sam_table"></table>
 </div>
 
