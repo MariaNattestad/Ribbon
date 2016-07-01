@@ -2,7 +2,8 @@ body {
   padding-top: 70px;
   padding-bottom: 30px;
   font-family: 'Lato', sans-serif;
-  font-size: 2vmin;
+  font-size: 1.4vmin;
+  background-color: #eeeeee; /*gray*/
 }
 
 div {
@@ -14,23 +15,25 @@ div {
 }
 
 #sam_input_panel {
-  background-color: #eeeeee; /*gray*/
+  
   display: block;
 }
 
 #visualization_panel {
   padding: 2vmin 2vmin 2vmin 2vmin;
-  background-color: #ffffff; /*white*/
   display: block;
 }
 #sam_table_panel {
+  font-size: 2vmin;
   padding: 2vmin 2vmin 2vmin 2vmin;
   display: inline-block;
-  background-color: #eeeeee; /*gray*/
 }
-
-textarea { /*#sam_input */
+svg {
+  background-color: #ffffff; /*white*/
+}
+#sam_input {
   padding: 2vmin 2vmin 2vmin 2vmin;
+  font-size: 2vmin;
   overflow-y: scroll;
   resize: none;
   white-space: nowrap;/* overflow: auto;.*/
@@ -40,7 +43,9 @@ table, th, td {
   text-align: center;
   padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
   border: 0.1px solid black;
+  font-size: 1vmin;
 }
+
 th {
   font-weight: 900;
 }
@@ -51,6 +56,6 @@ th {
 }
 
 text {
-  font: 10vmin;
+  font-size: 1.4vmin;
   font-family: 'Lato', sans-serif;
 }

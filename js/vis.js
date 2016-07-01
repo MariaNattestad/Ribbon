@@ -28,7 +28,21 @@ var colors = {"read":"blue","ref_block":"green"};
 // Data for visualization
 var Alignments;
 var Readname;
+var read_length;
 var Reference_intervals = {}; // by chromosome, contains [start,stop] genomic locations for which parts of the reference we are drawing
+
+var ref_intervals;
+var whole_refs;
+
+// Scales for visualization
+var positions;
+
+var read_scale = d3.scale.linear();
+var whole_ref_scale = d3.scale.linear();
+var ref_interval_scale = d3.scale.linear();
+var ref_color_scale = d3.scale.category20();
+
+
 
 
 function responsive_sizing() {
@@ -54,8 +68,8 @@ function responsive_sizing() {
   layout.vis_height = (window_height - padding.top - padding.bottom) * layout.canvas_fraction;
   layout.total_height = (window_height - padding.top - padding.bottom);
 
-  layout.canvas_width = layout.left_width - padding.between;
-  layout.canvas_height = layout.vis_height - padding.between;
+  layout.svg_width = layout.left_width - padding.between*4;
+  layout.svg_height = layout.vis_height - padding.between*4;
 
   layout.input_margin = padding.between;
 
@@ -76,6 +90,8 @@ function responsive_sizing() {
     .style("width",layout.table_width + "px")
     .style("height",layout.total_height + "px");
   table = d3.select("#sam_table_panel").select("table");
+
+  draw();
 }
 
 
@@ -203,13 +219,38 @@ function parse_SA_field(sa) {
 
   return alignments;
 }
-
+function get_read_length(cigar) {
+  var readlength = 0;
+  for (var i = 0; i < cigar.length; i++) {
+    switch (cigar[i].type) {
+      case "H":
+        readlength += cigar[i].num;
+        break;
+      case "S":
+        readlength += cigar[i].num;
+        break;
+      case "M":
+        readlength += cigar[i].num;
+        break;
+      case "I":
+        readlength += cigar[i].num;
+        break;
+      case "D":
+        break;
+      default:
+        console.log("Don't recognize cigar character: ", cigar[i].type, ", assuming it advances both query and reference, like a match or mismatch");
+        readlength += cigar[i].num;
+    }
+  }
+  return readlength;
+}
 function parse_sam_coordinates(line) {
   var fields = line.split(/[ \t]+/);
   
   var chrom = fields[2];
   var start = parseInt(fields[3]);
   var cigar = parse_cigar(fields[5]);
+  read_length = get_read_length(cigar);
   var alignment_lengths = alignment_length_from_cigar(cigar);
   var qstart = 0;
   if (cigar[0].type == "S" || cigar[0].type == "H") {
@@ -327,20 +368,97 @@ function natural_sort(a, b) {
   return aa.length - bb.length;
 }
 
+
+function alignment_path_generator(d) {
+  // d is an alignment with r, rs, re, qs, qe, mq
+  // r = chrom
+  // rs = ref start
+  // re = ref end
+  // qs = query start
+  // qe = query end
+  // mq = mapping quality
+
+  var bottom = {};
+  var top = {};
+
+  // read
+  bottom.y = positions.read.y;
+  bottom.left = read_scale(d.qs);
+  bottom.right = read_scale(d.qe);
+
+  // ref interval
+  top.y = positions.ref_intervals.y + positions.ref_intervals.height;
+  top.left = ref_interval_scale(map_ref_interval(d.r,d.rs));
+  top.right = ref_interval_scale(map_ref_interval(d.r,d.re));
+
+  return (
+       "M " + bottom.left                          + "," + bottom.y
+   + ", L " + bottom.right                          + "," + bottom.y
+   + ", L " + top.right                           + "," + top.y
+   + ", L " + top.left                           + "," + top.y
+   )
+}
+function ref_mapping_path_generator(d) {
+
+    var bottom = {};
+    var top = {};
+
+    bottom.y = positions.ref_intervals.y;
+    bottom.left = ref_interval_scale(d.cum_pos);
+    bottom.right = bottom.left + ref_interval_scale(d.end)-ref_interval_scale(d.start);
+
+    top.y = positions.ref_block.y + positions.ref_block.height;
+    top.left = whole_ref_scale(map_whole_ref(d.chrom,d.start));
+    top.right = whole_ref_scale(map_whole_ref(d.chrom,d.end));
+
+    return (
+         "M " + bottom.left                          + "," + bottom.y
+     + ", L " + bottom.right                          + "," + bottom.y
+     + ", L " + top.right                           + "," + top.y
+     + ", L " + top.left                           + "," + top.y
+     )
+}
+
+function map_whole_ref(chrom,position) {
+  // whole_refs has chrom, size, cum_pos
+
+  for (var i = 0; i < whole_refs.length; i++) {
+    if (whole_refs[i].chrom == chrom) {
+      return whole_refs[i].cum_pos + position;
+    }
+  }
+}
+
+function map_ref_interval(chrom,position) {
+  // ref_intervals has chrom, start, end, size, cum_pos
+  for (var i = 0; i < ref_intervals.length; i++) {
+    if (ref_intervals[i].chrom == chrom) {
+      if (position > ref_intervals[i].start && position < ref_intervals[i].end ) {
+        return ref_intervals[i].cum_pos + (position - ref_intervals[i].start);
+      }
+    }
+  }
+  console.log("ERROR: no chrom,pos match found in map_ref_interval()");
+}
+
 function draw() {
 
   ////////  Clear the svg to start drawing from scratch  ////////
   d3.select("#visualization_panel").selectAll("svg").remove();
   svg = d3.select("#visualization_panel").append("svg")
-    .attr("width",layout.canvas_width)
-    .attr("height",layout.canvas_height);
+    .attr("width",layout.svg_width)
+    .attr("height",layout.svg_height);
+
+  if (Alignments == undefined) {
+    return;
+  }
 
 
   // Calculate layouts within the svg
-  var positions = {};
-  positions.read = {"y":layout.canvas_height*0.75, "x":layout.canvas_width*0.10, "width":layout.canvas_width*0.80, "height":layout.canvas_height*0.03};
-  positions.ref_block = {"y":layout.canvas_height*0.15, "x":layout.canvas_width*0.10, "width":layout.canvas_width*0.80, "height":layout.canvas_height*0.03};
-  positions.ref_intervals = {"y":layout.canvas_height*0.35, "x":layout.canvas_width*0.10, "width":layout.canvas_width*0.80, "height":layout.canvas_height*0.03};
+  positions = {};
+  positions.read = {"y":layout.svg_height*0.75, "x":layout.svg_width*0.10, "width":layout.svg_width*0.80, "height":layout.svg_height*0.03};
+  positions.ref_block = {"y":layout.svg_height*0.15, "x":layout.svg_width*0.10, "width":layout.svg_width*0.80, "height":layout.svg_height*0.03};
+  positions.ref_intervals = {"y":layout.svg_height*0.35, "x":layout.svg_width*0.10, "width":layout.svg_width*0.80, "height":layout.svg_height*0.03};
 
   // Draw read
   svg.append("rect").attr("class","read").attr("x",positions.read.x).attr("y",positions.read.y).attr("width",positions.read.width).attr("height",positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill",colors.read);
@@ -361,14 +479,16 @@ function draw() {
 
   chromosomes.sort(natural_sort);
 
-  var ref_intervals = [];
+  ref_intervals = [];
   var cumulative_position = 0;
 
   // Note: this takes the largest mapping point as the end of the chromosome because it assumes we don't have reference chromosomes
-  var whole_refs = [];
+  whole_refs = [];
   var cumulative_whole_ref_size = 0;
-  for (var chrom in chromosomes) {
-    var intervals = Reference_intervals[chromosomes[chrom]];
+  for (var j = 0; j < chromosomes.length; j++){
+    var chrom = chromosomes[j];
+    console.log(chrom);
+    var intervals = Reference_intervals[chrom];
     for (var i = 0; i < intervals.length; i++) {
       ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
       cumulative_position += (intervals[i][1]-intervals[i][0])
@@ -379,12 +499,10 @@ function draw() {
   }
 
 
-
-
-
-  var whole_ref_scale = d3.scale.linear().domain([0,cumulative_whole_ref_size]).range([positions.ref_block.x, positions.ref_block.x + positions.ref_block.width]);
-  var ref_interval_scale = d3.scale.linear().domain([0,cumulative_position]).range([positions.ref_intervals.x, positions.ref_intervals.x+positions.ref_intervals.width]);
-  var ref_color_scale = d3.scale.category20().domain(chromosomes);
+  read_scale.domain([0,read_length]).range([positions.read.x,positions.read.x+positions.read.width]);
+  whole_ref_scale.domain([0,cumulative_whole_ref_size]).range([positions.ref_block.x, positions.ref_block.x + positions.ref_block.width]);
+  ref_interval_scale.domain([0,cumulative_position]).range([positions.ref_intervals.x, positions.ref_intervals.x+positions.ref_intervals.width]);
+  ref_color_scale.domain(chromosomes);
 
 
   // Whole reference chromosomes for the relevant references:
@@ -418,10 +536,20 @@ function draw() {
       .attr("fill",function(d) {return ref_color_scale(d.chrom);})
       .style("stroke-width",1).style("stroke", "black");
 
+  svg.selectAll("path.ref_mapping").data(ref_intervals).enter()
+    .append("path").attr("class","ref_mapping")
+      .attr("d",function(d) {return ref_mapping_path_generator(d)})
+      // .style("stroke-width",2)
+      // .style("stroke","black")
+      .attr("fill",function(d) {return ref_color_scale(d.chrom);})
 
 
-
-
+  svg.selectAll("path.alignment").data(Alignments).enter()
+    .append("path").attr("class","alignment")
+      .attr("d",function(d) {return alignment_path_generator(d)})
+      // .style("stroke-width",2)
+      // .style("stroke","black")
+      .attr("fill",function(d) {return ref_color_scale(d.r);})
 }
 
 // ===========================================================================
