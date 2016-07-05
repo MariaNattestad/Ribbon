@@ -28,6 +28,10 @@ div {
   padding: 2vmin 2vmin 2vmin 2vmin;
   display: inline-block;
 }
+
+#select_reads { /* just a label */
+  visibility: hidden;
+}
 svg {
   background-color: #ffffff; /*white*/
 }
@@ -58,4 +62,10 @@ th {
 text {
   font-size: 1.4vmin;
   font-family: 'Lato', sans-serif;
+}
+
+.tip {
+  font-size: 2vmin;
+  font-weight: 900;
+  font-family: 'Lato', sans-serif; 
 }

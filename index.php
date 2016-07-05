@@ -7,8 +7,8 @@
 
 <link href="css/custom.css" rel="stylesheet">
 <link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
+
 <script src="js/d3.v3.min.js"></script>
-<script src="js/d3.tip.v0.6.3.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
@@ -23,8 +23,12 @@
 <div id="visualization_panel"></div>
 </div>
 <div id="sam_table_panel">
-	<p>Select reads</p>
+	<div id="user_message" class="alert alert-default" role="alert"></div>
+	
+	<p id="select_reads">Select reads</p>
 	<table id="sam_table"></table>
+
+
 </div>
 
 <script src="js/vis.js"></script>
