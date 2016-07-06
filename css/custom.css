@@ -24,7 +24,7 @@ div {
   display: block;
 }
 #sam_table_panel {
-  font-size: 2vmin;
+  font-size: 1.4vmin;
   padding: 2vmin 2vmin 2vmin 2vmin;
   display: inline-block;
 }
@@ -32,15 +32,17 @@ div {
 #select_reads { /* just a label */
   visibility: hidden;
 }
+
 svg {
   background-color: #ffffff; /*white*/
 }
+
 #sam_input {
-  padding: 2vmin 2vmin 2vmin 2vmin;
-  font-size: 2vmin;
-  overflow-y: scroll;
-  resize: none;
-  white-space: nowrap;/* overflow: auto;.*/
+  padding: 2vmin 2vmin 2vmin 2vmin; 
+  font-size: 1.4vmin; 
+  overflow-y: scroll; 
+  resize: none; 
+  white-space: nowrap; /* overflow: auto;.*/
 }
 
 table, th, td {
@@ -68,4 +70,14 @@ text {
   font-size: 2vmin;
   font-weight: 900;
   font-family: 'Lato', sans-serif; 
+}
+
+
+#settings {
+  visibility: hidden;
+}
+
+div.input-group {
+  background-color: #bbbbbb;
+  
 }
