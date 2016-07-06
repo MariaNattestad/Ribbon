@@ -40,7 +40,12 @@ var positions;
 var read_scale = d3.scale.linear();
 var whole_ref_scale = d3.scale.linear();
 var ref_interval_scale = d3.scale.linear();
-var ref_color_scale = d3.scale.category20();
+
+
+var colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
+var ref_color_scale = d3.scale.ordinal().range(colors);
+
+
 
 // Aesthetics for visualization
 var alignment_alpha = 0.5;
@@ -652,12 +657,12 @@ function draw_dotplot() {
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom;
-				var x = ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = positions.ref_intervals.y + padding.text;
+				var x = positions.canvas.x +ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+				var y = positions.canvas.y + positions.canvas.height - padding.text;
 				show_tooltip(text,x,y);
 			})
 			.on('mouseout', function(d) {svg.selectAll("g.tip").remove();})
-			.style("stroke-opacity",0)
+			.style("stroke-opacity",0.1)
 			.attr("fill-opacity",dotplot_ref_opacity)
 
 	// Alignments
@@ -669,15 +674,15 @@ function draw_dotplot() {
 			.attr("x2", function(d) { return ref_interval_scale(map_ref_interval(d.r,d.re)); })
 			.attr("y1", function(d) { return read_scale(d.qs); })
 			.attr("y2", function(d) { return read_scale(d.qe); })
-			.style("stroke-width",1)
+			.style("stroke-width",2)
 			.style("stroke","black")
 			.style("stroke-opacity",1)
 			.attr("fill",function(d) {return ref_color_scale(d.r);})
 			.attr("fill-opacity",alignment_alpha)
 			.on('mouseover', function(d) {
-				var text = (d.qe-d.qs) + " bp"; 
-				var x = read_scale((d.qs+d.qe)/2);
-				var y = positions.read.y - padding.text;
+				var text = (d.qe-d.qs) + " bp";
+				var x = positions.canvas.x + ref_interval_scale(map_ref_interval(d.r,(d.rs+d.re)/2));
+				var y = padding.text*(-3) + positions.canvas.y + read_scale((d.qs+d.qe)/2);
 				show_tooltip(text,x,y);
 			})
 			.on('mouseout', function(d) {svg.selectAll("g.tip").remove();});
