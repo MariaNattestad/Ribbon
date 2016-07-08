@@ -45,20 +45,16 @@ svg {
   white-space: nowrap; /* overflow: auto;.*/
 }
 
-table, th, td {
+#sam_table table, #sam_table th, #sam_table td {
   text-align: center;
   padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
   border: 0.1px solid black;
   font-size: 1vmin;
+  background-color: #ffffff;
 }
 
 th {
   font-weight: 900;
-}
-
-#sam_table {
-  background-color: #ffffff;
-  font-size:1.4vmin;
 }
 
 text {
@@ -75,6 +71,11 @@ text {
 
 #settings {
   visibility: hidden;
+}
+
+#settings table, #settings th, #settings td {
+  padding: 0.2vmin  0.2vmin 0.2vmin 0.2vmin;
+  border: 0; /*.2px solid blue;*/
 }
 
 div.input-group {
