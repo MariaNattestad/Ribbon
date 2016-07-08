@@ -6,7 +6,6 @@
 <?php include "header.html";?>
 
 <link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
-<link href="css/bootstrap-switch.min.css" rel="stylesheet">
 
 <!-- My own styles -->
 <link href="css/custom.css" rel="stylesheet">
@@ -78,9 +77,6 @@
 <script src="js/d3.v3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<!-- <script src="js/bootstrap-switch.min.js"></script> -->
-<!-- <script> $(".bootstrap_switch").bootstrapSwitch(); </script> -->
-
 
 <script src="js/vis.js"></script>
 

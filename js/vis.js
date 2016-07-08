@@ -257,7 +257,10 @@ function parse_sam_line_for_table(line) {
 	var cigar = parse_cigar(fields[5]);
 	var fields_to_show = fields.slice(0,header.length-1);
 
-	fields_to_show[0] = "..."+readname.substr(readname.length-size_readname,readname.length);
+	if (readname.length>size_readname) {
+		fields_to_show[0] = "..."+readname.substr(readname.length-size_readname,readname.length);	
+	}
+	
 	fields_to_show[5] = cigar[0]["num"]+cigar[0]["type"] + "..." + cigar[cigar.length-1]["num"] + cigar[cigar.length-1]["type"];
 
 	return fields_to_show;
