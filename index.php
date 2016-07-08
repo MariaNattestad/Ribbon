@@ -30,6 +30,7 @@
 		<h3> Settings</h3>
 		<form>
 		<table id="settings_table">
+			<tr><td class="table_title" colspan="5">General settings</td></tr>
 			<tr>
 				<td width="45%">Minimum mapping quality: </td>
 				<td width="15%"><span id="mq_label">0</span></td>
@@ -38,32 +39,38 @@
 			</tr>
 			<tr>
 				<td>Minimum indel size to split: </td>
-				<td><span id="indel_size_label">0</span></td>
-				<td><input id="indel_checkbox" type="checkbox" checked>
+				<td><span id="indel_size_label">inf</span></td>
+				<td><input id="indel_checkbox" type="checkbox">
 				</td>
 				<td><input type="range" id="indel_size_slider" min="0" value="0"></td>
 				
 			</tr>
-			<tr><td><input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"></td></tr>
+<!-- 
+			<tr id="table_sep"><td colspan="5"><input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"></td></tr> -->
+
+			<tr id="table_sep">
+				<td colspan="5">
+					
+					<label class="radio-inline">
+						<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
+					</label>
+
+					<label class="radio-inline">
+						<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
+					</label>
+
+				</td>
+			</tr>
+
+			<tr class="dotplot_settings"><td class="table_title" colspan="5">Dot plot settings</td></tr>
+			<tr class="dotplot_settings">
+				<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
+			</tr>
+			<tr class="ribbon_settings"><td class="table_title" colspan="5">Ribbon settings</td></tr>
+			<tr class="ribbon_settings">
+				<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox" checked></td>
+			</tr>
 		</table>
-		<!-- <fieldset class="form-group">
-			<div class="input-group">
-				<span class="input-group-addon">Minimum mapping quality: <span id="mq_label">0</span></span>
-				<div class="form-control"> <input type="range" id="mq_slider" value="0"></div>
-			</div>
-		</fieldset> -->
-	<!-- 	<fieldset class="form-group">
-			<div class="input-group">
-				<span class="input-group-addon">Minimum indel size to split: <span id="indel_size_label">0</span></span>
-				<div class="form-control"> <input type="range" id="indel_size_slider" min="-1" value="10"></div>
-			</div>
-		</fieldset> -->
-		<!-- <fieldset class="form-group"> -->
-			<!-- <div class="input-group"> -->
-				<!-- Add Bootstrap switch for ribbons/dotplot -->
-				<!-- <input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"> -->
-			<!-- </div> -->
-		<!-- </fieldset> -->
 	</form>
 	</div>
 </div>
@@ -71,8 +78,8 @@
 <script src="js/d3.v3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/bootstrap-switch.min.js"></script>
-<script> $(".bootstrap_switch").bootstrapSwitch(); </script>
+<!-- <script src="js/bootstrap-switch.min.js"></script> -->
+<!-- <script> $(".bootstrap_switch").bootstrapSwitch(); </script> -->
 
 
 <script src="js/vis.js"></script>

@@ -73,12 +73,25 @@ text {
   visibility: hidden;
 }
 
-#settings table, #settings th, #settings td {
-  padding: 0.2vmin  0.2vmin 0.2vmin 0.2vmin;
+#settings_table table, #settings_table th, #settings_table td {
+  /* top right bottom left */
+  padding: 1vmin  0.2vmin 1vmin 0.2vmin;
   border: 0; /*.2px solid blue;*/
 }
 
 div.input-group {
   background-color: #bbbbbb;
   
+}
+
+.table_title {
+  text-align: center;
+  font-weight: 900;
+  /*font-size: 2vmin;*/
+}
+
+#table_sep tr, #table_sep td {
+  text-align: center;
+  border-top: 2px solid gray;
+  padding: 1vmin 1vmin 1vmin 1vmin ;
 }
