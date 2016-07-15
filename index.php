@@ -57,7 +57,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="panel-group">
+	<div class="panel-group" id="region_selector_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
@@ -78,55 +78,57 @@
 
 	
 	<h4 id="select_reads">Select reads</h4>
-	<table id="sam_table"></table>
+	<div id="sam_table_box">
+		<table id="sam_table"></table>
+	</div>
 	<div id="user_message" class="alert alert-default" role="alert"></div>
 	<br>
 	<div id="settings" style="float:left; display: inline-block">
 		<h3> Settings</h3>
 		<form>
-		<table id="settings_table">
-			<tr><td class="table_title" colspan="5">General settings</td></tr>
-			<tr>
-				<td width="45%">Minimum mapping quality: </td>
-				<td width="15%"><span id="mq_label">0</span></td>
-				<td width="35%"><input type="range" id="mq_slider" value="0"></td>
-			</tr>
-			<tr>
-				<td>Minimum indel size to split: </td>
-				<td><span id="indel_size_label">inf</span></td>
-				<td><input type="range" id="indel_size_slider" min="0" value="100000"></td>
-				
-			</tr>
-			<tr><td>Show only reference chromosome lengths from header</td>
-				<td><input id="only_header_refs_checkbox" type="checkbox"></td>
-			</tr>	
-<!-- 
-			<tr id="table_sep"><td colspan="5"><input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"></td></tr> -->
-
-			<tr id="table_sep">
-				<td colspan="5">
+			<table id="settings_table">
+				<tr><td class="table_title" colspan="5">General settings</td></tr>
+				<tr>
+					<td width="45%">Minimum mapping quality: </td>
+					<td width="15%"><span id="mq_label">0</span></td>
+					<td width="35%"><input type="range" id="mq_slider" value="0"></td>
+				</tr>
+				<tr>
+					<td>Minimum indel size to split: </td>
+					<td><span id="indel_size_label">inf</span></td>
+					<td><input type="range" id="indel_size_slider" min="0" value="100000"></td>
 					
-					<label class="radio-inline">
-						<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
-					</label>
+				</tr>
+				<tr><td>Show only reference chromosome lengths from header</td>
+					<td><input id="only_header_refs_checkbox" type="checkbox"></td>
+				</tr>	
+	<!-- 
+				<tr id="table_sep"><td colspan="5"><input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"></td></tr> -->
 
-					<label class="radio-inline">
-						<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
-					</label>
+				<tr id="table_sep">
+					<td colspan="5">
+						
+						<label class="radio-inline">
+							<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
+						</label>
 
-				</td>
-			</tr>
+						<label class="radio-inline">
+							<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
+						</label>
 
-			<tr class="dotplot_settings"><td class="table_title" colspan="5">Dot plot settings</td></tr>
-			<tr class="dotplot_settings">
-				<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
-			</tr>
-			<tr class="ribbon_settings"><td class="table_title" colspan="5">Ribbon plot settings</td></tr>
-			<tr class="ribbon_settings">
-				<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox" checked></td>
-			</tr>
-		</table>
-	</form>
+					</td>
+				</tr>
+
+				<tr class="dotplot_settings"><td class="table_title" colspan="5">Dot plot settings</td></tr>
+				<tr class="dotplot_settings">
+					<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
+				</tr>
+				<tr class="ribbon_settings"><td class="table_title" colspan="5">Ribbon plot settings</td></tr>
+				<tr class="ribbon_settings">
+					<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox" checked></td>
+				</tr>
+			</table>
+		</form>
 	</div>
 </div>
 

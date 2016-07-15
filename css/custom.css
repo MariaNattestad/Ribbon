@@ -61,12 +61,23 @@ svg {
 	padding: 1vmin 1vmin 1vmin 1vmin;
 }
 
+#sam_table {
+	visibility: hidden;
+}
+
+#region_selector_panel {
+	visibility: hidden;
+}
 #sam_table table, #sam_table th, #sam_table td {
 	text-align: center;
 	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
 	border: 0.1px solid black;
 	font-size: 1vmin;
 	background-color: #ffffff;
+}
+#sam_table_box {
+	height: 30%;
+	overflow: scroll;
 }
 #user_message {
 	font-size: 2vmin;

@@ -154,8 +154,11 @@ function responsive_sizing() {
 	d3.select("#right_panel")
 		.style("width",_layout.panel_width + "px")
 		.style("height",_layout.total_height + "px");
+
 	table = d3.select("#right_panel").select("table");
 
+
+	draw_chunk_of_alignments();
 	draw();
 }
 
@@ -241,6 +244,8 @@ function show_results() {
 
 function draw_chunk_of_alignments() {
 
+	console.log(_Chunk_alignments);
+
 	//////////////////////////   Table read picker   //////////////////////////
 	// Add all alignments to the table
 	table.selectAll("tr").remove();
@@ -261,15 +266,23 @@ function draw_chunk_of_alignments() {
 
 	console.log(_Chunk_alignments);
 
-
-
-
-
-
-
 }
 
 
+function chunk_changed() {
+	// Show results only if there is anything to show
+	if (_Chunk_alignments.length > 0) {
+		_current_read_index = 0;
+		draw_chunk_of_alignments();
+		select_read();
+		show_results();
+	} else {
+		hide_results();
+		user_message("","");
+		return;
+	}
+
+}
 
 function sam_input_changed(sam_input_value) {
 		// console.log(d3.select('#sam_input').value);
@@ -298,16 +311,8 @@ function sam_input_changed(sam_input_value) {
 			}
 		}
 		
-		// Show results only if there is anything to show
-		if (_Chunk_alignments.length > 0) {
-			_current_read_index = 0;
-			draw_chunk_of_alignments();
-			select_read();
-			show_results();
-		} else {
-			hide_results();
-			user_message("","");
-		}
+		chunk_changed();
+	
 }
 
 $('#sam_input').bind('input propertychange', function() {sam_input_changed(this.value)});
@@ -376,6 +381,11 @@ function parse_record_for_table(read_record) {
 		}
 		all_chrs[read_record.alignments[i].r] = true;
 	}
+	if (min_mq == 100000) {
+		console.log("MIN MQ NOT SET");
+		console.log(read_record);
+	}
+
 	fields_to_show.push(read_record.alignments.length);
 	fields_to_show.push(dict_length(all_chrs));
 	fields_to_show.push(min_mq);
@@ -412,7 +422,7 @@ function parse_cigar(cigar_string) {
 
 function parse_SA_field(sa) {
 	var alignments = [];
-	var aligns = sa.split(":")[2].split(";");
+	var aligns = sa.split(";");
 	for (var i = 0; i < aligns.length; i++) {
 		var fields = aligns[i].split(",");
 		if (fields.length >= 6) {
@@ -618,7 +628,7 @@ function parse_sam_coordinates(line) {
 	var alignments = [];
 	for (var i = 0; i < fields.length; i++) {
 		if (fields[i].substr(0,2) == "SA") {
-			alignments = parse_SA_field(fields[i]);
+			alignments = parse_SA_field(fields[i].split(":")[2]);
 		}
 	}
 
@@ -665,7 +675,7 @@ function reparse_read(record_from_chunk) {
 	if (record_from_chunk.raw_type == "sam") {
 		return parse_sam_coordinates(record_from_chunk.raw);
 	} else if (record_from_chunk.raw_type == "bam") {
-		console.log("No function yet to get alignment coordinates from bam record");
+		return parse_bam_record(record_from_chunk.raw);
 	} else {
 		console.log("Don't recognize record_from_chunk.raw_type, must be sam or bam");
 	}
@@ -673,6 +683,8 @@ function reparse_read(record_from_chunk) {
 
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
+
+	console.log(readname);
 
 	table.selectAll("span").style("color",function(d) {if (d.readname == readname) {return arrow_color.on} else {return arrow_color.off}});
 
@@ -1231,6 +1243,7 @@ function wait_then_run_when_all_data_loaded() {
 
 function bam_loaded() {
 	record_bam_header();
+	d3.select("#region_selector_panel").style("visibility","visible");
 }
 
 function record_bam_header() {
@@ -1243,7 +1256,27 @@ function record_bam_header() {
 	for (var i in _Bam.header.sq) {
 		_Ref_sizes_from_header[_Bam.header.sq[i].name] = _Bam.header.sq[i].end;
 	}
-	// console.log(_Ref_sizes_from_header);
+	
+
+
+	var chromosomes = [];
+	for (var chrom in _Ref_sizes_from_header) {
+		if (chromosomes.indexOf(chrom) == -1) {
+			chromosomes.push(chrom);
+		}
+	}
+	chromosomes.sort(natural_sort);
+
+	_Whole_refs = [];
+	var cumulative_whole_ref_size = 0;
+	for (var j = 0; j < chromosomes.length; j++){
+		var chrom = chromosomes[j];
+		_Whole_refs.push({"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size});
+		cumulative_whole_ref_size += _Ref_sizes_from_header[chrom];
+	}
+
+	_scales.whole_ref_scale.domain([0,cumulative_whole_ref_size]);
+	_scales.ref_color_scale.domain(chromosomes);
 
 }
 
@@ -1254,27 +1287,9 @@ function record_bam_header() {
 // ===========================================================================
 
 
-// function check_region_exists(chrom,start,end) {
-// 	// _Whole_refs has chrom, size, cum_pos
-
-// 	for (var i = 0; i < _Whole_refs.length; i++) {
-// 		if (_Whole_refs[i].chrom == chrom) {
-// 			if (start < 0 || end < 0) {
-// 				return false;
-// 			}
-// 			else if (start > _Whole_refs[i].size || end > _Whole_refs[i].size) {
-// 				return false;
-// 			} else {
-// 				return true;
-// 			}
-// 		}
-// 	}
-// 	return false;
-// }
-
 function get_chrom_index(chrom) {
 	for (var i = 0; i < _Whole_refs.length; i++) {
-		if (_Whole_refs[i].chrom == chrom || _Whole_refs.chrom == "chr" + chrom) {
+		if (_Whole_refs[i].chrom == chrom || _Whole_refs[i].chrom == "chr" + chrom) {
 			return i;
 		}
 	} 
@@ -1294,20 +1309,72 @@ function go_to_region(chrom,start,end) {
 
 //////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
-function use_fetched_data(records) {
-	// console.log("use_fetched_data()");
-	// console.log(records);
 
-	var consolidated_records = [];
-	var used_readnames = {};
-	for (var i in records) {
-		if (used_readnames[records[i].readName] == undefined) {
-			consolidated_records.push(records[i]);
-			used_readnames[records[i].readName] = true;
-		}
+function parse_bam_record(record) {
+	
+	var chrom = record.segment;
+	var rstart = record.pos;
+	var flag = record.flag;
+	var mq = record.mq;
+	var raw_cigar = record.cigar;
+	
+	var strand = "+";
+	if ((flag & 16) == 16) {
+		strand = "-";
 	}
 
-	console.log(consolidated_records);
+	if (mq == undefined) {
+		console.log("record missing mq");
+		console.log(record);
+	}
+	
+	var alignments = [];
+	
+	if (record.SA != undefined) {
+		alignments = parse_SA_field(record.SA);	
+	}
+	
+	alignments.push(read_cigar(raw_cigar,chrom,rstart,strand,mq));
+
+	var read_length = alignments[alignments.length-1].read_length;
+
+	for (var i = 0; i < alignments.length; i++) {
+		 if (alignments[i].read_length != read_length) {
+				user_message("Warning", "read length of primary and supplementary alignments do not match for this read (calculated using cigar strings)");
+		 }
+	}
+
+
+	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName};
+
+}
+
+
+function use_fetched_data(records) {
+	console.log("use_fetched_data()");
+	console.log(records);
+
+	var consolidated_records = [];
+	if (_settings.keep_duplicate_reads == false) {
+		var used_readnames = {};
+		for (var i in records) {
+			if (used_readnames[records[i].readName] == undefined) {
+				consolidated_records.push(records[i]);
+				used_readnames[records[i].readName] = true;
+			}
+		}
+	} else {
+		consolidated_records = records;
+	}
+	
+
+	_Chunk_alignments = [];
+	for (var i in consolidated_records) {
+		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
+	}
+	
+	chunk_changed();
+	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
 
 }
 
@@ -1327,7 +1394,7 @@ function region_submitted(event) {
 	var chrom_index = get_chrom_index(chrom);
 	if (chrom_index != undefined) {
 		console.log("Good");
-		chrom = _Whole_refs[chrom_index].chromosome;
+		chrom = _Whole_refs[chrom_index].chrom;
 		if (start > _Whole_refs[chrom_index].size) {
 			start = _Whole_refs[chrom_index].size;
 		}
@@ -1345,6 +1412,7 @@ function region_submitted(event) {
 			start = end;
 			end = tmp;
 		}
+
 		// Correct any issues with coordinates
 		d3.select("#region_chrom").property("value",chrom);
 		d3.select("#region_start").property("value",start);
@@ -1358,14 +1426,13 @@ function region_submitted(event) {
 
 	go_to_region(chrom,start,end);
 
-	// Return false to prevent page re-load
-	return false;  
 }
 
 d3.select("#region_go").on("click",region_submitted);
 d3.select("#region_chrom").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
+
 
 
 // ===========================================================================
