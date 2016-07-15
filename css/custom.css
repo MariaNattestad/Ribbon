@@ -1,97 +1,115 @@
 body {
-  padding-top: 70px;
-  padding-bottom: 30px;
-  font-family: 'Lato', sans-serif;
-  font-size: 1.4vmin;
-  background-color: #eeeeee; /*gray*/
+	padding-top: 70px;
+	padding-bottom: 30px;
+	font-family: 'Lato', sans-serif;
+	font-size: 1.4vmin;
+	background-color: #eeeeee; /*gray*/
 }
 
+/*
 div {
-  display: inline-block;
+	display: inline-block;
+}*/
+#user_message {
+	margin: 2vmin;
 }
 
 #left_panel {
-  float:left;
+	float:left;
 }
 
-#sam_input_panel {
-  
-  display: block;
+.small_input {
+	width: 35%;
 }
 
-#visualization_panel {
-  padding: 2vmin 2vmin 2vmin 2vmin;
-  display: block;
+.tiny_input {
+	width: 15%;
 }
-#sam_table_panel {
-  font-size: 1.4vmin;
-  padding: 2vmin 2vmin 2vmin 2vmin;
-  display: inline-block;
+
+#svg1_panel, #svg2_panel {
+	padding: 2vmin 2vmin 2vmin 2vmin;
+	display: block;
+	visibility: hidden;
+}
+
+#right_panel {
+	font-size: 1.4vmin;
+	padding: 2vmin 2vmin 2vmin 2vmin;
+	display: inline-block;
 }
 
 #select_reads { /* just a label */
-  visibility: hidden;
+	visibility: hidden;
 }
 
 svg {
-  background-color: #ffffff; /*white*/
+	background-color: #ffffff; /*white*/
 }
 
-#sam_input {
-  padding: 2vmin 2vmin 2vmin 2vmin; 
-  font-size: 1.4vmin; 
-  overflow-y: scroll; 
-  resize: none; 
-  white-space: nowrap; /* overflow: auto;.*/
+#sam_input, #bed_input {
+	padding: 1vmin 1vmin 1vmin 1vmin; 
+	font-size: 1.5vmin; 
+	overflow-y: scroll; 
+	resize: none; 
+	white-space: nowrap; 
+}
+
+#sam_info_icon, #bed_info_icon, #bam_info_icon{
+	color: #aaaaaa;
+}
+#bam_file {
+	padding: 1vmin 1vmin 1vmin 1vmin;
 }
 
 #sam_table table, #sam_table th, #sam_table td {
-  text-align: center;
-  padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
-  border: 0.1px solid black;
-  font-size: 1vmin;
-  background-color: #ffffff;
+	text-align: center;
+	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+	border: 0.1px solid black;
+	font-size: 1vmin;
+	background-color: #ffffff;
+}
+#user_message {
+	font-size: 2vmin;
 }
 
 th {
-  font-weight: 900;
+	font-weight: 900;
 }
 
 text {
-  font-size: 1.4vmin;
-  font-family: 'Lato', sans-serif;
+	font-size: 1.4vmin;
+	font-family: 'Lato', sans-serif;
 }
 
 .tip {
-  font-size: 2vmin;
-  font-weight: 900;
-  font-family: 'Lato', sans-serif; 
+	font-size: 2vmin;
+	font-weight: 900;
+	font-family: 'Lato', sans-serif; 
 }
 
-
 #settings {
-  visibility: hidden;
+	visibility: hidden;
 }
 
 #settings_table table, #settings_table th, #settings_table td {
-  /* top right bottom left */
-  padding: 1vmin  0.2vmin 1vmin 0.2vmin;
-  border: 0; /*.2px solid blue;*/
+	/* top right bottom left */
+	padding: 1vmin  0.2vmin 1vmin 0.2vmin;
+	border: 0; /*.2px solid blue;*/
 }
 
 div.input-group {
-  background-color: #bbbbbb;
-  
+	background-color: #bbbbbb;
+	
 }
 
 .table_title {
-  text-align: center;
-  font-weight: 900;
-  /*font-size: 2vmin;*/
+	text-align: center;
+	font-weight: 900;
+	/*font-size: 2vmin;*/
 }
 
 #table_sep tr, #table_sep td {
-  text-align: center;
-  border-top: 2px solid gray;
-  padding: 1vmin 1vmin 1vmin 1vmin ;
+	text-align: center;
+	border-top: 2px solid gray;
+	padding: 1vmin 1vmin 1vmin 1vmin ;
 }
