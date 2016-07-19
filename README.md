@@ -1,2 +1,6 @@
-Blob is a mini long read visualizer that uses lines from a sam file and plots for each read its primary alignment and those specified in the Secondary Alignment (SA) tag of the sam record.
+Ribbon is a long read visualizer for genomic data including sam and bam files.
+
+For each line in a sam file it draws the primary alignment and those specified in the Secondary Alignment (SA) tag of the sam record.
+
+
 
