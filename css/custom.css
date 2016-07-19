@@ -12,6 +12,7 @@ div {
 }*/
 #user_message {
 	margin: 2vmin;
+	font-size: 2vmin;
 }
 
 #left_panel {
@@ -46,6 +47,7 @@ svg {
 	background-color: #ffffff; /*white*/
 }
 
+
 #sam_input, #bed_input {
 	padding: 1vmin 1vmin 1vmin 1vmin; 
 	font-size: 1.5vmin; 
@@ -66,7 +68,7 @@ svg {
 }
 
 #region_selector_panel {
-	visibility: hidden;
+	display: none;
 }
 #sam_table table, #sam_table th, #sam_table td {
 	text-align: center;
@@ -79,9 +81,7 @@ svg {
 	height: 30%;
 	overflow: scroll;
 }
-#user_message {
-	font-size: 2vmin;
-}
+
 
 th {
 	font-weight: 900;

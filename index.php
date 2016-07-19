@@ -66,7 +66,7 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
 				<div class="panel-body">
-					<input class="tiny_input" id="region_chrom" placeholder="chr1"> : 
+					<input class="tiny_input" id="region_chrom" value="1"> : 
 					<input class="small_input" id="region_start" value="0"> - 
 					<input class="small_input" id="region_end" value="100000">
 					<button id="region_go">Go</button>
