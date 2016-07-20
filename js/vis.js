@@ -37,10 +37,14 @@ var _static = {};
 _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
 _static.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
-_static.margin_to_merge_ref_intervals = 100000;
+_static.margin_to_merge_ref_intervals = 10000;
 
 
 var _settings = {};
+_settings.region_min_mapping_quality = 0;
+_settings.max_num_alignments = 1000000;
+_settings.min_num_alignments = 1;
+
 _settings.ribbon_vs_dotplot = "ribbon";
 _settings.min_mapping_quality = 0;
 _settings.min_indel_size = -1; // set to -1 to stop showing indels
@@ -51,9 +55,14 @@ _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "max_mq";
 
 
+
 var _ui_properties = {};
+_ui_properties.region_mq_slider_max = 0;
+_ui_properties.num_alignments_slider_max = 1000000;
+
 _ui_properties.mq_slider_max = 0;
 _ui_properties.indel_size_slider_max = 0;
+
 
 
 // Scales for visualization
@@ -66,15 +75,15 @@ _scales.ref_color_scale = d3.scale.ordinal().range(_static.colors);
 
 
 
-// Soon to be deprecated: keep for testing read selection
-var table;
+////////////////// Soon to be deprecated: keep for testing read selection ////////////////////
+// var table;
 
-// How sam table looks
-var header = ["selected","read","alignments","chromosomes","min MQ","max MQ"];
-var size_readname = 20;
-var arrow_color = {"on":"#009900","off":"#cccccc"};
-var colors = {"read":"black","ref_block":"green"};
-
+// // How sam table looks
+// var header = ["selected","read","alignments","chromosomes","min MQ","max MQ"];
+// var size_readname = 20;
+// var arrow_color = {"on":"#009900","off":"#cccccc"};
+// 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
@@ -170,6 +179,44 @@ function responsive_sizing() {
 	draw();
 }
 
+
+//////////////////// Region settings /////////////////////////
+$('#region_mq_slider').bind('input propertychange', function() {
+	d3.select("#region_mq_label").text(this.value);
+	_settings.region_min_mapping_quality = this.value;
+	draw_region_view();
+});
+
+
+$('#max_num_alignments_slider').bind('input propertychange', function() {
+	
+	_settings.max_num_alignments = this.value;
+	if (_settings.max_num_alignments > _ui_properties.num_alignments_slider_max) {
+		// If we go above the maximum, put infinity
+		d3.select("#max_num_alignments_label").text("inf");
+	} else {
+		d3.select("#max_num_alignments_label").text(this.value);
+	}
+	draw_region_view();
+});
+
+
+$('#min_num_alignments_slider').bind('input propertychange', function() {
+	
+	_settings.min_num_alignments = this.value;
+	if (_settings.min_num_alignments > _ui_properties.num_alignments_slider_max) {
+		// If we go above the maximum, put infinity
+		d3.select("#min_num_alignments_label").text("inf");
+	} else {
+		d3.select("#min_num_alignments_label").text(this.value);
+	}
+	draw_region_view();
+});
+
+
+
+
+
 // For sliders, using .change() would make it run only when user releases slider
 $('#mq_slider').bind('input propertychange', function() {
 	d3.select("#mq_label").text(this.value);
@@ -182,7 +229,6 @@ $('#indel_size_slider').bind('input propertychange', function() {
 	_settings.min_indel_size = this.value;
 	if (_settings.min_indel_size > _ui_properties.indel_size_slider_max) {
 		// If we go above the maximum, put infinity
-		min_indel_size = -1;
 		d3.select("#indel_size_label").text("inf");
 	} else {
 		d3.select("#indel_size_label").text(this.value);
@@ -190,6 +236,7 @@ $('#indel_size_slider').bind('input propertychange', function() {
 	select_read(); // need to reparse the cigar string, so reselect the read. select_read() includes draw function
 
 });
+
 
 $('#only_header_refs_checkbox').change(function() {
 	_settings.show_only_known_references = this.checked;
@@ -251,7 +298,6 @@ function draw_chunk_ref() {
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
 	_scales.whole_ref_scale.range([_positions.chunk.ref_block.x, _positions.chunk.ref_block.x + _positions.chunk.ref_block.width]);
 	
-	user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes)");
 	// Whole reference chromosomes for the relevant references:
 	_svg2.selectAll("rect.ref_block").data(_Whole_refs).enter()
 		.append("rect").attr("class","ref_block")
@@ -302,7 +348,7 @@ function draw_chunk_ref_intervals() {
 
 	// console.log("draw_chunk_ref_intervals");
 
-	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
+	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	
 	_scales.chunk_ref_interval_scale.range([_positions.chunk.ref_intervals.x, _positions.chunk.ref_intervals.x+_positions.chunk.ref_intervals.width]);
 
@@ -314,6 +360,7 @@ function draw_chunk_ref_intervals() {
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
 			.attr("height", _positions.chunk.ref_intervals.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
+			.attr("fill-opacity",_static.dotplot_ref_opacity)
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
@@ -341,54 +388,64 @@ function draw_chunk_alignments() {
 		return;
 	}
 
-	_positions.chunk.reads = { "top_y":_layout.svg2_height*0.30, "height":_layout.svg2_height*0.65, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
+	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height*0.9, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
 	
-
-
 	// Focal region
 	_svg2.append("rect").attr("class","focal_region")
 		.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-		.attr("y",_positions.chunk.ref_intervals.y + _positions.chunk.ref_intervals.height)
+		.attr("y",_positions.chunk.ref_intervals.y)
 		.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-		.attr("height",_positions.chunk.reads.top_y + _positions.chunk.reads.height - _positions.chunk.ref_intervals.y - _positions.chunk.ref_intervals.height )
+		.attr("height", _positions.chunk.ref_intervals.height )
 		.attr("fill","none")
-		.style("stroke-width",1)
-		.style("stroke", function(d) {return _scales.ref_color_scale(_focal_region.chrom);});
+		.style("stroke-width",5)
+		.style("stroke", "black");
 
 
+	var chunks = [];
+	var counter = 0;
+	for (var i in _Chunk_alignments) {
+
+		if (_Chunk_alignments[i].alignments.length <= _settings.max_num_alignments && _Chunk_alignments[i].alignments.length >= _settings.min_num_alignments && _Chunk_alignments[i].max_mq >= _settings.region_min_mapping_quality) {
+			chunks.push(_Chunk_alignments[i]);
+			chunks[counter].index = i; // to remember the data order even after sorting
+			counter++;	
+		}
+	}
+
+	chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
+
+	var num_reads_to_show  = chunks.length;
+
+	for (var i = 0; i < chunks.length; i++) {
+		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+1)/num_reads_to_show;
+		chunks[i].ref_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*i/num_reads_to_show;
+
+	}
+
+	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(chunks).enter()
+		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
+		.on("click",function(d) { _current_read_index = d.index; select_read();});
+
+	// alignment_groups.append("line").attr("class","read")
+	// 	.attr("x1", _positions.chunk.reads.x)
+	// 	.attr("x2", _positions.chunk.reads.x + _positions.chunk.reads.width)
+	// 	.attr("y1", 0)
+	// 	.attr("y2", 0)
+	// 	.style("stroke-width",1)
+	// 	.style("stroke","gray")
+	// 	.style("stroke-opacity",1);
 
 
-	var num_reads_to_show  = _Chunk_alignments.length;
+	alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
+		.append("line")
+			.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
+			.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
+			.attr("y1",0)
+			.attr("y2",0)
+			.style("stroke-width",3)
+			.style("stroke",function(d) {if (d.qs < d.qe) {return "blue"} else {return "red"}})
+			.style("stroke-opacity",0.5);
 
-	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(_Chunk_alignments).enter()
-		.append("g").attr("class","alignment_groups");
-
-	alignment_groups.append("line").attr("class","read")
-		.attr("x1", _positions.chunk.reads.x)
-		.attr("x2", _positions.chunk.reads.x + _positions.chunk.reads.width)
-		.attr("y1", function(d,i) {return (_positions.chunk.reads.top_y + _positions.chunk.reads.height*(i/num_reads_to_show));})
-		.attr("y2", function(d,i) {return (_positions.chunk.reads.top_y + _positions.chunk.reads.height*(i/num_reads_to_show));})
-		.style("stroke-width",1)
-		.style("stroke","black")
-		.style("stroke-opacity",1)
-
-		// alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
-		// .append("path")
-		// 	.filter(function(d) {return d.mq >= _settings.min_mapping_quality})
-		// 	.attr("class","alignment")
-		// 	.attr("d",function(d) {return ribbon_alignment_chunk_path_generator(d); })
-		// 	.style("stroke-width",function() { if (_settings.ribbon_outline) {return 1;} else {return 0;} })
-		// 	.style("stroke","black")
-		// 	.style("stroke-opacity",1)
-		// 	.attr("fill",function(d) {return _scales.ref_color_scale(d.r);})
-		// 	.attr("fill-opacity",_static.alignment_alpha)
-		// 	.on('mouseover', function(d) {
-		// 		var text = Math.abs(d.qe-d.qs) + " bp"; 
-		// 		var x = _scales.read_scale((d.qs+d.qe)/2);
-		// 		var y = _positions.read.y - _padding.text;
-		// 		show_tooltip(text,x,y,_svg);
-		// 	})
-		// 	.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 
 }
 
@@ -398,16 +455,16 @@ function draw_region_view() {
 
 	//////////////////////////   Table read picker   //////////////////////////
 	// Add all alignments to the table
-	table.selectAll("tr").remove();
-	table.append("tr").selectAll("th").data(header).enter().append("th").text(function(d){return d;});
+	// table.selectAll("tr").remove();
+	// table.append("tr").selectAll("th").data(header).enter().append("th").text(function(d){return d;});
 
-	var rows = table.selectAll("tr.data").data(_Chunk_alignments).enter()
-		.append("tr").attr("class","data");
+	// var rows = table.selectAll("tr.data").data(_Chunk_alignments).enter()
+	// 	.append("tr").attr("class","data");
 	
-	rows.append("td").append("span").attr("class","glyphicon glyphicon-arrow-right").style("color",arrow_color.off).on("click",function(d,i) {_current_read_index = i; select_read();});
+	// rows.append("td").append("span").attr("class","glyphicon glyphicon-arrow-right").style("color",arrow_color.off).on("click",function(d,i) {_current_read_index = i; select_read();});
 	
-	rows.selectAll("td.data").data(function(read){return parse_record_for_table(read);}).enter()
-					.append("td").text(function(d){return d;}).attr("class","data");
+	// rows.selectAll("td.data").data(function(read){return parse_record_for_table(read);}).enter()
+	// 				.append("td").text(function(d){return d;}).attr("class","data");
 	///////////////////////////////////////////////////////////////////////////
 
 
@@ -434,6 +491,9 @@ function clear_data() {
 function chunk_changed() {
 	// Show results only if there is anything to show
 	if (_Chunk_alignments.length > 0) {
+
+		all_read_analysis(); // calculates features of each alignment and adds these variables to _Chunk_alignments
+
 		organize_references_for_chunk();
 		draw_region_view();
 		
@@ -529,38 +589,44 @@ function dict_length(dictionary) {
 }
 
 
-function parse_record_for_table(read_record) {
+function all_read_analysis() {
 	
-	var fields_to_show = [];
-	if (read_record.readname.length>size_readname) {
-		fields_to_show.push("..."+read_record.readname.substr(read_record.readname.length-size_readname,read_record.readname.length));	
-	} else {
-		fields_to_show.push(read_record.readname);	
-	}
-	var all_chrs = {};
-	var max_mq = 0;
-	var min_mq = 100000;
-	for (var i in read_record.alignments) {
-		if (read_record.alignments[i].mq > max_mq) {
-			max_mq = read_record.alignments[i].mq
+	var overall_max_mq = 0;
+	var overall_max_num_alignments = 0;
+
+	for (var j in _Chunk_alignments) {
+		read_record = _Chunk_alignments[j];
+		// var all_chrs = {};
+		var max_mq = 0;
+
+		// var min_mq = 100000;
+		for (var i in read_record.alignments) {
+			if (read_record.alignments[i].mq > max_mq) {
+				max_mq = read_record.alignments[i].mq
+			}
+			// if (read_record.alignments[i].mq < min_mq) {
+			// 	min_mq = read_record.alignments[i].mq
+			// }
+			// all_chrs[read_record.alignments[i].r] = true;
 		}
-		if (read_record.alignments[i].mq < min_mq) {
-			min_mq = read_record.alignments[i].mq
+		_Chunk_alignments[j].max_mq = max_mq;
+		if (max_mq > overall_max_mq) {
+			overall_max_mq = max_mq;
 		}
-		all_chrs[read_record.alignments[i].r] = true;
+
+		if (_Chunk_alignments[j].alignments.length > overall_max_num_alignments) {
+			overall_max_num_alignments = _Chunk_alignments[j].alignments.length;
+		}
 	}
-	if (min_mq == 100000) {
-		console.log("MIN MQ NOT SET");
-		console.log(read_record);
-	}
-
-	fields_to_show.push(read_record.alignments.length);
-	fields_to_show.push(dict_length(all_chrs));
-	fields_to_show.push(min_mq);
-	fields_to_show.push(max_mq);
 
 
-	return fields_to_show;
+	_ui_properties.region_mq_slider_max = overall_max_mq; 
+	d3.select('#region_mq_slider').property("max", _ui_properties.region_mq_slider_max);
+
+	_ui_properties.num_alignments_slider_max = overall_max_num_alignments; 
+	d3.select('#max_num_alignments_slider').property("max", _ui_properties.num_alignments_slider_max);
+	d3.select('#min_num_alignments_slider').property("max", _ui_properties.num_alignments_slider_max);
+
 }
 
 function parse_cigar(cigar_string) {
@@ -773,7 +839,9 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 				read_pos += step*num;
 				ref_pos += num;
 		}
-	}alignment.max_indel
+	}
+
+	// alignment.max_indel
 	alignment.path.push({"R":alignment.re, "Q":alignment.qe});
 	return alignment;
 }
@@ -860,7 +928,7 @@ function reparse_read(record_from_chunk) {
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
 
-	table.selectAll("span").style("color",function(d) {if (d.readname == readname) {return arrow_color.on} else {return arrow_color.off}});
+	// table.selectAll("span").style("color",function(d) {if (d.readname == readname) {return arrow_color.on} else {return arrow_color.off}});
 
 	user_message("","");
 	
@@ -946,10 +1014,6 @@ function ribbon_alignment_path_generator(d) {
 	output += ", L " + _scales.read_scale(d.path[0].Q)      + "," + bottom_y; // read start
 
 	return output;
-}
-
-function ribbon_alignment_chunk_path_generator(d,index,total) {
-	console.log("still need to write ribbon_alignment_chunk_path_generator()");
 }
 
 function ref_mapping_path_generator(d,chunk) {
@@ -1048,7 +1112,6 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 				var length_guess = intervals[intervals.length-1][1]*2;
 				_Whole_refs.push({"chrom":chrom,"size":length_guess,"cum_pos":cumulative_whole_ref_size});
 				cumulative_whole_ref_size += length_guess;
-				// ++++++++++++++++++++++++
 			}
 		} else {
 			_Whole_refs.push({"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size});
@@ -1084,7 +1147,7 @@ function organize_references_for_chunk() {
 			ref_pieces[_focal_region.chrom] = [];
 		}
 		ref_pieces[_focal_region.chrom].push([_focal_region.start,"s"]);
-		ref_pieces[_focal_region.chrom].push([_focal_region.start,"e"]);
+		ref_pieces[_focal_region.chrom].push([_focal_region.end,"e"]);
 	}
 
 	// For each chromosome, consolidate intervals
@@ -1181,15 +1244,20 @@ function organize_references_for_read() {
 
 
 function refresh_visibility() {
+	if (_Whole_refs.length > 0) {
+		d3.select("#svg2_panel").style('visibility','visible');
+	} else {
+		d3.select("#svg2_panel").style('visibility','hidden');
+	}
 
 	if (_Chunk_alignments.length > 0) {
-		d3.select("#svg2_panel").style('visibility','visible');
 		d3.select("#select_reads").style("visibility","visible"); // just the label	
-		table.style("visibility","visible");
+		d3.select("#region_settings_panel").style("display","block");
+		// table.style("visibility","visible");
 	} else {
 		d3.select("#select_reads").style("visibility","hidden"); // just the label	
-		table.style("visibility","hidden");
-		d3.select("#svg2_panel").style('visibility','hidden');
+		d3.select("#region_settings_panel").style("display","none");
+		// table.style("visibility","hidden");
 	}
 
 	if (_Alignments.length > 0) {
@@ -1340,7 +1408,7 @@ function draw_ribbons() {
 	_positions.ref_intervals = {"y":_layout.svg_height*0.35, "x":_layout.svg_width*0.10, "width":_layout.svg_width*0.80, "height":_layout.svg_height*0.03};
 
 	// Draw read
-	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill",colors.read)
+	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
 		.on('mouseover', function() {
 			var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
 			var x = _positions.read.x+_positions.read.width/2;
@@ -1555,6 +1623,8 @@ function bam_loaded() {
 	draw_chunk_ref();
 	d3.select("#region_selector_panel").style("display","block");
 
+	user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region above to fetch reads.");
+
 	refresh_visibility();
 }
 
@@ -1597,6 +1667,7 @@ function record_bam_header() {
 function remove_bam_file() {
 	// For when sam input changes, clear bam file to prevent confusion and enable switching back to the bam file
 	d3.select('#bam_file').property("value","");
+	d3.select("#region_selector_panel").style("display","none");
 }
 
 // ===========================================================================
@@ -1617,8 +1688,6 @@ function go_to_region(chrom,start,end) {
 
 	if (_Bam != undefined) {
 		console.log("Fetching bam records in region");
-		console.log()
-		console.log(_Whole_refs[get_chrom_index(chrom)]);
 		_Bam.fetch(chrom,start,end,use_fetched_data);
 	} else {
 		console.log("No bam file");
@@ -1626,8 +1695,8 @@ function go_to_region(chrom,start,end) {
 	}
 }
 
-//////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
+//////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
 function parse_bam_record(record) {
 	
