@@ -3,7 +3,16 @@
 <html>
 
 <!--		NAVIGATION BAR-->
-<?php include "header.html";?>
+<head>
+    <title>Ribbon</title>
+    <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+    
+
+</head>
 
 <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
@@ -19,6 +28,44 @@
 	<!-- My own styles -->
 	<link href="css/custom.css" rel="stylesheet">
 
+
+
+<body role="document">
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href=".">        Ribbon</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav" id="navbar">
+            <!-- <li><a href="./">Home</a></li> -->
+            <!--<li><a href="./help.php">Help</a></li>-->
+            <!-- <li><a href="./info.php">Info</a></li> -->
+            <!-- <li class="dropdown"> -->
+              <!-- <a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a> -->
+              <!-- <ul class="dropdown-menu" role="menu"> -->
+                <!-- <li><a href="analysis.php?code=example1">SK-BR-3 PacBio+Sniffles</a></li> -->
+                <!-- <li><a href="analysis.php?code=example2">SK-BR-3 Illumina+Lumpy</a></li> -->
+                
+                <!--<li class="divider"></li>-->
+                <!--<li class="dropdown-header">Nav header</li>-->
+                <!--<li><a href="#">Separated link</a></li>-->
+                <!--<li><a href="#">One more separated link</a></li>-->
+              <!-- </ul> -->
+            <!-- </li> -->
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+</div>
+
+<!--            End of Navigation Bar                 -->
 
 
 
@@ -39,8 +86,8 @@
 				<div class="panel-body">
 					<ul class="nav nav-tabs">
 						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
-						<!-- <li><a data-toggle="tab" href="#bed">paste bed</a></li> -->
 						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
+						<li><a data-toggle="tab" href="#coords">paste coords</a></li>
 					</ul>
 					
 					<div class="tab-content">
@@ -48,15 +95,16 @@
 							<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
 							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Show example</span>
 						</div>
-						<!-- <div id="bed" class="tab-pane fade">
-							<textarea class="form-control" placeholder="Paste lines from a bed file"  id="bed_input"></textarea>
-							<span id="bed_info_icon" class="glyphicon glyphicon-info-sign"></span>
-						</div> -->
 						<div id="bam" class="tab-pane fade">
 							<h5>Select bam and corresponding bam.bai</h5>
 							<input type="file" name="files[]" id="bam_file"	multiple />
 							<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
 						</div>
+						<div id="coords" class="tab-pane fade">
+							<textarea class="form-control" placeholder="Paste lines from a coordinates file (show-coords -rclTH)"  id="coords_input"></textarea>
+							<span id="bed_info_icon" class="glyphicon glyphicon-info-sign"></span>
+						</div>
+
 					</div>
 				</div>
 			</div>
@@ -146,8 +194,7 @@
 							<tr><td>Show only reference chromosome lengths from header</td>
 								<td><input id="only_header_refs_checkbox" type="checkbox"></td>
 							</tr>	
-				<!-- 
-							<tr id="table_sep"><td colspan="5"><input class="bootstrap_switch" id="ribbon_vs_dotplot" type="checkbox" name="ribbon_vs_dotplot" data-on-text="Ribbon" data-off-text="Dotplot"></td></tr> -->
+
 
 							<tr id="table_sep">
 								<td colspan="5">

@@ -381,7 +381,7 @@ function draw_chunk_alignments() {
 		return;
 	}
 
-	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height*0.9, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
+	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
 	
 	// Focal region
 	_svg2.append("rect").attr("class","focal_region")
@@ -410,9 +410,7 @@ function draw_chunk_alignments() {
 	var num_reads_to_show  = chunks.length;
 
 	for (var i = 0; i < chunks.length; i++) {
-		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+1)/num_reads_to_show;
-		chunks[i].ref_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*i/num_reads_to_show;
-
+		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
 	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(chunks).enter()
@@ -552,19 +550,21 @@ d3.select("#bam_info_icon").on("click", function() {
 
 
 
-// function bed_input_changed(bed_input_value) {
-// 	console.log(bed_input_value);
-// }
+function coords_input_changed(coords_input_value) {
+	console.log(coords_input_value);
+	
+
+}
 
 
-// $('#bed_input').bind('input propertychange', function() {bed_input_changed(this.value)});
+$('#coords_input').bind('input propertychange', function() {coords_input_changed(this.value)});
 
-// d3.select("#bed_info_icon").on("click", function() {
-// 	console.log("BED INFO");
-// 	var example = "chr1  32866713 32896713 read1 30 +\nchr2  22866713 22896713 read1 30 +";
-// 	d3.select('#bed_input').property("value",example);
-// 	bed_input_changed(example);
-// });
+d3.select("#coords_info_icon").on("click", function() {
+	console.log("COORDS INFO");
+	var example = "put coords example here";
+	d3.select('#coords_input').property("value",example);
+	coords_input_changed(example);
+});
 
 
 
@@ -1578,6 +1578,7 @@ function read_example(filename) {
 	}})
 }
 
+
 add_examples_to_navbar();
 
 
@@ -1596,23 +1597,64 @@ document.getElementById('bam_file').addEventListener('change', openBamFile, fals
 // 	}
 // });
 
+function blobToFile(theBlob, fileName){
+    //A Blob() is almost a File() - it's just missing the two properties below which we will add
+    theBlob.lastModifiedDate = new Date();
+    theBlob.name = fileName;
+    return theBlob;
+}
+
+
+// function open_bam_from_url(url) {
+// 	var xhr = new XMLHttpRequest();
+// 	xhr.open('GET', url, true);
+// 	xhr.responseType = 'blob';
+// 	xhr.onload = function(e) {
+// 	  if (this.status == 200) {
+// 	    var bamFile = new Blob([this.response]);
+// 	    _Bam = new Bam( bamFile, { bai: baiFile });
+// 	    // bamFile is now the blob that the object URL pointed to.
+// 	  //   var xhr2 = new XMLHttpRequest();
+// 	  //   xhr2.open('GET',url + ".bai", true);
+// 	  //   xhr2.responseType = 'blob';
+// 	  //   if (this.status == 200) {
+// 	  //   	var baiFile = blobToFile(this.response);
+// 	  //   	_Bam = new Bam( bamFile, { bai: baiFile });
+
+// 			// // wait_then_run_when_all_data_loaded();
+// 	  //   }
+// 	  }
+// 	};
+// 	xhr.send();
+
+// }
+
+
+// open_bam_from_url("examples/hg38.SKBR3-MHC.pb.bam");
+
+
 function openBamFile(event) {
 
+	create_bam(event.target.files);
+	
+}
+
+function create_bam(files) {
 	// From bam.iobio, thanks Marth lab!
-	if (event.target.files.length != 2) {
+	if (files.length != 2) {
 		 alert('must select both a .bam and .bai file');
 		 return;
 	}
 
-	var fileType0 = /[^.]+$/.exec(event.target.files[0].name)[0];
-	var fileType1 = /[^.]+$/.exec(event.target.files[1].name)[0];
+	var fileType0 = /[^.]+$/.exec(files[0].name)[0];
+	var fileType1 = /[^.]+$/.exec(files[1].name)[0];
 
 	if (fileType0 == 'bam' && fileType1 == 'bai') {
-		bamFile = event.target.files[0];
-		baiFile = event.target.files[1];
+		bamFile = files[0];
+		baiFile = files[1];
 	 } else if (fileType1 == 'bam' && fileType0 == 'bai') {
-			bamFile = event.target.files[1];
-			baiFile = event.target.files[0];
+			bamFile = files[1];
+			baiFile = files[0];
 	 } else {
 			alert('must select both a .bam and .bai file');
 	 }
@@ -1622,15 +1664,22 @@ function openBamFile(event) {
 }
 
 
-
-function wait_then_run_when_all_data_loaded() {
+function wait_then_run_when_all_data_loaded(counter) {
+	if (counter == undefined) {
+		counter = 0;
+	} else if (counter > 30) {
+		user_message("Error","File taking too long to load")
+		return;
+	}
 	if (_Bam.header != undefined) {
 		console.log("ready")
 		bam_loaded();
 	} else {
 		console.log("waiting for data to load")
-		window.setTimeout(wait_then_run_when_all_data_loaded,100)  
+		window.setTimeout(function () {wait_then_run_when_all_data_loaded(counter+1)},300)
 	}
+
+
 }
 
 
