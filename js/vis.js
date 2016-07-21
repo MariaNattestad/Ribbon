@@ -547,12 +547,80 @@ d3.select("#bam_info_icon").on("click", function() {
 });
 
 
+function parse_coords_columns(columns) {
+	//     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  |  [LEN R]  [LEN Q]  | [TAGS]
+	// ==========================================================================================================
+	// 38231172 38246777  | 242528828 242513174  |    15606    15655  |    97.69  | 133797422 249250621  | chr10       1
 
+	var alignment = {
+		r: columns[9],
+		rs: parseInt(columns[0]),
+		re: parseInt(columns[1]),
+		qs: parseInt(columns[2]),
+		qe: parseInt(columns[3]),
+		mq: parseFloat(columns[6]),
+		read_length: parseInt(columns[8]),
+		max_indel: null // no indel in coordinates, disable the indel options upon null
+	}
+
+	alignment.path = [];
+	alignment.path.push({"R":alignment.rs, "Q":alignment.qs});
+	alignment.path.push({"R":alignment.re, "Q":alignment.qe});
+
+	return alignment;
+}
 
 
 function coords_input_changed(coords_input_value) {
-	console.log(coords_input_value);
+
+	clear_data();
+	remove_bam_file();
+
+	// console.log(d3.select('#sam_input').value);
+	var input_text = coords_input_value.split("\n");
+	_Ref_sizes_from_header = {};
+	_settings.min_indel_size = 100000000000;
+
+	var alignments_by_query = {};
+
+	for (var i = 0; i < input_text.length; i++) {
+		var columns = input_text[i].split(/[ \t]+/);
+
+		//     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  |  [LEN R]  [LEN Q]  | [TAGS]
+		// ==========================================================================================================
+		// 38231172 38246777  | 242528828 242513174  |    15606    15655  |    97.69  | 133797422 249250621  | chr10       1
+
+		if (columns.length == 11) {
+			var readname = columns[10];
+			if (alignments_by_query[readname] == undefined) {
+				alignments_by_query[readname] = [];
+			}
+			alignments_by_query[readname].push(parse_coords_columns(columns));
+			_Ref_sizes_from_header[columns[9]] = parseInt(columns[7]);
+		} else if (columns.length < 3) {
+			continue;
+		} else if (columns.length != 11) {
+			user_message("Error","The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>");
+			refresh_visibility();
+			return;
+		}
+	}
+
+	_Chunk_alignments = [];
+	for (var readname in alignments_by_query) {
+		// {"alignments": alignments, "raw":line, "raw_type":"sam", "readname":fields[0]};
+		_Chunk_alignments.push({
+			"alignments": alignments_by_query[readname],
+			"raw_type":"coords",
+			"readname":readname
+		});
+	}
+
+
+	_focal_region = undefined;
 	
+	refresh_visibility();
+	chunk_changed();
 
 }
 
@@ -561,7 +629,7 @@ $('#coords_input').bind('input propertychange', function() {coords_input_changed
 
 d3.select("#coords_info_icon").on("click", function() {
 	console.log("COORDS INFO");
-	var example = "put coords example here";
+	var example = "1000 2000 3000 4000 0 0 97.69 3000 5000 chr5 read1";
 	d3.select('#coords_input').property("value",example);
 	coords_input_changed(example);
 });
@@ -655,7 +723,6 @@ function parse_cigar(cigar_string) {
 	var parsed = cigar_string.split(cigar_regex);
 	if (parsed.length < 2) {
 		user_message("Error","This doesn't look like a sam file. The 6th column must be a valid cigar string.");
-		hide_results();
 		throw("input error: not a valid cigar string");
 	}
 	// console.log(parsed);
@@ -940,6 +1007,8 @@ function reparse_read(record_from_chunk) {
 		return parse_sam_coordinates(record_from_chunk.raw);
 	} else if (record_from_chunk.raw_type == "bam") {
 		return parse_bam_record(record_from_chunk.raw);
+	} else if (record_from_chunk.raw_type == "coords") {
+		return record_from_chunk; // no indels
 	} else {
 		console.log("Don't recognize record_from_chunk.raw_type, must be sam or bam");
 	}
@@ -1562,7 +1631,16 @@ function add_examples_to_navbar() {
 
 					navbar_examples.append("li").append("a")
 						.attr("href",void(0))
-						.on("click",function() {read_example(example_file);})
+						.on("click",function() {read_example_sam(example_file);})
+						.text(example_file);
+				})
+				$(data).find("a:contains(.coords)").each(function() {
+					// will loop through
+					var example_file = $(this).attr("href");
+
+					navbar_examples.append("li").append("a")
+						.attr("href",void(0))
+						.on("click",function() {read_example_coords(example_file);})
 						.text(example_file);
 				})
 			}
@@ -1571,12 +1649,21 @@ function add_examples_to_navbar() {
 
 
 
-function read_example(filename) {
+function read_example_sam(filename) {
 
 	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
 		sam_input_changed(file_content);
 	}})
 }
+
+
+function read_example_coords(filename) {
+
+	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
+		coords_input_changed(file_content);
+	}})
+}
+
 
 
 add_examples_to_navbar();

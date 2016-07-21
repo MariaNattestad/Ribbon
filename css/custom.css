@@ -2,7 +2,7 @@ body {
 	padding-top: 70px;
 	padding-bottom: 30px;
 	font-family: 'Lato', sans-serif;
-	font-size: 1.4vmin;
+	font-size: 2vmin;
 	background-color: #eeeeee; /*gray*/
 }
 
@@ -12,7 +12,7 @@ div {
 }*/
 #user_message {
 	margin: 2vmin;
-	font-size: 2vmin;
+	font-size: 1.8vmin;
 }
 
 #left_panel {
@@ -48,7 +48,7 @@ svg {
 }
 
 
-#sam_input, #bed_input {
+#sam_input, #coords_input {
 	padding: 1vmin 1vmin 1vmin 1vmin; 
 	font-size: 1.5vmin; 
 	overflow-y: scroll; 
@@ -56,7 +56,7 @@ svg {
 	white-space: nowrap; 
 }
 
-#sam_info_icon, #bed_info_icon, #bam_info_icon{
+#sam_info_icon, #coords_info_icon, #bam_info_icon{
 	color: #aaaaaa;
 }
 #bam_file {
