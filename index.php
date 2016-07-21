@@ -12,8 +12,13 @@
     <!-- Bootstrap theme -->
     <link href="css/bootstrap-theme.min.css" rel="stylesheet">
 
+    <!-- Special range slider -->
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+
+
 	<!-- My own styles -->
 	<link href="css/custom.css" rel="stylesheet">
+
 
 
 
@@ -61,14 +66,14 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_region_picking_box">Select region</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_region_picking_box">Select position</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
 				<div class="panel-body">
-					<input class="tiny_input" id="region_chrom" value="1"> : 
-					<input class="small_input" id="region_start" value="0"> - 
-					<input class="small_input" id="region_end" value="100000">
+					<input class="tiny_input" id="region_chrom" value="chr1"> : 
+					<input class="small_input" id="region_start" value="0">
+					<!-- - <input class="small_input" id="region_end" value="100000"> -->
 					<button id="region_go">Go</button>
 				</div>
 			</div>
@@ -85,29 +90,24 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
-					Settings go here
 					<table id="settings_table">
-							<tr><td class="table_title" colspan="5">General settings</td></tr>
 							<tr>
 								<td width="45%">Minimum mapping quality for best alignment: </td>
 								<td width="15%"><span id="region_mq_label">0</span></td>
-								<td width="35%"><input type="range" id="region_mq_slider" value="0"></td>
+								<td width="35%"><div id="region_mq_slider"></td>
 							</tr>
-							<tr>
-								<td>Minimum number of alignments: </td>
-								<td><span id="min_num_alignments_label">1</span></td>
-								<td><input type="range" id="min_num_alignments_slider" min="1" value="1"></td>
-							</tr>
-							<tr>
-								<td>Maximum number of alignments: </td>
-								<td><span id="max_num_alignments_label">inf</span></td>
-								<td><input type="range" id="max_num_alignments_slider" min="1" value="10000"></td>
+							<tr><td>Number of alignments</td>
+								<td> <span id="num_aligns_range_label"></span> </td>
+								<td> <div id="num_aligns_range_slider"></div> </td>
 							</tr>
 					</table>
 				</div>
 			</div>
 		</div>
 	</div>
+	
+
+
 <!-- 
 	<div >
 		<h4 id="select_reads">Select reads</h4>
@@ -135,12 +135,12 @@
 							<tr>
 								<td width="45%">Minimum mapping quality: </td>
 								<td width="15%"><span id="mq_label">0</span></td>
-								<td width="35%"><input type="range" id="mq_slider" value="0"></td>
+								<td width="35%"><div id="mq_slider"></td>
 							</tr>
 							<tr>
 								<td>Minimum indel size to split: </td>
 								<td><span id="indel_size_label">inf</span></td>
-								<td><input type="range" id="indel_size_slider" min="0" value="100000"></td>
+								<td><div id="indel_size_slider"></td>
 								
 							</tr>
 							<tr><td>Show only reference chromosome lengths from header</td>
@@ -179,10 +179,14 @@
 	</div>
 </div>
 
+
 <!-- Libraries -->
 <script src="js/d3.v3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+
+<!-- Special range slider -->
+<script src="js/jquery-ui.min.js"></script>
 
 <!-- Library from bam.iobio for reading a bam file -->
 <script src="js/bam/class.js"></script>
@@ -191,13 +195,8 @@
 <script src="js/bam/bam.js"></script>
 <script src="js/bam/bam.iobio.js"></script>
 
-
 <!-- Main -->
 <script src="js/vis.js"></script>
-
-
-
-
 
 
 </body>

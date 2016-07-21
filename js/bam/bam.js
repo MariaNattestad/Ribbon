@@ -290,6 +290,7 @@ BamRecord.prototype.convertTo = function(format) {
 }
 
 BamFile.prototype.readBamRecords = function(ba, offset, sink, min, max, chrId) {;
+    
     while (true) {
         var blockSize = readInt(ba, offset);
         var blockEnd = offset + blockSize + 4;

@@ -180,61 +180,55 @@ function responsive_sizing() {
 }
 
 
+
 //////////////////// Region settings /////////////////////////
-$('#region_mq_slider').bind('input propertychange', function() {
-	d3.select("#region_mq_label").text(this.value);
-	_settings.region_min_mapping_quality = this.value;
-	draw_region_view();
-});
 
-
-$('#max_num_alignments_slider').bind('input propertychange', function() {
-	
-	_settings.max_num_alignments = this.value;
-	if (_settings.max_num_alignments > _ui_properties.num_alignments_slider_max) {
-		// If we go above the maximum, put infinity
-		d3.select("#max_num_alignments_label").text("inf");
-	} else {
-		d3.select("#max_num_alignments_label").text(this.value);
+$('#region_mq_slider').slider( {
+	min: 0,
+	max: 1000,
+	slide: function( event, ui) {
+		$("#region_mq_label").html(ui.value);
+		_settings.region_min_mapping_quality = ui.value;
+		draw_region_view();
 	}
-	draw_region_view();
 });
 
 
-$('#min_num_alignments_slider').bind('input propertychange', function() {
-	
-	_settings.min_num_alignments = this.value;
-	if (_settings.min_num_alignments > _ui_properties.num_alignments_slider_max) {
-		// If we go above the maximum, put infinity
-		d3.select("#min_num_alignments_label").text("inf");
-	} else {
-		d3.select("#min_num_alignments_label").text(this.value);
+$( "#num_aligns_range_slider" ).slider({
+  range: true,
+  min: 1,
+  max: 500,
+  values: [ 100, 300 ],
+  slide: function( event, ui ) {
+    $( "#num_aligns_range_label" ).html( "" + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+    _settings.min_num_alignments = ui.values[0];
+    _settings.max_num_alignments = ui.values[1];
+    draw_region_view();
+  }
+});
+
+
+$('#mq_slider').slider( {
+	min: 0,
+	max: 1000,
+	slide: function( event, ui) {
+		$("#mq_label").html(ui.value);
+		_settings.min_mapping_quality = ui.value;
+		draw();
 	}
-	draw_region_view();
 });
 
 
-
-
-
-// For sliders, using .change() would make it run only when user releases slider
-$('#mq_slider').bind('input propertychange', function() {
-	d3.select("#mq_label").text(this.value);
-	_settings.min_mapping_quality = this.value;
-	draw();
-});
-
-$('#indel_size_slider').bind('input propertychange', function() {
-	
-	_settings.min_indel_size = this.value;
-	if (_settings.min_indel_size > _ui_properties.indel_size_slider_max) {
-		// If we go above the maximum, put infinity
-		d3.select("#indel_size_label").text("inf");
-	} else {
-		d3.select("#indel_size_label").text(this.value);
+$('#indel_size_slider').slider( {
+	min: 0,
+	max: 1000,
+	slide: function( event, ui) {
+		$("#indel_size_label").html(ui.value);
+		_settings.min_indel_size = ui.value;
+		
+		_Alignments = reparse_read(_Chunk_alignments[_current_read_index]).alignments;
+		draw();
 	}
-	select_read(); // need to reparse the cigar string, so reselect the read. select_read() includes draw function
-
 });
 
 
@@ -382,7 +376,6 @@ function draw_chunk_ref_intervals() {
 }
 
 function draw_chunk_alignments() {
-	// ??????????????????????????????
 
 	if (_Chunk_alignments.length == 0) {
 		return;
@@ -424,16 +417,7 @@ function draw_chunk_alignments() {
 
 	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(chunks).enter()
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
-		.on("click",function(d) { _current_read_index = d.index; select_read();});
-
-	// alignment_groups.append("line").attr("class","read")
-	// 	.attr("x1", _positions.chunk.reads.x)
-	// 	.attr("x2", _positions.chunk.reads.x + _positions.chunk.reads.width)
-	// 	.attr("y1", 0)
-	// 	.attr("y2", 0)
-	// 	.style("stroke-width",1)
-	// 	.style("stroke","gray")
-	// 	.style("stroke-opacity",1);
+		.on("click",function(d) { _current_read_index = d.index; select_read();})
 
 
 	alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
@@ -444,8 +428,14 @@ function draw_chunk_alignments() {
 			.attr("y2",0)
 			.style("stroke-width",3)
 			.style("stroke",function(d) {if (d.qs < d.qe) {return "blue"} else {return "red"}})
-			.style("stroke-opacity",0.5);
-
+			.style("stroke-opacity",0.5)
+			.on('mouseover', function(d) {
+				var text = "select read";
+				var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+				var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+				show_tooltip(text,x,y,_svg2);
+			})
+			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 
 }
 
@@ -516,6 +506,7 @@ function sam_input_changed(sam_input_value) {
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
 		var unique_readnames = {};
+		_settings.min_indel_size = 100000000000; 
 
 		for (var i = 0; i < input_text.length; i++) {
 			var columns = input_text[i].split(/[ \t]+/);
@@ -621,12 +612,41 @@ function all_read_analysis() {
 
 
 	_ui_properties.region_mq_slider_max = overall_max_mq; 
-	d3.select('#region_mq_slider').property("max", _ui_properties.region_mq_slider_max);
-
 	_ui_properties.num_alignments_slider_max = overall_max_num_alignments; 
-	d3.select('#max_num_alignments_slider').property("max", _ui_properties.num_alignments_slider_max);
-	d3.select('#min_num_alignments_slider').property("max", _ui_properties.num_alignments_slider_max);
 
+	_settings.max_num_alignments = overall_max_num_alignments;
+	_settings.min_num_alignments = 1;
+	_settings.region_min_mapping_quality = 0;
+	_settings.min_mapping_quality = 0;
+	_settings.min_indel_size = 1000000;
+
+	
+}
+
+function refresh_ui_elements() {
+	// Mapping quality in region view
+	$('#region_mq_slider').slider("option","max", _ui_properties.region_mq_slider_max);
+	$('#region_mq_slider').slider("option","value", _settings.region_min_mapping_quality);
+	$("#region_mq_label").html(_settings.region_min_mapping_quality);
+
+
+	// Number of alignments in region view
+	$( "#num_aligns_range_slider" ).slider("option","max",_ui_properties.num_alignments_slider_max);
+	$( "#num_aligns_range_slider" ).slider("values",0,_settings.min_num_alignments);
+	$( "#num_aligns_range_slider" ).slider("values",1,_settings.max_num_alignments);
+	$( "#num_aligns_range_label" ).html( "" + _settings.min_num_alignments + " - " + _settings.max_num_alignments );
+
+
+	// Mapping quality in read detail view
+	$('#mq_slider').slider("option","max", _ui_properties.mq_slider_max);
+	$('#mq_slider').slider("option","value", _settings.min_mapping_quality);
+	$("#mq_label").html(_settings.min_mapping_quality);
+
+
+	// Indel size in read detail view
+	$('#indel_size_slider').slider("option","max", _ui_properties.indel_size_slider_max+1);
+	$('#indel_size_slider').slider("option","value", _settings.min_indel_size);
+	$("#indel_size_label").html(_settings.min_indel_size);
 }
 
 function parse_cigar(cigar_string) {
@@ -925,6 +945,7 @@ function reparse_read(record_from_chunk) {
 	}
 }
 
+
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
 
@@ -932,8 +953,9 @@ function select_read() {
 
 	user_message("","");
 	
-	_Alignments = reparse_read(_Chunk_alignments[_current_read_index]).alignments;
 
+	_settings.min_indel_size = 1000000000; // parse alignments for new read first without indels
+	_Alignments = reparse_read(_Chunk_alignments[_current_read_index]).alignments;
 	
 	_ui_properties.mq_slider_max = 0;
 	_ui_properties.indel_size_slider_max = 0;
@@ -945,12 +967,9 @@ function select_read() {
 		if (alignment.max_indel > _ui_properties.indel_size_slider_max) {
 			_ui_properties.indel_size_slider_max = alignment.max_indel;
 		}
-		
-		d3.select('#mq_slider').property("max", _ui_properties.mq_slider_max);
-		d3.select("#indel_size_slider").property("max",_ui_properties.indel_size_slider_max+1);
-	
 	}
-	
+
+	_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
 
 	organize_references_for_read();
 
@@ -958,6 +977,7 @@ function select_read() {
 
 
 	refresh_visibility();
+	refresh_ui_elements();
 	draw();
 }
 
@@ -1684,17 +1704,70 @@ function get_chrom_index(chrom) {
 	return undefined;
 }
 
+
+var loading_bam_right_now = false;
+function show_waiting_for_bam() {
+	user_message("Info","Fetching bam records at position");
+	d3.select("#region_go").property("disabled",true);
+	d3.select("#region_go").html("Fetching...");
+	d3.select("#region_go").style("color","gray");
+	loading_bam_right_now = true;
+}
+
+function show_bam_is_ready() {
+	d3.select("#region_go").property("disabled",false);
+	d3.select("#region_go").html("Go");
+	d3.select("#region_go").style("color","black");
+	loading_bam_right_now = false;
+}
+
 function go_to_region(chrom,start,end) {
 
 	if (_Bam != undefined) {
-		console.log("Fetching bam records in region");
+		console.log("Fetching bam records at position");
+		show_waiting_for_bam();
+
+		// var step = 1000;
+		// for (var i = start; i < end; i += step) {
+		// 	console.log(i,i+step);
+		// 	_Bam.fetch(chrom,i,i+step,record_fetched_data);
+		// }
+
+		// chrom = "chr6";
+		// var i = 29800000;
+		// var step = 3000; // 893 records
+		// var step = 4000; // 974
+		// var step = 6000; // 1174
+		// var step = 8000; // 1346
+		// var step = 10000; // 1646
+		// var step = 12000; // 1915
+		// var step = 14000; // 2296
+		// // var step = 16000; // crash
+		// // var step = 20000; // crash
+
+		// _Bam.fetch(chrom,i,i+step,record_fetched_data);
+		// var chrId = _Bam.bam.chrToIndex[chrom];
+	 //    var chunks;
+	 //    if (chrId === undefined) {
+	 //        chunks = [];
+	 //    } else {
+	 //        chunks = _Bam.bam.blocksForRange(chrId, start, end);
+	 //        if (!chunks) {
+	 //            callback(null, 'Error in index fetch');
+	 //        }
+	 //        console.log("Chunks:", chunks.length);
+	 //    }
+
+
+
 		_Bam.fetch(chrom,start,end,use_fetched_data);
+
+
 	} else {
 		console.log("No bam file");
 		user_message("Error","No bam file");
 	}
 }
-
 
 //////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
@@ -1740,6 +1813,7 @@ function parse_bam_record(record) {
 
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
+	show_bam_is_ready();
 	// console.log(records);
 
 	var consolidated_records = [];
@@ -1756,6 +1830,7 @@ function use_fetched_data(records) {
 	}
 	
 
+	_settings.min_indel_size = 100000000000; 
 	_Chunk_alignments = [];
 	for (var i in consolidated_records) {
 		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
@@ -1771,13 +1846,13 @@ function region_submitted(event) {
 
 	var chrom = d3.select("#region_chrom").property("value");
 	var start = parseInt(d3.select("#region_start").property("value").replace(/,/g,""));
-	var end = parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
+	var end = start + 1; //parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
 
 	if (isNaN(start) == true) {
 		user_message("Error", "start value:" + d3.select("#region_start").property("value") + " could not be made into a number");
-	} else if (isNaN(end) == true) {
-		user_message("Error", "end value:" + d3.select("#region_end").property("value") + " could not be made into a number");
-	}
+	} //else if (isNaN(end) == true) {
+	// 	user_message("Error", "end value:" + d3.select("#region_end").property("value") + " could not be made into a number");
+	// }
 
 	var chrom_index = get_chrom_index(chrom);
 	if (chrom_index != undefined) {
@@ -1803,7 +1878,7 @@ function region_submitted(event) {
 		// Correct any issues with coordinates
 		d3.select("#region_chrom").property("value",chrom);
 		d3.select("#region_start").property("value",start);
-		d3.select("#region_end").property("value",end);
+		// d3.select("#region_end").property("value",end);
 
 		go_to_region(chrom,start,end);
 		_focal_region = {"chrom":chrom,"start":start,"end":end};
@@ -1811,14 +1886,13 @@ function region_submitted(event) {
 	} else {
 		// console.log("Bad");
 		user_message("Error","Chromosome does not exist in reference");
-
 	}
 }
 
 d3.select("#region_go").on("click",region_submitted);
-d3.select("#region_chrom").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
-d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
-d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
+d3.select("#region_chrom").on("keyup",function(){ if (d3.event.keyCode == 13 && !loading_bam_right_now) {region_submitted()} });
+d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && !loading_bam_right_now) {region_submitted()} });
+// d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 
 
