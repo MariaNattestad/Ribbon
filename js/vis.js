@@ -177,6 +177,7 @@ function responsive_sizing() {
 
 	draw_region_view();
 	draw();
+	refresh_visibility();
 }
 
 
@@ -499,7 +500,6 @@ function sam_input_changed(sam_input_value) {
 		clear_data();
 		remove_bam_file();
 
-		// console.log(d3.select('#sam_input').value);
 		var input_text = sam_input_value.split("\n");
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
@@ -576,7 +576,6 @@ function coords_input_changed(coords_input_value) {
 	clear_data();
 	remove_bam_file();
 
-	// console.log(d3.select('#sam_input').value);
 	var input_text = coords_input_value.split("\n");
 	_Ref_sizes_from_header = {};
 	_settings.min_indel_size = 100000000000;
@@ -1602,22 +1601,8 @@ function draw_ribbons() {
 // ===========================================================================
 
 function add_examples_to_navbar() {
-	navbar_examples_link = d3.select("#navbar")
-	.append("li")
-		.attr("class","dropdown")
-
-	navbar_examples_link
-			.append("a")
-				.html("Examples <span class='caret'></span>")
-				.attr("class","dropdown-toggle")
-				.attr("data-toggle","dropdown")
-				.attr("href","")
-		
-	navbar_examples = navbar_examples_link.append("ul")
-			.attr("class","dropdown-menu")
-			.attr("id", "settings_dropdown_menu")
-			.attr("role","menu")
-
+	d3.select("#examples_navbar_item").style("visibility","visible");
+	navbar_examples = d3.select("ul#examples_list");
 
 	jQuery.ajax({
 			url: "examples",
@@ -2030,7 +2015,16 @@ d3.select("#region_chrom").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && !loading_bam_right_now) {region_submitted()} });
 // d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
+if (json_post != "") {
+	d3.select("#igv_stats").html("found something in GET. Check console.");
+ 
+ 	// Open the "from igv" tab
+ 	$('.nav-tabs a[href="#igv"]').tab('show');
 
+	// if input is text of sam file send to sam_input_changed(sam_text)
+	// otherwise make new parser on the fields, similar to what we did for the bam records, and need to treat the header separately too
+
+}
 
 // ===========================================================================
 // == Responsiveness

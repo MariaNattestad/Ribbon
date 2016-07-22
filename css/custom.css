@@ -2,16 +2,17 @@ body {
 	padding-top: 70px;
 	padding-bottom: 30px;
 	font-family: 'Lato', sans-serif;
-	font-size: 2vmin;
 	background-color: #eeeeee; /*gray*/
 }
 
-/*
-div {
-	display: inline-block;
-}*/
+.navbar {
+	font-size: 1vmax;
+}
+.navbar-brand { 
+	font-size: 1.2vmax;
+}
+
 #user_message {
-	margin: 2vmin;
 	font-size: 1.8vmin;
 }
 
@@ -23,6 +24,9 @@ div {
 	width: 35%;
 }
 
+#examples_navbar_item {
+	visibility: hidden;
+}
 .tiny_input {
 	width: 15%;
 }
@@ -34,8 +38,8 @@ div {
 }
 
 #right_panel {
-	font-size: 1.4vmin;
-	padding: 2vmin 2vmin 2vmin 2vmin;
+	font-size: 1vmax;
+	/*padding: 2vmin 2vmin 2vmin 2vmin;*/
 	display: inline-block;
 }
 

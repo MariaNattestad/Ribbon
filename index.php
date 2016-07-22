@@ -2,71 +2,7 @@
 
 <html>
 
-<!--		NAVIGATION BAR-->
-<head>
-    <title>Ribbon</title>
-    <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="">
-        <meta name="author" content="">
-    
-
-</head>
-
-<!-- CSS: -->
-	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
-	<!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap theme -->
-    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
-
-    <!-- Special range slider -->
-    <link href="css/jquery-ui.min.css" rel="stylesheet">
-
-
-	<!-- My own styles -->
-	<link href="css/custom.css" rel="stylesheet">
-
-
-
-<body role="document">
-<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href=".">        Ribbon</a>
-        </div>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav" id="navbar">
-            <!-- <li><a href="./">Home</a></li> -->
-            <!--<li><a href="./help.php">Help</a></li>-->
-            <!-- <li><a href="./info.php">Info</a></li> -->
-            <!-- <li class="dropdown"> -->
-              <!-- <a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a> -->
-              <!-- <ul class="dropdown-menu" role="menu"> -->
-                <!-- <li><a href="analysis.php?code=example1">SK-BR-3 PacBio+Sniffles</a></li> -->
-                <!-- <li><a href="analysis.php?code=example2">SK-BR-3 Illumina+Lumpy</a></li> -->
-                
-                <!--<li class="divider"></li>-->
-                <!--<li class="dropdown-header">Nav header</li>-->
-                <!--<li><a href="#">Separated link</a></li>-->
-                <!--<li><a href="#">One more separated link</a></li>-->
-              <!-- </ul> -->
-            <!-- </li> -->
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-</div>
-
-<!--            End of Navigation Bar                 -->
-
+<?php include "header.html";?>
 
 
 <div id="left_panel">
@@ -87,7 +23,8 @@
 					<ul class="nav nav-tabs">
 						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
 						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
-						<li><a data-toggle="tab" href="#coords">paste coords</a></li>
+						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
+						<li><a data-toggle="tab" href="#igv">from igv</a></li>
 					</ul>
 					
 					<div class="tab-content">
@@ -104,7 +41,11 @@
 							<textarea class="form-control" placeholder="Paste lines from a coordinates file (show-coords -lTH)"  id="coords_input"></textarea>
 							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
 						</div>
-
+						<div id="igv" class="tab-pane fade">
+							<p> Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
+							<h4>Data from IGV:</h4>
+							<pre readonly id="igv_stats">(empty)</pre>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -153,8 +94,6 @@
 			</div>
 		</div>
 	</div>
-	
-
 
 <!-- 
 	<div >
@@ -164,7 +103,6 @@
 		</div>
 	</div>
  -->
-
 
 	<div id="user_message" class="alert alert-default" role="alert"></div>
 
@@ -226,6 +164,18 @@
 	</div>
 </div>
 
+<script>
+	var json_post = undefined;
+	json_post = "<?php 
+		if (isset($_GET['var1'])) {
+			$data=escapeshellcmd($_GET['var1']);
+		} else {
+			$data="";
+		}
+		echo $data;
+		?>";
+	console.log("json_post:", json_post);
+</script>
 
 <!-- Libraries -->
 <script src="js/d3.v3.min.js"></script>
