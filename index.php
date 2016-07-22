@@ -28,19 +28,24 @@
 					</ul>
 					
 					<div class="tab-content">
+					<!-- Sam input -->
 						<div id="sam" class="tab-pane fade in active">
 							<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
 							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Show example</span>
 						</div>
+					<!-- Bam input -->
 						<div id="bam" class="tab-pane fade">
 							<h5>Select bam and corresponding bam.bai</h5>
 							<input type="file" name="files[]" id="bam_file"	multiple />
 							<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
 						</div>
+					<!-- Coords input -->
 						<div id="coords" class="tab-pane fade">
 							<textarea class="form-control" placeholder="Paste lines from a coordinates file (show-coords -lTH)"  id="coords_input"></textarea>
+							<input type="file" id="coords_file" />
 							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
 						</div>
+					<!-- IGV input -->
 						<div id="igv" class="tab-pane fade">
 							<p> Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
 							<h4>Data from IGV:</h4>
@@ -89,6 +94,33 @@
 								<td> <span id="num_aligns_range_label"></span> </td>
 								<td> <div id="num_aligns_range_slider"></div> </td>
 							</tr>
+							<tr>
+								<td>Sort reads vertically</td>
+								<td colspan="2">
+									<select class="form-control" id="read_sorting_dropdown">
+										
+									 </select>
+								</td>
+							</tr>
+							<tr>
+								<td>Color scheme</td>
+								<td colspan="2"> 
+									<select class="form-control" id="color_scheme_dropdown">
+										
+								 	</select>
+								</td>
+							</tr>
+							<tr> 
+								<td>Minimum length for reference sequences</td>
+								<td><span id="min_ref_length_label"></span> </td>
+								<td> <div id="min_ref_length_slider"></div> </td>
+							</tr>
+
+							<tr> 
+								<td>Minimum read/query length</td>
+								<td><span id="min_read_length_label"></span> </td>
+								<td> <div id="min_read_length_slider"></div> </td>
+							</tr>
 					</table>
 				</div>
 			</div>
@@ -135,10 +167,9 @@
 								<td><div id="align_length_slider"></td>
 								
 							</tr>
-							<tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
+							<!-- <tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
 								<td><input id="only_header_refs_checkbox" type="checkbox"></td>
-							</tr>	
-
+							</tr>	 -->
 
 							<tr id="table_sep">
 								<td colspan="5">

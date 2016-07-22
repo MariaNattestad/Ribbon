@@ -19,7 +19,7 @@ var _Alignments = [];
 var _Ref_intervals = [];
 var _Chunk_ref_intervals = [];
 var _Whole_refs = [];
-
+var _Refs_show_or_hide = {};
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
@@ -36,26 +36,35 @@ var _region = {}; // chrom, start, end
 var _static = {};
 _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
-_static.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
 _static.margin_to_merge_ref_intervals = 10000;
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
+_static.read_sort_options = [{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
+_static.color_schemes = [
+	{"name":"Color scheme 1", "colors": 0},
+	{"name":"Color scheme 2", "colors": 1},
+	{"name":"Color scheme 3", "colors": 2},
+];
+_static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"],["#ffff00","#ad0000","#bdadc6", "#00ffff", "#e75200","#de1052","#ffa5a5","#7b7b00","#7bffff","#008c00","#00adff","#ff00ff","#ff0000","#ff527b","#84d6a5","#e76b52","#8400ff","#6b4242","#52ff52","#0029ff","#ffffad","#ff94ff","#004200","gray","black"],['#E41A1C', '#A73C52', '#6B5F88', '#3780B3', '#3F918C', '#47A266','#53A651', '#6D8470', '#87638F', '#A5548D', '#C96555', '#ED761C','#FF9508', '#FFC11A', '#FFEE2C', '#EBDA30', '#CC9F2C', '#AD6428','#BB614F', '#D77083', '#F37FB8', '#DA88B3', '#B990A6', '#999999']]
 
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
 _settings.max_num_alignments = 1000000;
 _settings.min_num_alignments = 1;
+_settings.min_ref_length = 0;
+_settings.min_read_length = 0;
 
 _settings.ribbon_vs_dotplot = "ribbon";
 _settings.min_mapping_quality = 0;
 _settings.min_indel_size = -1; // set to -1 to stop showing indels
 _settings.min_align_length = 0; 
 
+_settings.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
 _settings.colorful = true;
 _settings.ribbon_outline = true;
-_settings.show_only_known_references = false;
+_settings.show_only_known_references = true;
 _settings.keep_duplicate_reads = false;
-_settings.feature_to_sort_reads = "max_mq";
+_settings.feature_to_sort_reads = "readname";
 
 
 _settings.current_input_type = "";
@@ -65,6 +74,8 @@ var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
 _ui_properties.region_mq_slider_min = 0;
 _ui_properties.num_alignments_slider_max = 1000000;
+_ui_properties.ref_length_slider_max = 10; 
+_ui_properties.read_length_slider_max = 10; 
 
 _ui_properties.mq_slider_max = 0;
 _ui_properties.indel_size_slider_max = 0;
@@ -77,7 +88,7 @@ _scales.read_scale = d3.scale.linear();
 _scales.whole_ref_scale = d3.scale.linear();
 _scales.ref_interval_scale = d3.scale.linear();
 _scales.chunk_ref_interval_scale = d3.scale.linear();
-_scales.ref_color_scale = d3.scale.ordinal().range(_static.colors);
+_scales.ref_color_scale = d3.scale.ordinal().range(_settings.colors);
 
 
 
@@ -152,9 +163,11 @@ function responsive_sizing() {
 	_layout.svg2_width = _layout.left_width - _padding.between*4;
 	_layout.svg2_height = _layout.svg2_box_height - _padding.between*4;
 
-
-
 	_layout.input_margin = _padding.between;
+
+
+	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
+	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
 
 
 	d3.select("#sam_input_panel")
@@ -200,6 +213,28 @@ $('#region_mq_slider').slider( {
 	}
 });
 
+
+$('#min_read_length_slider').slider({
+	min: 0,
+	max: 1000,
+	slide: function (event, ui) {
+		$("#min_read_length_label").html(ui.value);
+		_settings.min_read_length = ui.value;
+		draw_region_view();
+	}
+});
+
+
+$('#min_ref_length_slider').slider({
+	min: 0,
+	max: 1000,
+	slide: function (event, ui) {
+		$("#min_ref_length_label").html(ui.value);
+		_settings.min_ref_length = ui.value;
+		organize_references_for_chunk();
+		draw_region_view();
+	}
+});
 
 $( "#num_aligns_range_slider" ).slider({
   range: true,
@@ -250,16 +285,15 @@ $('#align_length_slider').slider( {
 
 
 
-$('#only_header_refs_checkbox').change(function() {
-	_settings.show_only_known_references = this.checked;
-	if (_settings.show_only_known_references == false) {
-		user_message("Info","Showing chromosome sizes as 2X the maximum alignment observed");
-	}
-	// select_read(); // need to reorganize the references used, not just redraw // ===========================
-	organize_references_for_chunk();
-	draw_region_view();
-	select_read();
-});
+// $('#only_header_refs_checkbox').change(function() {
+// 	_settings.show_only_known_references = this.checked;
+// 	if (_settings.show_only_known_references == false) {
+// 		user_message("Info","Showing chromosome sizes as 2X the maximum alignment observed");
+// 	}
+// 	organize_references_for_chunk();
+// 	draw_region_view();
+// 	select_read();
+// });
 
 
 $('#colors_checkbox').change(function() {
@@ -359,8 +393,6 @@ function draw_chunk_ref_intervals() {
 	}
 
 	// console.log("draw_chunk_ref_intervals");
-
-	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	
 	_scales.chunk_ref_interval_scale.range([_positions.chunk.ref_intervals.x, _positions.chunk.ref_intervals.x+_positions.chunk.ref_intervals.width]);
 
@@ -398,32 +430,36 @@ function draw_chunk_alignments() {
 	if (_Chunk_alignments.length == 0) {
 		return;
 	}
-
-	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
 	
 	// Focal region
-	_svg2.append("rect").attr("class","focal_region")
+	if (_focal_region != undefined) {
+		_svg2.append("rect").attr("class","focal_region")
 		.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
 		.attr("y",_positions.chunk.ref_intervals.y)
 		.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
 		.attr("height", _positions.chunk.ref_intervals.height )
 		.attr("fill","none")
 		.style("stroke-width",5)
-		.style("stroke", "black");
-
-
+		.style("stroke", "black");	
+	}
+	
 	var chunks = [];
 	var counter = 0;
 	for (var i in _Chunk_alignments) {
-
-		if (_Chunk_alignments[i].alignments.length <= _settings.max_num_alignments && _Chunk_alignments[i].alignments.length >= _settings.min_num_alignments && _Chunk_alignments[i].max_mq >= _settings.region_min_mapping_quality) {
+		if (_Chunk_alignments[i].alignments[0].read_length >= _settings.min_read_length  && _Chunk_alignments[i].alignments.length <= _settings.max_num_alignments && _Chunk_alignments[i].alignments.length >= _settings.min_num_alignments && _Chunk_alignments[i].max_mq >= _settings.region_min_mapping_quality) {
 			chunks.push(_Chunk_alignments[i]);
 			chunks[counter].index = i; // to remember the data order even after sorting
 			counter++;	
 		}
 	}
 
-	chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
+	if (_settings.feature_to_sort_reads == "num_alignments") {
+		// sorting by alignment_length
+		chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
+	} else if (_settings.feature_to_sort_reads == "readname") {
+		chunks.sort(function(a, b){return natural_sort(a.readname,b.readname)});
+		// sorting by readname
+	}
 
 	var num_reads_to_show  = chunks.length;
 
@@ -438,43 +474,26 @@ function draw_chunk_alignments() {
 
 	alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
 		.append("line")
-			.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
-			.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
-			.attr("y1",0)
-			.attr("y2",0)
-			.style("stroke-width",3)
-			.style("stroke",function(d) {if (d.qs < d.qe) {return "blue"} else {return "red"}})
-			.style("stroke-opacity",0.5)
-			.on('mouseover', function(d) {
-				var text = "select read";
-				var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
-				var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-				show_tooltip(text,x,y,_svg2);
-			})
-			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+			.filter(function(d) {return _Refs_show_or_hide[d.r]})
+				.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
+				.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
+				.attr("y1",0)
+				.attr("y2",0)
+				.style("stroke-width",3)
+				.style("stroke",function(d) {if (d.qs < d.qe) {return "blue"} else {return "red"}})
+				.style("stroke-opacity",0.5)
+				.on('mouseover', function(d) {
+					var text = "select read";
+					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+					var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+					show_tooltip(text,x,y,_svg2);
+				})
+				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 
 }
 
 
 function draw_region_view() {
-	// console.log("draw_region_view");
-
-	//////////////////////////   Table read picker   //////////////////////////
-	// Add all alignments to the table
-	// table.selectAll("tr").remove();
-	// table.append("tr").selectAll("th").data(header).enter().append("th").text(function(d){return d;});
-
-	// var rows = table.selectAll("tr.data").data(_Chunk_alignments).enter()
-	// 	.append("tr").attr("class","data");
-	
-	// rows.append("td").append("span").attr("class","glyphicon glyphicon-arrow-right").style("color",arrow_color.off).on("click",function(d,i) {_current_read_index = i; select_read();});
-	
-	// rows.selectAll("td.data").data(function(read){return parse_record_for_table(read);}).enter()
-	// 				.append("td").text(function(d){return d;}).attr("class","data");
-	///////////////////////////////////////////////////////////////////////////
-
-
-
 
 	reset_svg2();
 	draw_chunk_ref();
@@ -658,6 +677,30 @@ d3.select("#coords_info_icon").on("click", function() {
 });
 
 
+d3.select("select#read_sorting_dropdown").selectAll("option").data(_static.read_sort_options).enter()
+	.append("option")
+		.text(function(d){return d.description})
+		.property("value",function(d){return d.id});
+
+d3.select("select#read_sorting_dropdown").on("change",function(d) {
+	_settings.feature_to_sort_reads = this.options[this.selectedIndex].value;
+	draw_region_view();
+});
+
+
+
+d3.select("select#color_scheme_dropdown").selectAll("option").data(_static.color_schemes).enter()
+	.append("option")
+		.text(function(d){return d.name})
+		.property("value",function(d){return d.colors});
+
+d3.select("select#color_scheme_dropdown").on("change",function(d) {
+	_settings.colors = _static.color_collections[this.options[this.selectedIndex].value];	
+	_scales.ref_color_scale.range(_settings.colors);
+	draw_region_view();
+	draw();
+});
+
 
 function run() {
 	responsive_sizing();
@@ -676,12 +719,16 @@ function all_read_analysis() {
 	var overall_max_mq = 0;
 	var overall_min_mq = 100000000;
 	var overall_max_num_alignments = 0;
+	var max_readlength = 0;
 
 	for (var j in _Chunk_alignments) {
 		read_record = _Chunk_alignments[j];
 		// var all_chrs = {};
 		var max_mq = 0;
-		var min_mq = 10000000; 
+		var min_mq = 10000000;
+		if (read_record.alignments[0].read_length > max_readlength) {
+			max_readlength = read_record.alignments[0].read_length;
+		}
 
 		// var min_mq = 100000;
 		for (var i in read_record.alignments) {
@@ -710,6 +757,7 @@ function all_read_analysis() {
 	_ui_properties.region_mq_slider_max = overall_max_mq; 
 	_ui_properties.region_mq_slider_min = overall_min_mq; 
 	_ui_properties.num_alignments_slider_max = overall_max_num_alignments; 
+	_ui_properties.read_length_slider_max = max_readlength;
 
 	_settings.max_num_alignments = overall_max_num_alignments;
 	_settings.min_num_alignments = 1;
@@ -717,6 +765,8 @@ function all_read_analysis() {
 	_settings.min_mapping_quality = overall_min_mq;
 	_settings.min_indel_size = 1000000;
 	_settings.min_align_length = 0;
+	_settings.min_ref_length = 0;
+	_settings.min_read_length = 0;
 	
 }
 
@@ -751,6 +801,15 @@ function refresh_ui_elements() {
 	$('#region_mq_slider').slider("option","value", _settings.region_min_mapping_quality);
 	$("#region_mq_label").html(_settings.region_min_mapping_quality);
 
+	$('#min_ref_length_slider').slider("option","max", _ui_properties.ref_length_slider_max);
+	$('#min_ref_length_slider').slider("option","value", _settings.min_ref_length);
+	$("#min_ref_length_label").html(_settings.min_ref_length);
+
+	
+	$('#min_read_length_slider').slider("option","max", _ui_properties.read_length_slider_max);
+	$('#min_read_length_slider').slider("option","value", _settings.min_read_length);
+	$("#min_read_length_label").html(_settings.min_read_length);
+
 
 	// Number of alignments in region view
 	$( "#num_aligns_range_slider" ).slider("option","max",_ui_properties.num_alignments_slider_max);
@@ -771,7 +830,7 @@ function refresh_ui_elements() {
 	$('#indel_size_slider').slider("option","value", _settings.min_indel_size);
 	$("#indel_size_label").html(_settings.min_indel_size);
 
-	// Indel size in read detail view
+	// Alignment length in read detail view
 	$('#align_length_slider').slider("option","max", _ui_properties.align_length_slider_max);
 	$('#align_length_slider').slider("option","value", _settings.min_align_length);
 	$("#align_length_label").html(_settings.min_align_length);
@@ -1257,22 +1316,43 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 
 	chromosomes.sort(natural_sort);
 
+	_ui_properties.ref_length_slider_max = 0;
+
+	// console.log("get_chromosome_sizes runs with ", _settings.min_ref_length, " min ref length");
+
 	_Whole_refs = [];
+	_Refs_show_or_hide = {};
+
 	var cumulative_whole_ref_size = 0;
 	for (var j = 0; j < chromosomes.length; j++){
 		var chrom = chromosomes[j];
 		var intervals = ref_intervals_by_chrom[chrom];
+		var new_ref_data = undefined;
 		if (_Ref_sizes_from_header[chrom] == undefined) {
 			if (!_settings.show_only_known_references) {
 				var length_guess = intervals[intervals.length-1][1]*2;
-				_Whole_refs.push({"chrom":chrom,"size":length_guess,"cum_pos":cumulative_whole_ref_size});
-				cumulative_whole_ref_size += length_guess;
+				new_ref_data = {"chrom":chrom,"size":length_guess,"cum_pos":cumulative_whole_ref_size};
+				// cumulative_whole_ref_size += length_guess;
 			}
 		} else {
-			_Whole_refs.push({"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size});
-			cumulative_whole_ref_size += _Ref_sizes_from_header[chrom];
+			new_ref_data = {"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size};
+			// cumulative_whole_ref_size += _Ref_sizes_from_header[chrom];
+		}
+
+		if (new_ref_data != undefined) {
+			if (new_ref_data.size > _ui_properties.ref_length_slider_max) {
+				_ui_properties.ref_length_slider_max = new_ref_data.size;
+			}
+			if (new_ref_data.size >= _settings.min_ref_length) {
+				_Whole_refs.push(new_ref_data);
+				cumulative_whole_ref_size += new_ref_data.size;
+				_Refs_show_or_hide[chrom] = true;
+			} else {
+				_Refs_show_or_hide[chrom] = false;
+			}
 		}
 	}
+	
 
 	_scales.whole_ref_scale.domain([0,cumulative_whole_ref_size]);
 	_scales.ref_color_scale.domain(chromosomes);
@@ -1316,6 +1396,7 @@ function organize_references_for_chunk() {
 		}
 	}
 	
+	// If a focal region was specified from querying the bam file, be sure to include it
 	if (_focal_region != undefined) {
 		if (ref_pieces[_focal_region.chrom] == undefined) {
 			ref_pieces[_focal_region.chrom] = [];
@@ -1336,28 +1417,30 @@ function organize_references_for_chunk() {
 
 	chromosomes.sort(natural_sort);
 
-	var longest_region = {};
-	var length_of_longest_region = 0;
+	// var longest_region = {};
+	// var length_of_longest_region = 0;
 
 	_Chunk_ref_intervals = [];
 	var cumulative_position = 0;
 	for (var j = 0; j < chromosomes.length; j++){
 		var chrom = chromosomes[j];
-		var intervals = ref_intervals_by_chrom[chrom];
-		for (var i = 0; i < intervals.length; i++) {
-			_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
-			var region_length = intervals[i][1]-intervals[i][0];
-			cumulative_position += region_length;
-			if (region_length > length_of_longest_region) {
-				length_of_longest_region = region_length;
-				longest_region = {"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1]};
+		if (_Refs_show_or_hide[chrom] == true) {
+			var intervals = ref_intervals_by_chrom[chrom];
+			for (var i = 0; i < intervals.length; i++) {
+				_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
+				var region_length = intervals[i][1]-intervals[i][0];
+				cumulative_position += region_length;
+				// if (region_length > length_of_longest_region) {
+				// 	length_of_longest_region = region_length;
+				// 	longest_region = {"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1]};
+				// }
 			}
 		}
 	}
 	
-	if (_focal_region == undefined) {
-		_focal_region = longest_region;	
-	}
+	// if (_focal_region == undefined) {
+	// 	_focal_region = longest_region;	
+	// }
 
 
 	_scales.chunk_ref_interval_scale.domain([0,cumulative_position]);
@@ -1401,8 +1484,6 @@ function organize_references_for_read() {
 			cumulative_position += (intervals[i][1]-intervals[i][0]);
 		}
 	}
-	
-	
 
 	_scales.ref_interval_scale.domain([0,cumulative_position]);
 }
@@ -1502,7 +1583,7 @@ function draw_dotplot() {
 
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
-	canvas.append("text").text("Read").style('text-anchor',"middle")
+	canvas.append("text").text("Read / Query").style('text-anchor',"middle")
 		 .attr("transform", "translate("+ (-5*_padding.text) + "," + (_positions.canvas.height/2)+")rotate(-90)")
 
 
@@ -1581,7 +1662,7 @@ function draw_ribbons() {
 			var y = _positions.read.y+_positions.read.height*3.5;
 			show_tooltip(text,x,y,_svg);
 		})
-	_svg.append("text").text("Read").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
 	
 	// Draw "Reference" label
 	_svg.append("text").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
@@ -1741,12 +1822,37 @@ add_examples_to_navbar();
 
 
 
+
+// ===========================================================================
+// == Load coords file
+// ===========================================================================
+
+
+function open_coords_file(event) {
+	console.log("in open_coords_file");
+		
+	var raw_data;
+	var reader = new FileReader();
+
+	if (this.files[0].size > 1000000) {
+		user_message("Warning","Loading large file may take a while.");
+	}
+
+	reader.readAsText(this.files[0]);
+	reader.onload = function(event) {
+		raw_data = event.target.result;
+		clear_coords_input();
+		coords_input_changed(raw_data);
+	}
+}
+
+d3.select("#coords_file").on("change",open_coords_file);
+
 // ===========================================================================
 // == Load bam file
 // ===========================================================================
 
-
-document.getElementById('bam_file').addEventListener('change', openBamFile, false);
+d3.select('#bam_file').on('change', open_bam_file);
 
 
 // $("#chrom_pos_input").keyup(function(event) {
@@ -1755,12 +1861,12 @@ document.getElementById('bam_file').addEventListener('change', openBamFile, fals
 // 	}
 // });
 
-function blobToFile(theBlob, fileName){
-    //A Blob() is almost a File() - it's just missing the two properties below which we will add
-    theBlob.lastModifiedDate = new Date();
-    theBlob.name = fileName;
-    return theBlob;
-}
+// function blobToFile(theBlob, fileName){
+//     //A Blob() is almost a File() - it's just missing the two properties below which we will add
+//     theBlob.lastModifiedDate = new Date();
+//     theBlob.name = fileName;
+//     return theBlob;
+// }
 
 
 // function open_bam_from_url(url) {
@@ -1791,7 +1897,7 @@ function blobToFile(theBlob, fileName){
 // open_bam_from_url("examples/hg38.SKBR3-MHC.pb.bam");
 
 
-function openBamFile(event) {
+function open_bam_file(event) {
 
 	create_bam(event.target.files);
 	
