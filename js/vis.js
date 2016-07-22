@@ -38,6 +38,7 @@ _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
 _static.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
 _static.margin_to_merge_ref_intervals = 10000;
+_static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
 
 
 var _settings = {};
@@ -48,6 +49,8 @@ _settings.min_num_alignments = 1;
 _settings.ribbon_vs_dotplot = "ribbon";
 _settings.min_mapping_quality = 0;
 _settings.min_indel_size = -1; // set to -1 to stop showing indels
+_settings.min_align_length = 0; 
+
 _settings.colorful = true;
 _settings.ribbon_outline = true;
 _settings.show_only_known_references = false;
@@ -55,14 +58,17 @@ _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "max_mq";
 
 
+_settings.current_input_type = "";
+
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
+_ui_properties.region_mq_slider_min = 0;
 _ui_properties.num_alignments_slider_max = 1000000;
 
 _ui_properties.mq_slider_max = 0;
 _ui_properties.indel_size_slider_max = 0;
-
+_ui_properties.align_length_slider_max = 0;
 
 
 // Scales for visualization
@@ -231,6 +237,17 @@ $('#indel_size_slider').slider( {
 		draw();
 	}
 });
+
+$('#align_length_slider').slider( {
+	min: 0,
+	max: 1000,
+	slide: function( event, ui) {
+		$("#align_length_label").html(ui.value);
+		_settings.min_align_length = ui.value;
+		draw();
+	}
+});
+
 
 
 $('#only_header_refs_checkbox').change(function() {
@@ -497,7 +514,10 @@ function chunk_changed() {
 }
 
 function sam_input_changed(sam_input_value) {
+		_settings.current_input_type = "sam";
+
 		clear_data();
+		clear_coords_input();
 		remove_bam_file();
 
 		var input_text = sam_input_value.split("\n");
@@ -561,7 +581,9 @@ function parse_coords_columns(columns) {
 		mq: parseFloat(columns[6]),
 		read_length: parseInt(columns[8]),
 		max_indel: null // no indel in coordinates, disable the indel options upon null
+
 	}
+	alignment.aligned_length = Math.abs(alignment.qe - alignment.qs);
 
 	alignment.path = [];
 	alignment.path.push({"R":alignment.rs, "Q":alignment.qs});
@@ -572,8 +594,10 @@ function parse_coords_columns(columns) {
 
 
 function coords_input_changed(coords_input_value) {
+	_settings.current_input_type = "coords";
 
 	clear_data();
+	clear_sam_input();
 	remove_bam_file();
 
 	var input_text = coords_input_value.split("\n");
@@ -650,26 +674,32 @@ function dict_length(dictionary) {
 function all_read_analysis() {
 	
 	var overall_max_mq = 0;
+	var overall_min_mq = 100000000;
 	var overall_max_num_alignments = 0;
 
 	for (var j in _Chunk_alignments) {
 		read_record = _Chunk_alignments[j];
 		// var all_chrs = {};
 		var max_mq = 0;
+		var min_mq = 10000000; 
 
 		// var min_mq = 100000;
 		for (var i in read_record.alignments) {
 			if (read_record.alignments[i].mq > max_mq) {
-				max_mq = read_record.alignments[i].mq
+				max_mq = read_record.alignments[i].mq;
 			}
-			// if (read_record.alignments[i].mq < min_mq) {
-			// 	min_mq = read_record.alignments[i].mq
-			// }
+			if (read_record.alignments[i].mq < min_mq) {
+				min_mq = read_record.alignments[i].mq;
+			}
+
 			// all_chrs[read_record.alignments[i].r] = true;
 		}
 		_Chunk_alignments[j].max_mq = max_mq;
 		if (max_mq > overall_max_mq) {
 			overall_max_mq = max_mq;
+		}
+		if (min_mq < overall_min_mq) {
+			overall_min_mq = min_mq;
 		}
 
 		if (_Chunk_alignments[j].alignments.length > overall_max_num_alignments) {
@@ -677,22 +707,47 @@ function all_read_analysis() {
 		}
 	}
 
-
 	_ui_properties.region_mq_slider_max = overall_max_mq; 
+	_ui_properties.region_mq_slider_min = overall_min_mq; 
 	_ui_properties.num_alignments_slider_max = overall_max_num_alignments; 
 
 	_settings.max_num_alignments = overall_max_num_alignments;
 	_settings.min_num_alignments = 1;
-	_settings.region_min_mapping_quality = 0;
-	_settings.min_mapping_quality = 0;
+	_settings.region_min_mapping_quality = overall_min_mq;
+	_settings.min_mapping_quality = overall_min_mq;
 	_settings.min_indel_size = 1000000;
-
+	_settings.min_align_length = 0;
 	
 }
 
 function refresh_ui_elements() {
+
+	if (_settings.current_input_type == "coords") {
+		$("#min_mq_title").html("Minimum % identity: ");
+		$("#region_min_mq_title").html("Minimum % identity for best alignment: ");
+
+		d3.selectAll(".hide_for_coords").style("color","#dddddd");
+		// Disable indel size slider
+		$("#indel_size_slider").slider("option","disabled",true);
+
+		// Disable header refs only checkbox
+		$("#only_header_refs_checkbox").attr("disabled",true);
+		
+	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
+		$("#min_mq_title").html("Minimum mapping quality: ");
+		$("#region_min_mq_title").html("Minimum mapping quality for best alignment: ");
+		
+		d3.selectAll(".hide_for_coords").style("color","black");
+		// Enable indel size slider
+		$("#indel_size_slider").slider("option","disabled",false);
+
+		// Enable header refs only checkbox
+		$("#only_header_refs_checkbox").attr("disabled",false);
+	}
+
 	// Mapping quality in region view
 	$('#region_mq_slider').slider("option","max", _ui_properties.region_mq_slider_max);
+	$('#region_mq_slider').slider("option","min", _ui_properties.region_mq_slider_min);
 	$('#region_mq_slider').slider("option","value", _settings.region_min_mapping_quality);
 	$("#region_mq_label").html(_settings.region_min_mapping_quality);
 
@@ -706,6 +761,7 @@ function refresh_ui_elements() {
 
 	// Mapping quality in read detail view
 	$('#mq_slider').slider("option","max", _ui_properties.mq_slider_max);
+	$('#mq_slider').slider("option","min", _ui_properties.region_mq_slider_min);
 	$('#mq_slider').slider("option","value", _settings.min_mapping_quality);
 	$("#mq_label").html(_settings.min_mapping_quality);
 
@@ -714,6 +770,11 @@ function refresh_ui_elements() {
 	$('#indel_size_slider').slider("option","max", _ui_properties.indel_size_slider_max+1);
 	$('#indel_size_slider').slider("option","value", _settings.min_indel_size);
 	$("#indel_size_label").html(_settings.min_indel_size);
+
+	// Indel size in read detail view
+	$('#align_length_slider').slider("option","max", _ui_properties.align_length_slider_max);
+	$('#align_length_slider').slider("option","value", _settings.min_align_length);
+	$("#align_length_label").html(_settings.min_align_length);
 }
 
 function parse_cigar(cigar_string) {
@@ -868,6 +929,7 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 	alignment.read_length = coordinates.front_padding_length + coordinates.read_alignment_length + coordinates.end_padding_length;
 	alignment.mq = mq;
 	alignment.max_indel = 0;
+	alignment.aligned_length = coordinates.read_alignment_length;
 
 	/////////     Now we run through the cigar string to capture the features     //////////
 	alignment.path = [];
@@ -1027,6 +1089,7 @@ function select_read() {
 	
 	_ui_properties.mq_slider_max = 0;
 	_ui_properties.indel_size_slider_max = 0;
+	_ui_properties.align_length_slider_max = 0; 
 	for (var i in _Alignments) {
 		var alignment = _Alignments[i];
 		if (alignment.mq > _ui_properties.mq_slider_max) {
@@ -1035,8 +1098,12 @@ function select_read() {
 		if (alignment.max_indel > _ui_properties.indel_size_slider_max) {
 			_ui_properties.indel_size_slider_max = alignment.max_indel;
 		}
+		if (alignment.aligned_length > _ui_properties.align_length_slider_max) {
+			_ui_properties.align_length_slider_max = alignment.aligned_length;
+		}
 	}
 
+	_settings.min_align_length = 0;
 	_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
 
 	organize_references_for_read();
@@ -1212,7 +1279,26 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 
 }
 
-
+function ref_intervals_from_ref_pieces(ref_pieces) {
+	// For each chromosome, consolidate intervals
+	var ref_intervals_by_chrom = {};
+	for (var chrom in ref_pieces) {
+		ref_intervals_by_chrom[chrom] = planesweep_consolidate_intervals(ref_pieces[chrom]);
+		
+		if (_Ref_sizes_from_header[chrom] != undefined) {
+			var chrom_sum = 0;
+			for (var i in ref_intervals_by_chrom[chrom]) {
+				chrom_sum += (ref_intervals_by_chrom[chrom][i][1]-ref_intervals_by_chrom[chrom][i][0]);
+			}
+			// console.log(chrom_sum*1.0/_Ref_sizes_from_header[chrom]);
+			if (chrom_sum*1.0/_Ref_sizes_from_header[chrom] > _static.fraction_ref_to_show_whole) {
+				// console.log(ref_intervals_by_chrom[chrom]);
+				ref_intervals_by_chrom[chrom] = [[0, _Ref_sizes_from_header[chrom]]];
+			}	
+		}
+	}
+	return ref_intervals_by_chrom;
+}
 function organize_references_for_chunk() {
 	////////////////   Select reference chromosomes to show:   ////////////////////
 	// Gather starts and ends for each chromosome
@@ -1238,11 +1324,7 @@ function organize_references_for_chunk() {
 		ref_pieces[_focal_region.chrom].push([_focal_region.end,"e"]);
 	}
 
-	// For each chromosome, consolidate intervals
-	var ref_intervals_by_chrom = {};
-	for (var chrom in ref_pieces) {
-		ref_intervals_by_chrom[chrom] = planesweep_consolidate_intervals(ref_pieces[chrom]);
-	}
+	var ref_intervals_by_chrom = ref_intervals_from_ref_pieces(ref_pieces);
 
 	//////////////////////////////////////////////////////////
 	get_chromosome_sizes(ref_intervals_by_chrom);
@@ -1299,12 +1381,8 @@ function organize_references_for_read() {
 	}
 
 	// For each chromosome, consolidate intervals
-	var ref_intervals_by_chrom = {};
-	for (var chrom in ref_pieces) {
-		ref_intervals_by_chrom[chrom] = planesweep_consolidate_intervals(ref_pieces[chrom]);
-	}
+	var ref_intervals_by_chrom = ref_intervals_from_ref_pieces(ref_pieces);
 
-	//////////////////////////////////////////////////////////
 
 	var chromosomes = [];
 	for (var chrom in ref_intervals_by_chrom) {
@@ -1460,7 +1538,7 @@ function draw_dotplot() {
 	var a_groups = canvas.selectAll("g.alignment").data(_Alignments).enter()
 		.append("g").attr("class","alignment");
 	a_groups.append("path")
-			.filter(function(d) {return d.mq >= _settings.min_mapping_quality})
+			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
 				.attr("d",dotplot_alignment_path_generator)
 				.style("stroke-width",2)
 				.style("stroke","black")
@@ -1570,7 +1648,7 @@ function draw_ribbons() {
 	// Alignments
 	_svg.selectAll("path.alignment").data(_Alignments).enter()
 		.append("path")
-			.filter(function(d) {return d.mq >= _settings.min_mapping_quality})
+			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
 			.attr("class","alignment")
 			.attr("d",ribbon_alignment_path_generator)
 			.style("stroke-width",function() { if (_settings.ribbon_outline) {return 1;} else {return 0;} })
@@ -1607,7 +1685,7 @@ function add_examples_to_navbar() {
 	jQuery.ajax({
 			url: "examples",
 			error: function() {
-				console.log("Can't find examples");
+				navbar_examples.append("li").html("Can't find examples. Create a directory called examples within the main ribbon directory and put .sam and .coords files inside it, then they will show up here");
 			},
 			success: function (data) {
 				$(data).find("a:contains(.sam)").each(function() {
@@ -1638,6 +1716,10 @@ function read_example_sam(filename) {
 
 	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
 		sam_input_changed(file_content);
+		clear_sam_input();
+
+	 	// Open the "from igv" tab
+	 	$('.nav-tabs a[href="#sam"]').tab('show');
 	}})
 }
 
@@ -1646,6 +1728,10 @@ function read_example_coords(filename) {
 
 	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
 		coords_input_changed(file_content);
+		clear_coords_input();
+
+	 	// Open the "from igv" tab
+	 	$('.nav-tabs a[href="#coords"]').tab('show');
 	}})
 }
 
@@ -1754,8 +1840,20 @@ function wait_then_run_when_all_data_loaded(counter) {
 
 }
 
+function clear_sam_input() {
+	d3.select('#sam_input').property("value","");
+}
+
+function clear_coords_input() {
+	d3.select('#coords_input').property("value","");
+}
 
 function bam_loaded() {
+	_settings.current_input_type = "bam";
+
+	clear_sam_input();
+	clear_coords_input();
+
 	clear_data();
 
 	record_bam_header();
@@ -2017,6 +2115,7 @@ d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 
 if (json_post != "") {
 	d3.select("#igv_stats").html("found something in GET. Check console.");
+	console.log("json_post:", json_post);
  
  	// Open the "from igv" tab
  	$('.nav-tabs a[href="#igv"]').tab('show');

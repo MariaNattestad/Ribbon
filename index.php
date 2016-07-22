@@ -15,7 +15,7 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_alignment_input_box">Input read alignments</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_alignment_input_box">Inputs</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
@@ -74,14 +74,14 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Filter reads</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Region view settings</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
 					<table id="settings_table">
 							<tr>
-								<td width="45%">Minimum mapping quality for best alignment: </td>
+								<td width="45%" id="region_min_mq_title" >Minimum mapping quality for best alignment: </td>
 								<td width="15%"><span id="region_mq_label">0</span></td>
 								<td width="35%"><div id="region_mq_slider"></td>
 							</tr>
@@ -119,17 +119,23 @@
 						<table id="settings_table">
 							<tr><td class="table_title" colspan="5">General settings</td></tr>
 							<tr>
-								<td width="45%">Minimum mapping quality: </td>
+								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
 								<td width="15%"><span id="mq_label">0</span></td>
 								<td width="35%"><div id="mq_slider"></td>
 							</tr>
 							<tr>
-								<td>Minimum indel size to split: </td>
-								<td><span id="indel_size_label">inf</span></td>
+								<td class="hide_for_coords">Minimum indel size to split: </td>
+								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
 								<td><div id="indel_size_slider"></td>
 								
 							</tr>
-							<tr><td>Show only reference chromosome lengths from header</td>
+							<tr>
+								<td>Minimum alignment length: </td>
+								<td><span id="align_length_label">inf</span></td>
+								<td><div id="align_length_slider"></td>
+								
+							</tr>
+							<tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
 								<td><input id="only_header_refs_checkbox" type="checkbox"></td>
 							</tr>	
 
@@ -174,7 +180,6 @@
 		}
 		echo $data;
 		?>";
-	console.log("json_post:", json_post);
 </script>
 
 <!-- Libraries -->
