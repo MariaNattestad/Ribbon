@@ -544,7 +544,7 @@ function sam_input_changed(sam_input_value) {
 		_settings.min_indel_size = 100000000000; 
 
 		for (var i = 0; i < input_text.length; i++) {
-			var columns = input_text[i].split(/[ \t]+/);
+			var columns = input_text[i].split(/\s+/);
 			if (columns[0][0] == "@") {
 				if (columns[0].substr(0,3) == "@SQ") {
 					_Ref_sizes_from_header[columns[1].split(":")[columns[1].split(":").length-1]] = parseInt(columns[2].split(":")[columns[2].split(":").length-1]);	
@@ -552,9 +552,11 @@ function sam_input_changed(sam_input_value) {
 			} else if (columns.length >= 2) {
 				if (columns.length >= 6) {
 					var parsed_line = parse_sam_coordinates(input_text[i]);
-					if (unique_readnames[parsed_line.readname] == undefined || _settings.keep_duplicate_reads) {
-						_Chunk_alignments.push(parsed_line);
-						unique_readnames[parsed_line.readname] = true;
+					if (parsed_line != undefined) {
+						if (unique_readnames[parsed_line.readname] == undefined || _settings.keep_duplicate_reads) {
+							_Chunk_alignments.push(parsed_line);
+							unique_readnames[parsed_line.readname] = true;
+						}
 					}
 				} else {
 					user_message("Error","Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments");
@@ -624,7 +626,7 @@ function coords_input_changed(coords_input_value) {
 	var alignments_by_query = {};
 
 	for (var i = 0; i < input_text.length; i++) {
-		var columns = input_text[i].split(/[ \t]+/);
+		var columns = input_text[i].split(/\s+/);
 
 		//     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  |  [LEN R]  [LEN Q]  | [TAGS]
 		// ==========================================================================================================
@@ -1052,13 +1054,16 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 }
 
 function parse_sam_coordinates(line) {
-	var fields = line.split(/[ \t]+/);
-	
+	var fields = line.split(/\s+/);
+
 	var chrom = fields[2];
 	var rstart = parseInt(fields[3]);
 	var flag = parseInt(fields[1]);
 	var mq = parseInt(fields[4]);
 	var raw_cigar = fields[5];
+	if (raw_cigar == "*") {
+		return undefined;
+	}
 	
 	var strand = "+";
 	if ((flag & 16) == 16) {

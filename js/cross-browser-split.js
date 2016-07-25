@@ -103,6 +103,7 @@ split = split || function (undef) {
         } else {
             output.push(str.slice(lastLastIndex));
         }
+
         return output.length > limit ? output.slice(0, limit) : output;
     };
 

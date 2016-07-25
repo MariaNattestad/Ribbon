@@ -220,7 +220,7 @@
 <script src="js/d3.v3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/cross-browser-split.js"></script>
+
 
 
 <!-- Special range slider -->
@@ -233,6 +233,9 @@
 <script src="js/bam/bam.js"></script>
 <script src="js/bam/bam.iobio.js"></script>
 
+
+<!-- Cross-browser split -->
+<script src="js/cross-browser-split.js"></script>
 <!-- Main -->
 <script src="js/vis.js"></script>
 
