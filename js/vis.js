@@ -1852,7 +1852,12 @@ d3.select("#coords_file").on("change",open_coords_file);
 // == Load bam file
 // ===========================================================================
 
-d3.select('#bam_file').on('change', open_bam_file);
+function open_bam_file(event) {
+
+	create_bam(event.target.files);
+}
+
+document.getElementById('bam_file').addEventListener('change',open_bam_file,false);
 
 
 // $("#chrom_pos_input").keyup(function(event) {
@@ -1897,11 +1902,7 @@ d3.select('#bam_file').on('change', open_bam_file);
 // open_bam_from_url("examples/hg38.SKBR3-MHC.pb.bam");
 
 
-function open_bam_file(event) {
 
-	create_bam(event.target.files);
-	
-}
 
 function create_bam(files) {
 	// From bam.iobio, thanks Marth lab!
