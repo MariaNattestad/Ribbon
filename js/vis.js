@@ -494,12 +494,10 @@ function draw_chunk_alignments() {
 
 
 function draw_region_view() {
-
 	reset_svg2();
 	draw_chunk_ref();
 	draw_chunk_ref_intervals();
 	draw_chunk_alignments();
-
 }
 
 
@@ -1066,7 +1064,6 @@ function parse_sam_coordinates(line) {
 	if ((flag & 16) == 16) {
 		strand = "-";
 	}
-
 	
 	var alignments = [];
 	for (var i = 0; i < fields.length; i++) {
@@ -1329,10 +1326,15 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 		var intervals = ref_intervals_by_chrom[chrom];
 		var new_ref_data = undefined;
 		if (_Ref_sizes_from_header[chrom] == undefined) {
+			var length_guess = intervals[intervals.length-1][1]*2;
 			if (!_settings.show_only_known_references) {
-				var length_guess = intervals[intervals.length-1][1]*2;
 				new_ref_data = {"chrom":chrom,"size":length_guess,"cum_pos":cumulative_whole_ref_size};
 				// cumulative_whole_ref_size += length_guess;
+			} else {
+				// If the reference is not in the header, we still have to make the _Chunk_ref_intervals for these visible
+				if (length_guess >= _settings.min_ref_length) {
+					_Refs_show_or_hide[chrom] = true; 
+				}
 			}
 		} else {
 			new_ref_data = {"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size};
@@ -1437,11 +1439,10 @@ function organize_references_for_chunk() {
 			}
 		}
 	}
-	
+
 	// if (_focal_region == undefined) {
 	// 	_focal_region = longest_region;	
 	// }
-
 
 	_scales.chunk_ref_interval_scale.domain([0,cumulative_position]);
 
@@ -1491,7 +1492,8 @@ function organize_references_for_read() {
 
 
 function refresh_visibility() {
-	if (_Whole_refs.length > 0) {
+
+	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
@@ -1794,7 +1796,7 @@ function add_examples_to_navbar() {
 
 
 function read_example_sam(filename) {
-
+	user_message("Info","Loading sam file. This may take a few minutes.");
 	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
 		sam_input_changed(file_content);
 		clear_sam_input();
@@ -1806,7 +1808,7 @@ function read_example_sam(filename) {
 
 
 function read_example_coords(filename) {
-
+	user_message("Info","Loading coordinates file. This may take a few minutes.");
 	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
 		coords_input_changed(file_content);
 		clear_coords_input();

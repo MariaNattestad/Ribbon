@@ -220,6 +220,8 @@
 <script src="js/d3.v3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/cross-browser-split.js"></script>
+
 
 <!-- Special range slider -->
 <script src="js/jquery-ui.min.js"></script>
