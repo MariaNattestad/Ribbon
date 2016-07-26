@@ -16,23 +16,22 @@
 
 <!-- PAPER LINK -->
 
-<div class="panel panel-default">
+<!-- <div class="panel panel-default">
     <div class="panel-heading"><h3 class="panel-title">How to cite SplitThreader</h3></div>
     <div class="panel-body">
-        <!-- <p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p> -->
+        <p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
         Citation information goes here
     </div>
 </div>
 
-
+ -->
 <div class="panel panel-default">
     <div class="panel-heading"> <h3 class="panel-title">Contact information</h3></div>
     <div class="panel-body">
-          Contact information goes here
-         <!--  <p>Science and web application by <a href="http://marianattestad.com" target="_blank">Maria Nattestad</a></p>
-          <p>Principal investigator / The Boss: <a href="http://schatzlab.cshl.edu" target="_blank">Mike Schatz</a></p>
-          <br>
-          <p>For questions, email: <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20SplitThreader" target="_top">mnattest@cshl.edu</a></p> -->
+          <!-- <p>Science and web application by <a href="http://marianattestad.com" target="_blank">Maria Nattestad</a></p> -->
+          <!-- <p>Principal investigator / The Boss: <a href="http://schatzlab.cshl.edu" target="_blank">Mike Schatz</a></p> -->
+          <!-- <br> -->
+          <p>For questions contact Maria Nattestad at <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20Ribbon" target="_top">mnattest@cshl.edu</a></p>
     </div>
 </div>
 
