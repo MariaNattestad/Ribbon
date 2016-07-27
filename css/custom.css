@@ -12,6 +12,9 @@ body {
 	font-size: 1.2vmax;
 }
 
+.snug {
+	width: 90%;
+}
 #show_all_refs {
 	display: inline;
 }

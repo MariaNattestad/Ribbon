@@ -68,8 +68,8 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
 				<div class="panel-body">
-					<input class="tiny_input" id="region_chrom" value="chr1"> : 
-					<input class="small_input" id="region_start" value="0">
+					<input class="tiny_input" type="text" id="region_chrom" value="chr1"> : 
+					<input class="small_input" type="number" id="region_start" value="0">
 					<!-- - <input class="small_input" id="region_end" value="100000"> -->
 					<button id="region_go">Go</button>
 				</div>
@@ -95,15 +95,15 @@
 							</tr>
 							<tr> 
 								<td>Minimum read/query length</td>
-								<td><span id="min_read_length_label"></span> </td>
+								<!-- <td><span id="min_read_length_input"></span> </td> -->
+								<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
 								<td> <div id="min_read_length_slider"></div> </td>
 							</tr>
 							<tr>
 								<td width="45%" id="region_min_mq_title" >Minimum mapping quality for best alignment: </td>
-								<td width="15%"><span id="region_mq_label">0</span></td>
-								<td width="35%"><div id="region_mq_slider"></td>
+								<td width="20%"><span id="region_mq_label">0</span></td>
+								<td width="30%"><div id="region_mq_slider"></td>
 							</tr>
-
 							<tr><th colspan="3">Filter references</th></tr>
 							<tr>
 								<td>Zoom to chromosome</td>
@@ -116,7 +116,8 @@
 							</tr>
 							<tr>
 								<td>Maximum length for reference sequences</td>
-								<td><span id="max_ref_length_label"></span> </td>
+								<td><input class="snug" type="number" id="max_ref_length_input"></span> </td>
+								<!-- <td><span id="max_ref_length_input"></span> </td> -->
 								<td> <div id="max_ref_length_slider"></div> </td>
 							</tr>
 							<tr><th colspan="3">Settings</th></tr>

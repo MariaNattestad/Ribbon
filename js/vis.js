@@ -214,32 +214,23 @@ $('#region_mq_slider').slider( {
 	}
 });
 
-
 $('#min_read_length_slider').slider({
 	min: 0,
 	max: 1000,
 	slide: function (event, ui) {
-		$("#min_read_length_label").html(ui.value);
+		d3.select("#min_read_length_input").property("value",ui.value);
 		_settings.min_read_length = ui.value;
 		draw_region_view();
 	}
 });
 
-
 $('#max_ref_length_slider').slider({
 	min: 0,
 	max: 1000,
 	slide: function (event, ui) {
-		$("#max_ref_length_label").html(ui.value);
+		d3.select("#max_ref_length_input").property("value",ui.value);
 		_settings.max_ref_length = ui.value;
-
-		for (var i in _Whole_refs) {
-			_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
-		}
-
-		d3.select("#chrom_highlighted").html("by size");
-		apply_ref_filters();
-		draw_region_view();
+		max_ref_length_changed();
 	}
 });
 
@@ -255,7 +246,6 @@ $( "#num_aligns_range_slider" ).slider({
     draw_region_view();
   }
 });
-
 
 $('#mq_slider').slider( {
 	min: 0,
@@ -301,21 +291,34 @@ $('#align_length_slider').slider( {
 // });
 
 
+function max_ref_length_changed() {
+	for (var i in _Whole_refs) {
+			_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
+		}
+
+	d3.select("#chrom_highlighted").html("by size");
+	apply_ref_filters();
+	draw_region_view();
+}
+
 function select_chrom(chrom) {
 	d3.select("#chrom_livesearch").html("");
 	d3.select("#chrom_livesearch").style("border","0px");
 
 	d3.select("#chrom_search_input").property("value","");
 
+	// Reset the ref size slider to default
+	_settings.max_ref_length = _ui_properties.ref_length_slider_max;
+	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
+	d3.select("#max_ref_length_input").property("value",_settings.max_ref_length);
 
 	highlight_chromosome(chrom);
 }
 
 function search_chrom() {
 	var str = this.value;
-	console.log(str);
 
-	if (str.length==0) { 
+	if (str.length==0) {
 		d3.select("#chrom_livesearch").html("");
 		d3.select("#chrom_livesearch").style("border","0px");
 		return;
@@ -337,12 +340,31 @@ function search_chrom() {
 	d3.select("#chrom_livesearch").style("border","1px solid #A5ACB2");
 }
 
-
 d3.select("#chrom_search_input").on("keyup",search_chrom);
+
+d3.select("#min_read_length_input").on("keyup",function() {
+	_settings.min_read_length = parseInt(this.value);
+	if (isNaN(_settings.min_read_length)) {
+		_settings.min_read_length = 0;
+	}
+
+	$('#min_read_length_slider').slider("option","value", _settings.min_read_length);
+	draw_region_view();
+});
+
+d3.select("#max_ref_length_input").on("keyup",function() {
+	_settings.max_ref_length = parseInt(this.value);
+	if (isNaN(_settings.max_ref_length)) {
+		_settings.max_ref_length = 0;
+	}
+
+	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
+	max_ref_length_changed();
+});
+
 
 
 $("#show_all_refs").click(function() {
-	console.log("click");
 	show_all_chromosomes();
 	apply_ref_filters();
 	draw_region_view();
@@ -352,6 +374,7 @@ $('#colors_checkbox').change(function() {
 	_settings.colorful = this.checked
 	draw();
 });
+
 $('#outline_checkbox').change(function() {
 	_settings.ribbon_outline = this.checked
 	draw();
@@ -505,9 +528,18 @@ function draw_chunk_alignments() {
 	var counter = 0;
 	for (var i in _Chunk_alignments) {
 		if (_Chunk_alignments[i].alignments[0].read_length >= _settings.min_read_length  && _Chunk_alignments[i].alignments.length <= _settings.max_num_alignments && _Chunk_alignments[i].alignments.length >= _settings.min_num_alignments && _Chunk_alignments[i].max_mq >= _settings.region_min_mapping_quality) {
-			chunks.push(_Chunk_alignments[i]);
-			chunks[counter].index = i; // to remember the data order even after sorting
-			counter++;	
+			var has_visible_alignments = false;
+			for (var j in _Chunk_alignments[i].alignments) {
+				if (_Refs_show_or_hide[_Chunk_alignments[i].alignments[j].r] == true) {
+					has_visible_alignments = true;
+					break;
+				}
+			}
+			if (has_visible_alignments) {
+				chunks.push(_Chunk_alignments[i]);
+				chunks[counter].index = i; // to remember the data order even after sorting
+				counter++;	
+			}
 		}
 	}
 
@@ -594,7 +626,6 @@ function highlight_chromosome(chromosome) {
 		// console.log("hiding " + chrom);
 		_Refs_show_or_hide[chrom] = false;
 	}
-	console.log("showing " + chromosome);
 	_Refs_show_or_hide[chromosome] = true;
 
 	apply_ref_filters();
@@ -935,12 +966,12 @@ function refresh_ui_elements() {
 
 	$('#max_ref_length_slider').slider("option","max", _ui_properties.ref_length_slider_max);
 	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
-	$("#max_ref_length_label").html(_settings.max_ref_length);
+	d3.select("#max_ref_length_input").property("value",_settings.max_ref_length);
 
 	
 	$('#min_read_length_slider').slider("option","max", _ui_properties.read_length_slider_max);
 	$('#min_read_length_slider').slider("option","value", _settings.min_read_length);
-	$("#min_read_length_label").html(_settings.min_read_length);
+	d3.select("#min_read_length_input").property("value", _settings.min_read_length);
 
 
 	// Number of alignments in region view
