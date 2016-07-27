@@ -109,9 +109,9 @@
 								<td>Zoom to chromosome</td>
 								<td><p id="chrom_highlighted">all</p></td>
 								<td>
-									<div class="input-group"><input class="form-control"  id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"><button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
+									<div class="input-group"><input class="form-control"  autocomplete="off" id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"><button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
 									</div>
-									<div id="chrom_livesearch"></div>
+									<ul id="chrom_livesearch"></ul>
 								</td>
 							</tr>
 							<tr>
@@ -155,13 +155,13 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_detail_settings_box">
 				<div class="panel-body">
-					<form>
+					<!-- <form> -->
 						<table id="settings_table">
 							<tr>
 								<td>Read selected</td>
 								<td colspan="2">
-									<input class="snug" type="text" id="readname_search_input">
-									<div id="readname_livesearch"></div>
+									<input class="snug"  autocomplete="off" type="text" id="readname_search_input">
+									<ul id="readname_livesearch"></ul>
 								</td>
 							</tr>
 							<tr>
@@ -208,7 +208,7 @@
 								<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox"></td>
 							</tr>
 						</table>
-					</form>
+					<!-- </form> -->
 				</div>
 			</div>
 		</div>

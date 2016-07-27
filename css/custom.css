@@ -11,6 +11,9 @@ body {
 .navbar-brand { 
 	font-size: 1.2vmax;
 }
+#readname_livesearch, #chrom_livesearch {
+	list-style-type: none;
+}
 
 .slider {
 	margin: 1vmin;

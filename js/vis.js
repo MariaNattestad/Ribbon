@@ -304,34 +304,82 @@ function select_chrom(chrom) {
 	highlight_chromosome(chrom);
 }
 
-function search_chrom() {
-	var str = this.value;
+var _chrom_search = {};
+_chrom_search.highlighted_index = 0;
+_chrom_search.last_value = "";
+_chrom_search.last_index = 0;
 
-	if (str.length==0) {
+function search_chrom() {
+	var search_value = this.value;
+
+	if (search_value.length==0) {
 		d3.select("#chrom_livesearch").html("");
 		d3.select("#chrom_livesearch").style("border","0px");
 		return;
 	}
 
-	var search_value = str.toUpperCase();
+	var key = d3.event.keyCode;
 
+	if (key == 13) { // Enter/Return key
+		var selected = d3.select("#chrom_select_" + _chrom_search.highlighted_index);
+		if (selected[0] != null) {
+			select_chrom(selected.property("textContent"));
+			_chrom_search.highlighted_index = 0;
+		}
+		return;
+	} else if (key == 40) { // down arrow
+		if (_chrom_search.highlighted_index < _chrom_search.last_index) {
+			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#ffffff");
+			_chrom_search.highlighted_index++;
+			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");	
+		}
+		return;
+	} else if (key == 38) { // up arrow
+		if (_chrom_search.highlighted_index > 0) {
+			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#ffffff");
+			_chrom_search.highlighted_index--;
+			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");
+		}
+		return; 
+	}
+
+	if (search_value == _chrom_search.last_value) {
+		return;
+	}
+	_chrom_search.last_value = search_value;
+
+	var max_suggestions_to_show = 10;
 	var suggestions = "";
+	var num_suggestions = 0;
 	for (var chrom in _Refs_show_or_hide) {
-		if (chrom.toUpperCase().indexOf(search_value) != -1) {
+		if (chrom.indexOf(search_value) != -1) {
 			var func = "select_chrom('" + chrom + "')";
-			suggestions += '<p onclick="' + func + '">' + chrom + '</p>';
+			suggestions += '<li id="chrom_select_' + num_suggestions + '" onclick="' + func + '">' + chrom + '</li>';
+			_chrom_search.last_index = num_suggestions;
+			num_suggestions++;
+			if (num_suggestions >= max_suggestions_to_show) {
+				suggestions += '<li>. . .</li>';
+				break;
+			}
 		}
 	}
 	if (suggestions == "") {
 		suggestions = "no match";
-	}
+	} 
+	
 	d3.select("#chrom_livesearch").html(suggestions);
 	d3.select("#chrom_livesearch").style("border","1px solid #A5ACB2");
+
+	d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");
 }
 
 
 d3.select("#chrom_search_input").on("keyup",search_chrom);
 
+var _readname_search = {};
+_readname_search.highlighted_index = 0;
+_readname_search.last_value = "";
+_readname_search.last_index = 0;
 
 function search_readnames() {
 	var search_value = this.value;
@@ -342,18 +390,61 @@ function search_readnames() {
 		return;
 	}
 
+	var key = d3.event.keyCode;
+
+	if (key == 13) { // Enter/Return key
+		var selected = d3.select("#read_select_" + _readname_search.highlighted_index);
+		if (selected[0] != null) {
+			select_read_by_index(selected.property("value"));
+			_readname_search.highlighted_index = 0;
+		}
+		return;
+	} else if (key == 40) { // down arrow
+		if (_readname_search.highlighted_index < _readname_search.last_index) {
+			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#ffffff");
+			_readname_search.highlighted_index++;
+			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");	
+		}
+		return;
+	} else if (key == 38) { // up arrow
+		if (_readname_search.highlighted_index > 0) {
+			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#ffffff");
+			_readname_search.highlighted_index--;
+			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");
+		}
+		return; 
+	}
+
+	if (search_value == _readname_search.last_value) {
+		return;
+	}
+	_readname_search.last_value = search_value;
+
+	var max_suggestions_to_show = 10;
 	var suggestions = "";
+	var num_suggestions = 0;
 	for (var i in _Chunk_alignments) {
 		if (_Chunk_alignments[i].readname.indexOf(search_value) != -1) {
 			var func = "select_read_by_index('" + i + "')";
-			suggestions += '<p onclick="' + func + '">' + _Chunk_alignments[i].readname + '</p>';
+			suggestions += '<li value="' + i + '"  id="read_select_' + num_suggestions + '" onclick="' + func + '">' + _Chunk_alignments[i].readname + '</li>';
+			_readname_search.last_index = num_suggestions;
+			num_suggestions++;
+			if (num_suggestions >= max_suggestions_to_show) {
+				suggestions += '<li>. . .</li>';
+				break;
+			}
 		}
 	}
 	if (suggestions == "") {
 		suggestions = "no match";
-	}
+	} 
+	
 	d3.select("#readname_livesearch").html(suggestions);
 	d3.select("#readname_livesearch").style("border","1px solid #A5ACB2");
+
+	d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");
+
+	
 }
 
 function select_read_by_index(index) {
