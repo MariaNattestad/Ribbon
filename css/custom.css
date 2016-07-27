@@ -14,7 +14,18 @@ body {
 #readname_livesearch, #chrom_livesearch {
 	list-style-type: none;
 }
-
+#readname_livesearch, #readname_livesearch li {
+	list-style-type: none;
+	list-style-position:inside;
+	/*margin: 0;*/
+	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+}
+#chrom_livesearch, #chrom_livesearch li {
+	list-style-type: none;
+	list-style-position:inside;
+	/*margin: 0;*/
+	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+}
 .slider {
 	margin: 1vmin;
 }

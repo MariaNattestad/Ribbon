@@ -315,6 +315,7 @@ function search_chrom() {
 	if (search_value.length==0) {
 		d3.select("#chrom_livesearch").html("");
 		d3.select("#chrom_livesearch").style("border","0px");
+		_chrom_search.last_value = "";
 		return;
 	}
 
@@ -387,6 +388,7 @@ function search_readnames() {
 	if (search_value.length==0) {
 		d3.select("#readname_livesearch").html("");
 		d3.select("#readname_livesearch").style("border","0px");
+		_readname_search.last_value = "";
 		return;
 	}
 
