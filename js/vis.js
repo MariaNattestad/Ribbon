@@ -92,17 +92,6 @@ _scales.chunk_ref_interval_scale = d3.scale.linear();
 _scales.ref_color_scale = d3.scale.ordinal().range(_settings.colors);
 
 
-
-////////////////// Soon to be deprecated: keep for testing read selection ////////////////////
-// var table;
-
-// // How sam table looks
-// var header = ["selected","read","alignments","chromosomes","min MQ","max MQ"];
-// var size_readname = 20;
-// var arrow_color = {"on":"#009900","off":"#cccccc"};
-// 
-///////////////////////////////////////////////////////////////////////////////////////////////
-
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
 	parent_object.selectAll("g.tip").remove();
@@ -191,13 +180,13 @@ function responsive_sizing() {
 
 	d3.select("#right_panel")
 		.style("width",_layout.panel_width + "px")
-		.style("height",_layout.total_height + "px");
-
-	table = d3.select("#right_panel").select("table");
+		.style("height",_layout.total_height + "px")
+		.style("visibility","visible");
 
 	draw_region_view();
 	draw();
 	refresh_visibility();
+
 }
 
 
@@ -1420,8 +1409,6 @@ function reparse_read(record_from_chunk) {
 
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
-
-	// table.selectAll("span").style("color",function(d) {if (d.readname == readname) {return arrow_color.on} else {return arrow_color.off}});
 
 	user_message("","");
 	d3.select("#readname_search_input").property("value",readname);
