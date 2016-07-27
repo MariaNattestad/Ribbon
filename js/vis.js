@@ -280,17 +280,6 @@ $('#align_length_slider').slider( {
 	}
 });
 
-// $('#only_header_refs_checkbox').change(function() {
-// 	_settings.show_only_known_references = this.checked;
-// 	if (_settings.show_only_known_references == false) {
-// 		user_message("Info","Showing chromosome sizes as 2X the maximum alignment observed");
-// 	}
-// 	organize_references_for_chunk();
-// 	draw_region_view();
-// 	select_read();
-// });
-
-
 function max_ref_length_changed() {
 	for (var i in _Whole_refs) {
 			_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
@@ -340,7 +329,43 @@ function search_chrom() {
 	d3.select("#chrom_livesearch").style("border","1px solid #A5ACB2");
 }
 
+
 d3.select("#chrom_search_input").on("keyup",search_chrom);
+
+
+function search_readnames() {
+	var search_value = this.value;
+
+	if (search_value.length==0) {
+		d3.select("#readname_livesearch").html("");
+		d3.select("#readname_livesearch").style("border","0px");
+		return;
+	}
+
+	var suggestions = "";
+	for (var i in _Chunk_alignments) {
+		if (_Chunk_alignments[i].readname.indexOf(search_value) != -1) {
+			var func = "select_read_by_index('" + i + "')";
+			suggestions += '<p onclick="' + func + '">' + _Chunk_alignments[i].readname + '</p>';
+		}
+	}
+	if (suggestions == "") {
+		suggestions = "no match";
+	}
+	d3.select("#readname_livesearch").html(suggestions);
+	d3.select("#readname_livesearch").style("border","1px solid #A5ACB2");
+}
+
+function select_read_by_index(index) {
+	d3.select("#readname_livesearch").html("");
+	d3.select("#readname_livesearch").style("border","0px");
+	d3.select("#readname_search_input").property("value","");
+
+	_current_read_index = index; 
+	select_read();
+}
+
+d3.select("#readname_search_input").on("keyup",search_readnames);
 
 d3.select("#min_read_length_input").on("keyup",function() {
 	_settings.min_read_length = parseInt(this.value);
@@ -1306,6 +1331,7 @@ function select_read() {
 	// table.selectAll("span").style("color",function(d) {if (d.readname == readname) {return arrow_color.on} else {return arrow_color.off}});
 
 	user_message("","");
+	d3.select("#readname_search_input").property("value",readname);
 	
 
 	_settings.min_indel_size = 1000000000; // parse alignments for new read first without indels
@@ -1667,13 +1693,9 @@ function refresh_visibility() {
 	}
 
 	if (_Chunk_alignments.length > 0) {
-		d3.select("#select_reads").style("visibility","visible"); // just the label	
 		d3.select("#region_settings_panel").style("display","block");
-		// table.style("visibility","visible");
 	} else {
-		d3.select("#select_reads").style("visibility","hidden"); // just the label	
 		d3.select("#region_settings_panel").style("display","none");
-		// table.style("visibility","hidden");
 	}
 
 	if (_Alignments.length > 0) {

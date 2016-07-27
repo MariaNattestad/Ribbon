@@ -12,8 +12,11 @@ body {
 	font-size: 1.2vmax;
 }
 
+.slider {
+	margin: 1vmin;
+}
 .snug {
-	width: 90%;
+	width: 100%;
 }
 #show_all_refs {
 	display: inline;

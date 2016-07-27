@@ -91,18 +91,18 @@
 							<tr><th colspan="3">Filter reads</th></tr>
 							<tr><td>Number of alignments</td>
 								<td> <span id="num_aligns_range_label"></span> </td>
-								<td> <div id="num_aligns_range_slider"></div> </td>
+								<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
 							</tr>
-							<tr> 
+							<tr>
 								<td>Minimum read/query length</td>
 								<!-- <td><span id="min_read_length_input"></span> </td> -->
 								<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
-								<td> <div id="min_read_length_slider"></div> </td>
+								<td> <div class="slider" id="min_read_length_slider"></div> </td>
 							</tr>
 							<tr>
 								<td width="45%" id="region_min_mq_title" >Minimum mapping quality for best alignment: </td>
 								<td width="20%"><span id="region_mq_label">0</span></td>
-								<td width="30%"><div id="region_mq_slider"></td>
+								<td width="30%"><div class="slider" id="region_mq_slider"></td>
 							</tr>
 							<tr><th colspan="3">Filter references</th></tr>
 							<tr>
@@ -118,7 +118,7 @@
 								<td>Maximum length for reference sequences</td>
 								<td><input class="snug" type="number" id="max_ref_length_input"></span> </td>
 								<!-- <td><span id="max_ref_length_input"></span> </td> -->
-								<td> <div id="max_ref_length_slider"></div> </td>
+								<td> <div class="slider" id="max_ref_length_slider"></div> </td>
 							</tr>
 							<tr><th colspan="3">Settings</th></tr>
 							<tr>
@@ -143,14 +143,6 @@
 		</div>
 	</div>
 
-<!-- 
-	<div >
-		<h4 id="select_reads">Select reads</h4>
-		<div id="sam_table_box">
-			<table id="sam_table"></table>
-		</div>
-	</div>
- -->
 
 	<div id="user_message" class="alert alert-default" role="alert"></div>
 
@@ -166,20 +158,27 @@
 					<form>
 						<table id="settings_table">
 							<tr>
+								<td>Read selected</td>
+								<td colspan="2">
+									<input class="snug" type="text" id="readname_search_input">
+									<div id="readname_livesearch"></div>
+								</td>
+							</tr>
+							<tr>
 								<td class="hide_for_coords">Minimum indel size to split: </td>
 								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
-								<td><div id="indel_size_slider"></td>
+								<td><div class="slider" id="indel_size_slider"></td>
 							</tr>
 							<tr><th colspan="5">Filter alignments</td></tr>
 							<tr>
 								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
 								<td width="15%"><span id="mq_label">0</span></td>
-								<td width="35%"><div id="mq_slider"></td>
+								<td width="35%"><div class="slider" id="mq_slider"></td>
 							</tr>
 							<tr>
 								<td>Minimum alignment length: </td>
 								<td><span id="align_length_label">inf</span></td>
-								<td><div id="align_length_slider"></td>
+								<td><div class="slider" id="align_length_slider"></td>
 								
 							</tr>
 							<!-- <tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
