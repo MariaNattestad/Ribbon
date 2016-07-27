@@ -38,7 +38,7 @@ _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
 _static.margin_to_merge_ref_intervals = 10000;
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
-_static.read_sort_options = [{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
+_static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"position","description":"Position"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
 _static.color_schemes = [
 	{"name":"Color scheme 1", "colors": 0},
 	{"name":"Color scheme 2", "colors": 1},
@@ -51,7 +51,7 @@ var _settings = {};
 _settings.region_min_mapping_quality = 0;
 _settings.max_num_alignments = 1000000;
 _settings.min_num_alignments = 1;
-_settings.min_ref_length = 0;
+_settings.max_ref_length = 0;
 _settings.min_read_length = 0;
 
 _settings.ribbon_vs_dotplot = "ribbon";
@@ -61,10 +61,10 @@ _settings.min_align_length = 0;
 
 _settings.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
 _settings.colorful = true;
-_settings.ribbon_outline = true;
+_settings.ribbon_outline = false;
 _settings.show_only_known_references = true;
 _settings.keep_duplicate_reads = false;
-_settings.feature_to_sort_reads = "readname";
+_settings.feature_to_sort_reads = "original";
 
 
 _settings.current_input_type = "";
@@ -86,6 +86,7 @@ _ui_properties.align_length_slider_max = 0;
 var _scales = {};
 _scales.read_scale = d3.scale.linear();
 _scales.whole_ref_scale = d3.scale.linear();
+_scales.chunk_whole_ref_scale = d3.scale.linear();
 _scales.ref_interval_scale = d3.scale.linear();
 _scales.chunk_ref_interval_scale = d3.scale.linear();
 _scales.ref_color_scale = d3.scale.ordinal().range(_settings.colors);
@@ -225,13 +226,19 @@ $('#min_read_length_slider').slider({
 });
 
 
-$('#min_ref_length_slider').slider({
+$('#max_ref_length_slider').slider({
 	min: 0,
 	max: 1000,
 	slide: function (event, ui) {
-		$("#min_ref_length_label").html(ui.value);
-		_settings.min_ref_length = ui.value;
-		organize_references_for_chunk();
+		$("#max_ref_length_label").html(ui.value);
+		_settings.max_ref_length = ui.value;
+
+		for (var i in _Whole_refs) {
+			_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
+		}
+
+		d3.select("#chrom_highlighted").html("by size");
+		apply_ref_filters();
 		draw_region_view();
 	}
 });
@@ -283,8 +290,6 @@ $('#align_length_slider').slider( {
 	}
 });
 
-
-
 // $('#only_header_refs_checkbox').change(function() {
 // 	_settings.show_only_known_references = this.checked;
 // 	if (_settings.show_only_known_references == false) {
@@ -295,6 +300,53 @@ $('#align_length_slider').slider( {
 // 	select_read();
 // });
 
+
+function select_chrom(chrom) {
+	d3.select("#chrom_livesearch").html("");
+	d3.select("#chrom_livesearch").style("border","0px");
+
+	d3.select("#chrom_search_input").property("value","");
+
+
+	highlight_chromosome(chrom);
+}
+
+function search_chrom() {
+	var str = this.value;
+	console.log(str);
+
+	if (str.length==0) { 
+		d3.select("#chrom_livesearch").html("");
+		d3.select("#chrom_livesearch").style("border","0px");
+		return;
+	}
+
+	var search_value = str.toUpperCase();
+
+	var suggestions = "";
+	for (var chrom in _Refs_show_or_hide) {
+		if (chrom.toUpperCase().indexOf(search_value) != -1) {
+			var func = "select_chrom('" + chrom + "')";
+			suggestions += '<p onclick="' + func + '">' + chrom + '</p>';
+		}
+	}
+	if (suggestions == "") {
+		suggestions = "no match";
+	}
+	d3.select("#chrom_livesearch").html(suggestions);
+	d3.select("#chrom_livesearch").style("border","1px solid #A5ACB2");
+}
+
+
+d3.select("#chrom_search_input").on("keyup",search_chrom);
+
+
+$("#show_all_refs").click(function() {
+	console.log("click");
+	show_all_chromosomes();
+	apply_ref_filters();
+	draw_region_view();
+})
 
 $('#colors_checkbox').change(function() {
 	_settings.colorful = this.checked
@@ -338,39 +390,43 @@ function draw_chunk_ref() {
 	
 	_positions.chunk.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
 	// Draw "Reference" label
-	_svg2.append("text").text("Reference").attr("x",_positions.chunk.ref_block.x+_positions.chunk.ref_block.width/2).attr("y",_positions.chunk.ref_block.y-_positions.chunk.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.chunk.ref_block.x+_positions.chunk.ref_block.width/2).attr("y",_positions.chunk.ref_block.y-_positions.chunk.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
 
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
-	_scales.whole_ref_scale.range([_positions.chunk.ref_block.x, _positions.chunk.ref_block.x + _positions.chunk.ref_block.width]);
+	_scales.chunk_whole_ref_scale.range([_positions.chunk.ref_block.x, _positions.chunk.ref_block.x + _positions.chunk.ref_block.width]);
 	
+	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
+
 	// Whole reference chromosomes for the relevant references:
-	_svg2.selectAll("rect.ref_block").data(_Whole_refs).enter()
-		.append("rect").attr("class","ref_block")
-			.attr("x",function(d) { return _scales.whole_ref_scale(d.cum_pos); })
-			.attr("y",_positions.chunk.ref_block.y)
-			.attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos));})
-			.attr("height", _positions.chunk.ref_block.height)
-			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
-			.style("stroke-width",1).style("stroke", "black")
+	var ref_blocks = _svg2.selectAll("g.ref_block").data(_Whole_refs).enter()
+		.append("g").attr("class","ref_block")
+		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
+			.attr("transform",function(d) {return "translate(" + _scales.chunk_whole_ref_scale(d.filtered_cum_pos) + "," + _positions.chunk.ref_block.y + ")"})
+			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();})
+			.on("click",function(d) {highlight_chromosome(d.chrom)})
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
-				var x = _scales.whole_ref_scale(d.cum_pos + d.size/2);
+				var x = _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2);
 				var y = _positions.chunk.ref_block.y - _padding.text;
 				show_tooltip(text,x,y,_svg2);
-			})
-			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+			});
 
-	_svg2.selectAll("text.ref_block").data(_Whole_refs).enter()
-		.append("text").attr("class","ref_block")
-			.filter(function(d) { return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > 15);})
+	ref_blocks.append("rect").attr("class","ref_block")
+		.attr("x", 0)
+		.attr("y", 0)
+		.attr("width", function(d) {return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos));})
+		.attr("height", _positions.chunk.ref_block.height)
+		.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
+		.style("stroke-width",1).style("stroke", "black");
+			
+	ref_blocks.append("text").attr("class","ref_block")
+		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
+			.filter(function(d) { return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos) > ((font_size/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
-				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
-				.attr("y",_positions.chunk.ref_block.y - _padding.text)
+				.attr("x", function(d) { return _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos)})
+				.attr("y", -_padding.text)
 				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
-				// .attr("height", _positions.chunk.ref_block.height)
-				// .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
-				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 }
 
 function comma_format(x) {
@@ -399,6 +455,7 @@ function draw_chunk_ref_intervals() {
 	// Zoom into reference intervals where the read maps:
 	_svg2.selectAll("rect.ref_interval").data(_Chunk_ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
+		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
 			.attr("x",function(d) { return _scales.chunk_ref_interval_scale(d.cum_pos); })
 			.attr("y",_positions.chunk.ref_intervals.y)
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
@@ -417,6 +474,7 @@ function draw_chunk_ref_intervals() {
 	// Ref interval mapping back to ref
 	_svg2.selectAll("path.ref_mapping").data(_Chunk_ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
+		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined;})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,true)})
 				// .style("stroke-width",2)
@@ -453,11 +511,32 @@ function draw_chunk_alignments() {
 		}
 	}
 
+
+
+
 	if (_settings.feature_to_sort_reads == "num_alignments") {
 		// sorting by alignment_length
 		chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
 	} else if (_settings.feature_to_sort_reads == "readname") {
 		chunks.sort(function(a, b){return natural_sort(a.readname,b.readname)});
+		// sorting by readname
+	} else if (_settings.feature_to_sort_reads == "original") {
+		chunks.sort(function(a, b){return a.index-b.index});
+		// sorting by readname
+	} else if (_settings.feature_to_sort_reads == "position") {
+		for (var i in chunks) {
+			if (chunks[i].longest_ref_pos == undefined) {
+				var index_longest = 0;
+				for (var j in chunks[i].alignments) {
+					if (chunks[i].alignments[j].aligned_length > chunks[i].alignments[index_longest].aligned_length) {
+						index_longest = j;
+					}
+				}
+				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[index_longest].r, chunks[i].alignments[index_longest].rs));
+			}
+		}
+
+		chunks.sort(function(a, b){return a.longest_ref_pos-b.longest_ref_pos});
 		// sorting by readname
 	}
 
@@ -510,14 +589,65 @@ function clear_data() {
 	_Ref_sizes_from_header = {};
 }
 
+function highlight_chromosome(chromosome) {
+	for (var chrom in _Refs_show_or_hide) {
+		// console.log("hiding " + chrom);
+		_Refs_show_or_hide[chrom] = false;
+	}
+	console.log("showing " + chromosome);
+	_Refs_show_or_hide[chromosome] = true;
+
+	apply_ref_filters();
+	draw_region_view();
+
+
+	d3.select("#chrom_highlighted").html(chromosome);
+	d3.select("#show_all_refs").style("display","inline");
+}
+
+function show_all_chromosomes() {
+	for (var i in _Chunk_ref_intervals) {
+		_Refs_show_or_hide[_Chunk_ref_intervals[i].chrom] = true;
+	}
+	for (var i in _Whole_refs) {
+		_Refs_show_or_hide[_Whole_refs[i].chrom] = true;
+	}
+	d3.select("#chrom_highlighted").html("all");
+	d3.select("#show_all_refs").style("display","none");
+}
+
+function apply_ref_filters() {
+	var interval_cumulative_position = 0;
+	for (var i in _Chunk_ref_intervals) {
+		if (_Refs_show_or_hide[_Chunk_ref_intervals[i].chrom] == true) {
+			_Chunk_ref_intervals[i].cum_pos = interval_cumulative_position;
+			interval_cumulative_position += _Chunk_ref_intervals[i].size;
+		}
+	}
+	var whole_cumulative_position = 0;
+	for (var i in _Whole_refs) {
+		if (_Refs_show_or_hide[_Whole_refs[i].chrom] == true) {
+			_Whole_refs[i].filtered_cum_pos = whole_cumulative_position;
+			whole_cumulative_position += _Whole_refs[i].size;
+		}
+	}
+
+	_scales.chunk_ref_interval_scale.domain([0,interval_cumulative_position]);
+	_scales.chunk_whole_ref_scale.domain([0,whole_cumulative_position]);
+}
 
 function chunk_changed() {
 	// Show results only if there is anything to show
 	if (_Chunk_alignments.length > 0) {
 
 		all_read_analysis(); // calculates features of each alignment and adds these variables to _Chunk_alignments
-
+		
 		organize_references_for_chunk();
+
+		show_all_chromosomes();
+
+		apply_ref_filters();
+
 		draw_region_view();
 		
 		_current_read_index = 0;
@@ -713,7 +843,6 @@ function dict_length(dictionary) {
 	return num;
 }
 
-
 function all_read_analysis() {
 	
 	var overall_max_mq = 0;
@@ -722,7 +851,7 @@ function all_read_analysis() {
 	var max_readlength = 0;
 
 	for (var j in _Chunk_alignments) {
-		read_record = _Chunk_alignments[j];
+		var read_record = _Chunk_alignments[j];
 		// var all_chrs = {};
 		var max_mq = 0;
 		var min_mq = 10000000;
@@ -765,16 +894,17 @@ function all_read_analysis() {
 	_settings.min_mapping_quality = overall_min_mq;
 	_settings.min_indel_size = 1000000;
 	_settings.min_align_length = 0;
-	_settings.min_ref_length = 0;
-	_settings.min_read_length = 0;
 	
+	_settings.min_read_length = 0;
 }
 
 function refresh_ui_elements() {
 
 	if (_settings.current_input_type == "coords") {
 		$("#min_mq_title").html("Minimum % identity: ");
+		$('#mq_slider').slider("option","step", 0.01);
 		$("#region_min_mq_title").html("Minimum % identity for best alignment: ");
+		$('#region_mq_slider').slider("option","step", 0.01);
 
 		d3.selectAll(".hide_for_coords").style("color","#dddddd");
 		// Disable indel size slider
@@ -785,7 +915,9 @@ function refresh_ui_elements() {
 		
 	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
 		$("#min_mq_title").html("Minimum mapping quality: ");
+		$('#mq_slider').slider("option","step", 1);
 		$("#region_min_mq_title").html("Minimum mapping quality for best alignment: ");
+		$('#region_mq_slider').slider("option","step", 1);
 		
 		d3.selectAll(".hide_for_coords").style("color","black");
 		// Enable indel size slider
@@ -801,9 +933,9 @@ function refresh_ui_elements() {
 	$('#region_mq_slider').slider("option","value", _settings.region_min_mapping_quality);
 	$("#region_mq_label").html(_settings.region_min_mapping_quality);
 
-	$('#min_ref_length_slider').slider("option","max", _ui_properties.ref_length_slider_max);
-	$('#min_ref_length_slider').slider("option","value", _settings.min_ref_length);
-	$("#min_ref_length_label").html(_settings.min_ref_length);
+	$('#max_ref_length_slider').slider("option","max", _ui_properties.ref_length_slider_max);
+	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
+	$("#max_ref_length_label").html(_settings.max_ref_length);
 
 	
 	$('#min_read_length_slider').slider("option","max", _ui_properties.read_length_slider_max);
@@ -1241,18 +1373,21 @@ function ref_mapping_path_generator(d,chunk) {
 			bottom.y = _positions.chunk.ref_intervals.y;		
 			bottom.left = _scales.chunk_ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start);
-
+			
 			top.y = _positions.chunk.ref_block.y + _positions.chunk.ref_block.height;
+			top.left = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.start));
+			top.right = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.end));
 		} else {
 			bottom.y = _positions.ref_intervals.y;			
 			bottom.left = _scales.ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start);
-
+			
 			top.y = _positions.ref_block.y + _positions.ref_block.height;
+			top.left = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.start));
+			top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.end));
 		}
 		
-		top.left = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.start));
-		top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.end));
+		
 
 		return (
 				 "M " + bottom.left                          + "," + bottom.y
@@ -1273,6 +1408,17 @@ function map_whole_ref(chrom,position) {
 	}
 	return undefined;
 }
+function map_chunk_whole_ref(chrom,position) {
+	// _Whole_refs has chrom, size, cum_pos
+
+	for (var i = 0; i < _Whole_refs.length; i++) {
+		if (_Whole_refs[i].chrom == chrom) {
+			return _Whole_refs[i].filtered_cum_pos + position;
+		}
+	}
+	return undefined;
+}
+
 
 function map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
@@ -1320,11 +1466,8 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 
 	_ui_properties.ref_length_slider_max = 0;
 
-	// console.log("get_chromosome_sizes runs with ", _settings.min_ref_length, " min ref length");
 
 	_Whole_refs = [];
-	_Refs_show_or_hide = {};
-
 	var cumulative_whole_ref_size = 0;
 	for (var j = 0; j < chromosomes.length; j++){
 		var chrom = chromosomes[j];
@@ -1335,11 +1478,6 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 			if (!_settings.show_only_known_references) {
 				new_ref_data = {"chrom":chrom,"size":length_guess,"cum_pos":cumulative_whole_ref_size};
 				// cumulative_whole_ref_size += length_guess;
-			} else {
-				// If the reference is not in the header, we still have to make the _Chunk_ref_intervals for these visible
-				if (length_guess >= _settings.min_ref_length) {
-					_Refs_show_or_hide[chrom] = true; 
-				}
 			}
 		} else {
 			new_ref_data = {"chrom":chrom, "size":_Ref_sizes_from_header[chrom], "cum_pos":cumulative_whole_ref_size};
@@ -1350,20 +1488,15 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
 			if (new_ref_data.size > _ui_properties.ref_length_slider_max) {
 				_ui_properties.ref_length_slider_max = new_ref_data.size;
 			}
-			if (new_ref_data.size >= _settings.min_ref_length) {
-				_Whole_refs.push(new_ref_data);
-				cumulative_whole_ref_size += new_ref_data.size;
-				_Refs_show_or_hide[chrom] = true;
-			} else {
-				_Refs_show_or_hide[chrom] = false;
-			}
+			_Whole_refs.push(new_ref_data);
+			cumulative_whole_ref_size += new_ref_data.size;
 		}
 	}
 	
+	_settings.max_ref_length = _ui_properties.ref_length_slider_max;
 
 	_scales.whole_ref_scale.domain([0,cumulative_whole_ref_size]);
 	_scales.ref_color_scale.domain(chromosomes);
-
 }
 
 function ref_intervals_from_ref_pieces(ref_pieces) {
@@ -1431,17 +1564,15 @@ function organize_references_for_chunk() {
 	var cumulative_position = 0;
 	for (var j = 0; j < chromosomes.length; j++){
 		var chrom = chromosomes[j];
-		if (_Refs_show_or_hide[chrom] == true) {
-			var intervals = ref_intervals_by_chrom[chrom];
-			for (var i = 0; i < intervals.length; i++) {
-				_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
-				var region_length = intervals[i][1]-intervals[i][0];
-				cumulative_position += region_length;
-				// if (region_length > length_of_longest_region) {
-				// 	length_of_longest_region = region_length;
-				// 	longest_region = {"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1]};
-				// }
-			}
+		var intervals = ref_intervals_by_chrom[chrom];
+		for (var i in intervals) {
+			_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
+			var region_length = intervals[i][1]-intervals[i][0];
+			cumulative_position += region_length;
+			// if (region_length > length_of_longest_region) {
+			// 	length_of_longest_region = region_length;
+			// 	longest_region = {"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1]};
+			// }
 		}
 	}
 
@@ -1672,8 +1803,9 @@ function draw_ribbons() {
 	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
 	
 	// Draw "Reference" label
-	_svg.append("text").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
+	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
 	_scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
 	_scales.whole_ref_scale.range([_positions.ref_block.x, _positions.ref_block.x + _positions.ref_block.width]);
@@ -1698,7 +1830,7 @@ function draw_ribbons() {
 
 	_svg.selectAll("text.ref_block").data(_Whole_refs).enter()
 		.append("text").attr("class","ref_block")
-			.filter(function(d) { return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > 15);})
+			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((font_size/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
 				.attr("y",_positions.ref_block.y - _padding.text)

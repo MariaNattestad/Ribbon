@@ -88,15 +88,38 @@
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
 					<table id="settings_table">
+							<tr><th colspan="3">Filter reads</th></tr>
+							<tr><td>Number of alignments</td>
+								<td> <span id="num_aligns_range_label"></span> </td>
+								<td> <div id="num_aligns_range_slider"></div> </td>
+							</tr>
+							<tr> 
+								<td>Minimum read/query length</td>
+								<td><span id="min_read_length_label"></span> </td>
+								<td> <div id="min_read_length_slider"></div> </td>
+							</tr>
 							<tr>
 								<td width="45%" id="region_min_mq_title" >Minimum mapping quality for best alignment: </td>
 								<td width="15%"><span id="region_mq_label">0</span></td>
 								<td width="35%"><div id="region_mq_slider"></td>
 							</tr>
-							<tr><td>Number of alignments</td>
-								<td> <span id="num_aligns_range_label"></span> </td>
-								<td> <div id="num_aligns_range_slider"></div> </td>
+
+							<tr><th colspan="3">Filter references</th></tr>
+							<tr>
+								<td>Zoom to chromosome</td>
+								<td><p id="chrom_highlighted">all</p></td>
+								<td>
+									<div class="input-group"><input class="form-control"  id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"><button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
+									</div>
+									<div id="chrom_livesearch"></div>
+								</td>
 							</tr>
+							<tr>
+								<td>Maximum length for reference sequences</td>
+								<td><span id="max_ref_length_label"></span> </td>
+								<td> <div id="max_ref_length_slider"></div> </td>
+							</tr>
+							<tr><th colspan="3">Settings</th></tr>
 							<tr>
 								<td>Sort reads vertically</td>
 								<td colspan="2">
@@ -112,17 +135,6 @@
 										
 								 	</select>
 								</td>
-							</tr>
-							<tr> 
-								<td>Minimum length for reference sequences</td>
-								<td><span id="min_ref_length_label"></span> </td>
-								<td> <div id="min_ref_length_slider"></div> </td>
-							</tr>
-
-							<tr> 
-								<td>Minimum read/query length</td>
-								<td><span id="min_read_length_label"></span> </td>
-								<td> <div id="min_read_length_slider"></div> </td>
 							</tr>
 					</table>
 				</div>
@@ -152,17 +164,16 @@
 				<div class="panel-body">
 					<form>
 						<table id="settings_table">
-							<tr><td class="table_title" colspan="5">General settings</td></tr>
-							<tr>
-								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
-								<td width="15%"><span id="mq_label">0</span></td>
-								<td width="35%"><div id="mq_slider"></td>
-							</tr>
 							<tr>
 								<td class="hide_for_coords">Minimum indel size to split: </td>
 								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
 								<td><div id="indel_size_slider"></td>
-								
+							</tr>
+							<tr><th colspan="5">Filter alignments</td></tr>
+							<tr>
+								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
+								<td width="15%"><span id="mq_label">0</span></td>
+								<td width="35%"><div id="mq_slider"></td>
 							</tr>
 							<tr>
 								<td>Minimum alignment length: </td>
@@ -188,13 +199,13 @@
 								</td>
 							</tr>
 
-							<tr class="dotplot_settings"><td class="table_title" colspan="5">Dot plot settings</td></tr>
+							<tr class="dotplot_settings"><th colspan="5">Dot plot settings</td></tr>
 							<tr class="dotplot_settings">
 								<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
 							</tr>
-							<tr class="ribbon_settings"><td class="table_title" colspan="5">Ribbon plot settings</td></tr>
+							<tr class="ribbon_settings"><th colspan="5">Ribbon plot settings</td></tr>
 							<tr class="ribbon_settings">
-								<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox" checked></td>
+								<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox"></td>
 							</tr>
 						</table>
 					</form>

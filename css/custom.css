@@ -12,6 +12,9 @@ body {
 	font-size: 1.2vmax;
 }
 
+#show_all_refs {
+	display: inline;
+}
 #user_message {
 	font-size: 1.8vmin;
 }
@@ -22,6 +25,7 @@ body {
 
 .small_input {
 	width: 35%;
+	display: inline;
 }
 
 #examples_navbar_item {
