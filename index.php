@@ -159,7 +159,7 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
-					<table id="settings_table">
+					<table class="settings_table">
 							<tr><th colspan="3">Filter reads</th></tr>
 							<tr><td>Number of alignments</td>
 								<td> <span id="num_aligns_range_label"></span> </td>
@@ -225,7 +225,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_detail_settings_box">
 				<div class="panel-body">
 					<!-- <form> -->
-						<table id="settings_table">
+						<table class="settings_table">
 							<tr>
 								<td>Read selected</td>
 								<td colspan="2">

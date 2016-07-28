@@ -713,8 +713,8 @@ function draw_chunk_alignments() {
 		_Variants[i].start_precision = start_results.precision;
 		var end_results = closest_map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end); 
 		_Variants[i].end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
-		if (_Variants[i].end_cum_pos == _Variants[i].start_cum_pos) {
-			_Variants[i].end_cum_pos = _Variants[i].start_cum_pos + 1;
+		if (_Variants[i].end_cum_pos < _Variants[i].start_cum_pos + 5) {
+			_Variants[i].end_cum_pos = _Variants[i].start_cum_pos + 5;
 		} else if (_Variants[i].end_cum_pos < _Variants[i].start_cum_pos) {
 			var tmp = _Variants[i].start_cum_pos;
 			_Variants[i].start_cum_pos = _Variants[i].end_cum_pos;
