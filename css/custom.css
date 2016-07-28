@@ -43,11 +43,26 @@ body {
 	float:left;
 }
 
+hr {
+	margin: 1vmin 0vmin 1vmin 0vmin;
+}
+
+.panel-body {
+	padding: 1vmin 1vmin 1vmin 1vmin;
+}
+
 .small_input {
 	width: 35%;
 	display: inline;
 }
 
+.tab-pane {
+	padding: 2vmin 1vmin 1vmin 1vmin;
+}
+
+#region_box {
+	padding: 2vmin 2vmin 2vmin 2vmin;
+}
 #examples_navbar_item {
 	visibility: hidden;
 }
@@ -77,7 +92,7 @@ svg {
 }
 
 
-#sam_input, #coords_input {
+textarea {
 	padding: 1vmin 1vmin 1vmin 1vmin; 
 	font-size: 1.5vmin; 
 	overflow-y: scroll; 
@@ -85,28 +100,24 @@ svg {
 	white-space: nowrap; 
 }
 
-#sam_info_icon, #coords_info_icon, #bam_info_icon{
+#sam_info_icon, #coords_info_icon, #bam_info_icon, #bed_info_icon, #vcf_info_icon{
 	color: #aaaaaa;
 }
-#bam_file {
+input[type="file"] {
 	padding: 1vmin 1vmin 1vmin 1vmin;
 }
 
-#sam_table {
-	visibility: hidden;
-}
-
-#region_selector_panel {
+#region_selector_panel, #bed_input_panel, #variant_table_panel {
 	display: none;
 }
-#sam_table table, #sam_table th, #sam_table td {
+#variant_table table, #variant_table th, #variant_table td {
 	text-align: center;
 	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
 	border: 0.1px solid black;
 	font-size: 1vmin;
 	background-color: #ffffff;
 }
-#sam_table_box {
+#variant_table_box {
 	height: 30%;
 	overflow: scroll;
 }

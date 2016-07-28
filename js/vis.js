@@ -20,6 +20,7 @@ var _Ref_intervals = [];
 var _Chunk_ref_intervals = [];
 var _Whole_refs = [];
 var _Refs_show_or_hide = {};
+var _Variants = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
@@ -172,11 +173,9 @@ function responsive_sizing() {
 		.style("width",_layout.left_width + "px")
 		.style("height",_layout.svg1_box_height + "px");
 
-
 	d3.select("#svg2_panel")
 		.style("width",_layout.left_width + "px")
 		.style("height",_layout.svg2_box_height + "px");
-
 
 	d3.select("#right_panel")
 		.style("width",_layout.panel_width + "px")
@@ -188,8 +187,6 @@ function responsive_sizing() {
 	refresh_visibility();
 
 }
-
-
 
 //////////////////// Region settings /////////////////////////
 
@@ -631,6 +628,8 @@ function draw_chunk_alignments() {
 		.style("stroke", "black");	
 	}
 	
+
+
 	var chunks = [];
 	var counter = 0;
 	for (var i in _Chunk_alignments) {
@@ -708,6 +707,36 @@ function draw_chunk_alignments() {
 				})
 				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 
+	// Show bed file contents:
+	for (var i in _Variants) {
+		var start_results = closest_map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start);
+		_Variants[i].start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
+		_Variants[i].start_precision = start_results.precision;
+		var end_results = closest_map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end); 
+		_Variants[i].end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
+		_Variants[i].end_precision = end_results.precision;
+	}
+
+	_svg2.selectAll("rect.bed").data(_Variants).enter()
+		.append("rect").attr("class","bed")
+			.attr("x",function(d) { return d.start_cum_pos })
+			.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+			.attr("y",_positions.chunk.reads.top_y)
+			.attr("height", _positions.chunk.reads.height)
+			.style("stroke-width",2)
+			.style("stroke","black")
+			.style("fill","none")
+			.style("stroke-opacity",1)
+			.on('mouseover', function(d) {
+				var text = d.name;
+				if (d.type != undefined) {
+					text = d.name + ": " + d.type;
+				}
+				var x = (d.start_cum_pos + d.end_cum_pos)/2;
+				var y = _positions.chunk.reads.top_y + _positions.chunk.reads.height;
+				show_tooltip(text,x,y,_svg2);
+			})
+			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 }
 
 
@@ -783,8 +812,9 @@ function chunk_changed() {
 		organize_references_for_chunk();
 
 		show_all_chromosomes();
-
 		apply_ref_filters();
+
+		d3.select("#variant_input_panel").style("display","block");
 
 		draw_region_view();
 		
@@ -803,6 +833,7 @@ function sam_input_changed(sam_input_value) {
 
 		clear_data();
 		clear_coords_input();
+		remove_coords_file();
 		remove_bam_file();
 
 		var input_text = sam_input_value.split("\n");
@@ -852,6 +883,17 @@ d3.select("#sam_info_icon").on("click", function() {
 d3.select("#bam_info_icon").on("click", function() {
 	user_message("Instructions","Create a bam file using an aligner such as BWA, BLASR, or NGM-LR. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, upload the my_file.sorted.bam and the my_file.sorted.bam.bai files");
 });
+
+
+d3.select("#bed_info_icon").on("click", function() {
+	user_message("Instructions","Paste or upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.");
+});
+
+
+d3.select("#vcf_info_icon").on("click", function() {
+	user_message("Instructions","Paste or upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.");
+});
+
 
 
 function parse_coords_columns(columns) {
@@ -935,10 +977,10 @@ function coords_input_changed(coords_input_value) {
 }
 
 
-$('#coords_input').bind('input propertychange', function() {coords_input_changed(this.value)});
+$('#coords_input').bind('input propertychange', function() {remove_coords_file(); coords_input_changed(this.value)});
+
 
 d3.select("#coords_info_icon").on("click", function() {
-	console.log("COORDS INFO");
 	var example = "1000 2000 3000 4000 0 0 97.69 3000 5000 chr5 read1";
 	d3.select('#coords_input').property("value",example);
 	coords_input_changed(example);
@@ -968,6 +1010,106 @@ d3.select("select#color_scheme_dropdown").on("change",function(d) {
 	draw_region_view();
 	draw();
 });
+
+function show_variant_table() {
+	d3.select("#variant_table_panel").style("display","block");
+	d3.select("#variant_table").html("");
+
+	var keys = d3.keys(_Variants[0]);
+	d3.select("#variant_table").append("tr").selectAll("th").data(keys).enter().append("th").html(function(d){return d});
+
+	var rows = d3.select("#variant_table").selectAll("tr.data").data(_Variants).enter().append("tr").attr("class","data")
+	
+	if (_settings.current_input_type == "bam") {
+		rows.on("click",function(d) {go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1)});		
+	}
+	
+	rows.selectAll("td").data(keys).enter().append("td").html(function(d){return d3.select(this.parentNode).datum()[d]});
+}
+
+function bed_input_changed(bed_input) {
+	var input_text = bed_input.split("\n");
+	
+	_Variants = [];
+	for (var i in input_text) {
+		var columns = input_text[i].split(/\s+/);
+		if (columns.length>2) {
+			var start = parseInt(columns[1]);
+			var end = parseInt(columns[2]);
+			var score = parseFloat(columns[4]);
+			if (isNaN(score)) {
+				score = 0;
+			}
+			if (isNaN(start) || isNaN(end)) {
+				user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
+				return;
+			}
+			_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
+		}
+	}
+
+	user_message("Info","Loaded " + _Variants.length + " bed entries");
+	show_variant_table();
+	clear_vcf_input();
+	draw_region_view();
+}
+$('#bed_input').bind('input propertychange', function() {remove_variant_file(); bed_input_changed(this.value)});
+
+
+function vcf_input_changed(vcf_input) {
+	var input_text = vcf_input.split("\n");
+	
+	_Variants = [];
+	for (var i in input_text) {
+		if (input_text[i][0] != "#") {
+			var columns = input_text[i].split(/\s+/);
+			if (columns.length>=3) {
+				var start = parseInt(columns[1]);
+				var end = start;
+				var type = "";
+				var strand = "";
+				var score = parseFloat(columns[4]);
+				if (isNaN(score)) {
+					score = 0;
+				}
+				if (isNaN(start) || isNaN(end)) {
+					user_message("Error","VCF file must contain a number in column 2. Found: <pre>" + columns[1] + "</pre>.");
+					return;
+				}
+				if (columns[7] != undefined) {
+					var info_fields = columns[7].split(";");
+					for (var field in info_fields) {
+						var info = info_fields[field].split("=");
+						if (info.length == 2) {
+							if (info[0] == "END") {
+								end = parseInt(info[1]);
+							} else if (info[0] == "TYPE" || info[0] == "SVTYPE") {
+								type = info[1];
+							} else if (info[0] == "STRAND") {
+								strand = info[1];
+							}
+						}
+					}
+				}
+				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[2], "score":score,"strand":strand,"type":type});
+			}
+		}
+	}
+
+	clear_bed_input();
+
+	user_message("Info","Loaded " + _Variants.length + " vcf entries");
+	show_variant_table();
+	draw_region_view();
+}
+
+
+$('#vcf_input').bind('input propertychange', function() {remove_variant_file(); vcf_input_changed(this.value)});
+
+function remove_variant_file() {
+	// For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
+	d3.select('#variant_file').property("value","");
+}
 
 
 function run() {
@@ -1572,6 +1714,32 @@ function map_ref_interval(chrom,position) {
 
 }
 
+
+function closest_map_chunk_ref_interval(chrom,position) {
+	// _Ref_intervals has chrom, start, end, size, cum_pos
+	var closest = 0;
+	var best_distance = -1;
+	for (var i in _Chunk_ref_intervals) {
+		if (_Chunk_ref_intervals[i].chrom == chrom) {
+			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
+				return {"precision":"exact","pos": _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start)};
+			}
+			if (Math.abs(position - _Chunk_ref_intervals[i].start) < best_distance || best_distance == -1) {
+				closest = _Chunk_ref_intervals[i].cum_pos;
+				best_distance = Math.abs(position - _Chunk_ref_intervals[i].start);
+			}
+			if (Math.abs(position - _Chunk_ref_intervals[i].end) < best_distance) {
+				closest = _Chunk_ref_intervals[i].cum_pos + _Chunk_ref_intervals[i].end - _Chunk_ref_intervals[i].start;
+				best_distance = Math.abs(position - _Chunk_ref_intervals[i].end);
+			}
+		}
+	}
+
+	// If no exact match found by the end, return the closest
+	return {"precision":"inexact","pos": closest};
+	
+}
+
 function map_chunk_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
@@ -1584,7 +1752,6 @@ function map_chunk_ref_interval(chrom,position) {
 	console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
 	console.log(chrom,position);
 	console.log(_Chunk_ref_intervals);
-
 }
 
 function get_chromosome_sizes(ref_intervals_by_chrom) {
@@ -2088,11 +2255,43 @@ function read_example_coords(filename) {
 	}})
 }
 
-
-
 add_examples_to_navbar();
 
+// ===========================================================================
+// == Load bed file
+// ===========================================================================
 
+function open_variant_file(event) {
+	if (this.files[0].size > 1000000) {
+		user_message("Warning","Loading large file may take a while.");
+	}
+	
+	var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
+	if (file_extension == "vcf") {
+		var raw_data;
+		var reader = new FileReader();
+		reader.readAsText(this.files[0]);
+		reader.onload = function(event) {
+			raw_data = event.target.result;
+			clear_vcf_input();
+			vcf_input_changed(raw_data);
+		}
+	}
+	else if (file_extension == "bed") {
+		var raw_data;
+		var reader = new FileReader();
+		reader.readAsText(this.files[0]);
+		reader.onload = function(event) {
+			raw_data = event.target.result;
+			clear_bed_input();
+			bed_input_changed(raw_data);
+		}
+	} else {
+		user_message("Error", "File extension must be .bed or .vcf");
+	}
+}
+
+d3.select("#variant_file").on("change",open_variant_file);
 
 
 // ===========================================================================
@@ -2130,51 +2329,6 @@ function open_bam_file(event) {
 }
 
 document.getElementById('bam_file').addEventListener('change',open_bam_file,false);
-
-
-// $("#chrom_pos_input").keyup(function(event) {
-// 	if(event.keyCode == 13) {
-// 		go_to_location(this.value);
-// 	}
-// });
-
-// function blobToFile(theBlob, fileName){
-//     //A Blob() is almost a File() - it's just missing the two properties below which we will add
-//     theBlob.lastModifiedDate = new Date();
-//     theBlob.name = fileName;
-//     return theBlob;
-// }
-
-
-// function open_bam_from_url(url) {
-// 	var xhr = new XMLHttpRequest();
-// 	xhr.open('GET', url, true);
-// 	xhr.responseType = 'blob';
-// 	xhr.onload = function(e) {
-// 	  if (this.status == 200) {
-// 	    var bamFile = new Blob([this.response]);
-// 	    _Bam = new Bam( bamFile, { bai: baiFile });
-// 	    // bamFile is now the blob that the object URL pointed to.
-// 	  //   var xhr2 = new XMLHttpRequest();
-// 	  //   xhr2.open('GET',url + ".bai", true);
-// 	  //   xhr2.responseType = 'blob';
-// 	  //   if (this.status == 200) {
-// 	  //   	var baiFile = blobToFile(this.response);
-// 	  //   	_Bam = new Bam( bamFile, { bai: baiFile });
-
-// 			// // wait_then_run_when_all_data_loaded();
-// 	  //   }
-// 	  }
-// 	};
-// 	xhr.send();
-
-// }
-
-
-// open_bam_from_url("examples/hg38.SKBR3-MHC.pb.bam");
-
-
-
 
 function create_bam(files) {
 	// From bam.iobio, thanks Marth lab!
@@ -2226,6 +2380,12 @@ function clear_sam_input() {
 function clear_coords_input() {
 	d3.select('#coords_input').property("value","");
 }
+function clear_bed_input() {
+	d3.select('#bed_input').property("value","");
+}
+function clear_vcf_input() {
+	d3.select('#vcf_input').property("value","");
+}
 
 function bam_loaded() {
 	_settings.current_input_type = "bam";
@@ -2237,11 +2397,17 @@ function bam_loaded() {
 
 	record_bam_header();
 
+	organize_references_for_chunk();
+	show_all_chromosomes();
+	apply_ref_filters();
+
 	reset_svg2();
 	draw_chunk_ref();
 	d3.select("#region_selector_panel").style("display","block");
 
-	user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region above to fetch reads.");
+	user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");
+
+	d3.select("#variant_input_panel").style("display","block");
 
 	refresh_visibility();
 }
@@ -2287,6 +2453,13 @@ function remove_bam_file() {
 	d3.select('#bam_file').property("value","");
 	d3.select("#region_selector_panel").style("display","none");
 }
+function remove_coords_file() {
+	// For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
+	d3.select('#coords_file').property("value","");
+}
+
+
+
 
 // ===========================================================================
 // == Select region
@@ -2325,42 +2498,7 @@ function go_to_region(chrom,start,end) {
 		console.log("Fetching bam records at position");
 		show_waiting_for_bam();
 
-		// var step = 1000;
-		// for (var i = start; i < end; i += step) {
-		// 	console.log(i,i+step);
-		// 	_Bam.fetch(chrom,i,i+step,record_fetched_data);
-		// }
-
-		// chrom = "chr6";
-		// var i = 29800000;
-		// var step = 3000; // 893 records
-		// var step = 4000; // 974
-		// var step = 6000; // 1174
-		// var step = 8000; // 1346
-		// var step = 10000; // 1646
-		// var step = 12000; // 1915
-		// var step = 14000; // 2296
-		// // var step = 16000; // crash
-		// // var step = 20000; // crash
-
-		// _Bam.fetch(chrom,i,i+step,record_fetched_data);
-		// var chrId = _Bam.bam.chrToIndex[chrom];
-	 //    var chunks;
-	 //    if (chrId === undefined) {
-	 //        chunks = [];
-	 //    } else {
-	 //        chunks = _Bam.bam.blocksForRange(chrId, start, end);
-	 //        if (!chunks) {
-	 //            callback(null, 'Error in index fetch');
-	 //        }
-	 //        console.log("Chunks:", chunks.length);
-	 //    }
-
-
-
 		_Bam.fetch(chrom,start,end,use_fetched_data);
-
-
 	} else {
 		console.log("No bam file");
 		user_message("Error","No bam file");
