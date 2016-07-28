@@ -8,6 +8,9 @@ body {
 .navbar {
 	font-size: 1vmax;
 }
+.panel-group {
+	margin-bottom: 1vmin;
+}
 .navbar-brand { 
 	font-size: 1.2vmax;
 }
@@ -44,7 +47,7 @@ body {
 }
 
 hr {
-	margin: 1vmin 0vmin 1vmin 0vmin;
+	margin: 0.5vmin 0vmin 0.5vmin 0vmin;
 }
 
 .panel-body {
@@ -57,12 +60,13 @@ hr {
 }
 
 .tab-pane {
-	padding: 2vmin 1vmin 1vmin 1vmin;
+	padding: 1vmin 1vmin 0vmin 1vmin;
 }
 
-#region_box {
+/*#region_box {
 	padding: 2vmin 2vmin 2vmin 2vmin;
-}
+}*/
+
 #examples_navbar_item {
 	visibility: hidden;
 }
@@ -100,20 +104,20 @@ textarea {
 	white-space: nowrap; 
 }
 
-#sam_info_icon, #coords_info_icon, #bam_info_icon, #bed_info_icon, #vcf_info_icon{
+#sam_info_icon, #coords_info_icon, #bam_info_icon, .bed_info_icon, .vcf_info_icon{
 	color: #aaaaaa;
 }
 input[type="file"] {
-	padding: 1vmin 1vmin 1vmin 1vmin;
+	padding: 0vmin 1vmin 1vmin 1vmin;
 }
 
-#region_selector_panel, #bed_input_panel, #variant_table_panel {
+#region_selector_panel, #variant_input_panel, #variant_table_panel {
 	display: none;
 }
 #variant_table table, #variant_table th, #variant_table td {
 	text-align: center;
 	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
-	border: 0.1px solid black;
+	border: 0.1px solid #eeeeee;
 	font-size: 1vmin;
 	background-color: #ffffff;
 }
