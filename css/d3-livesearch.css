@@ -1,0 +1,12 @@
+.d3-livesearch-suggestions, .d3-livesearch-suggestions li {
+	list-style-type: none;
+	list-style-position:inside;
+	padding: 0 0 0 0;
+	margin: 0 0 0 0;
+}
+.d3-livesearch-suggestions .selected {
+	background-color: #eeeeee;
+}
+.d3-livesearch-suggestions .unselected {
+	background-color: #ffffff;
+}

@@ -24,7 +24,6 @@ var _Variants = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
-
 // Reading bam file
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
@@ -275,12 +274,7 @@ function max_ref_length_changed() {
 	draw_region_view();
 }
 
-function select_chrom(chrom) {
-	d3.select("#chrom_livesearch").html("");
-	d3.select("#chrom_livesearch").style("border","0px");
-
-	d3.select("#chrom_search_input").property("value","");
-
+function search_select_chrom(chrom) {
 	// Reset the ref size slider to default
 	_settings.max_ref_length = _ui_properties.ref_length_slider_max;
 	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
@@ -289,161 +283,10 @@ function select_chrom(chrom) {
 	highlight_chromosome(chrom);
 }
 
-var _chrom_search = {};
-_chrom_search.highlighted_index = 0;
-_chrom_search.last_value = "";
-_chrom_search.last_index = 0;
-
-function search_chrom() {
-	var search_value = this.value;
-
-	if (search_value.length==0) {
-		d3.select("#chrom_livesearch").html("");
-		d3.select("#chrom_livesearch").style("border","0px");
-		_chrom_search.last_value = "";
-		return;
-	}
-
-	var key = d3.event.keyCode;
-
-	if (key == 13) { // Enter/Return key
-		var selected = d3.select("#chrom_select_" + _chrom_search.highlighted_index);
-		if (selected[0] != null) {
-			select_chrom(selected.property("textContent"));
-			_chrom_search.highlighted_index = 0;
-		}
-		return;
-	} else if (key == 40) { // down arrow
-		if (_chrom_search.highlighted_index < _chrom_search.last_index) {
-			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#ffffff");
-			_chrom_search.highlighted_index++;
-			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");	
-		}
-		return;
-	} else if (key == 38) { // up arrow
-		if (_chrom_search.highlighted_index > 0) {
-			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#ffffff");
-			_chrom_search.highlighted_index--;
-			d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");
-		}
-		return; 
-	}
-
-	if (search_value == _chrom_search.last_value) {
-		return;
-	}
-	_chrom_search.last_value = search_value;
-
-	var max_suggestions_to_show = 10;
-	var suggestions = "";
-	var num_suggestions = 0;
-	for (var chrom in _Refs_show_or_hide) {
-		if (chrom.indexOf(search_value) != -1) {
-			var func = "select_chrom('" + chrom + "')";
-			suggestions += '<li id="chrom_select_' + num_suggestions + '" onclick="' + func + '">' + chrom + '</li>';
-			_chrom_search.last_index = num_suggestions;
-			num_suggestions++;
-			if (num_suggestions >= max_suggestions_to_show) {
-				suggestions += '<li>. . .</li>';
-				break;
-			}
-		}
-	}
-	if (suggestions == "") {
-		suggestions = "no match";
-	} 
-	
-	d3.select("#chrom_livesearch").html(suggestions);
-	d3.select("#chrom_livesearch").style("border","1px solid #A5ACB2");
-
-	d3.select("#chrom_select_" + _chrom_search.highlighted_index).style("background-color","#eeeeee");
-}
-
-
-d3.select("#chrom_search_input").on("keyup",search_chrom);
-
-var _readname_search = {};
-_readname_search.highlighted_index = 0;
-_readname_search.last_value = "";
-_readname_search.last_index = 0;
-
-function search_readnames() {
-	var search_value = this.value;
-
-	if (search_value.length==0) {
-		d3.select("#readname_livesearch").html("");
-		d3.select("#readname_livesearch").style("border","0px");
-		_readname_search.last_value = "";
-		return;
-	}
-
-	var key = d3.event.keyCode;
-
-	if (key == 13) { // Enter/Return key
-		var selected = d3.select("#read_select_" + _readname_search.highlighted_index);
-		if (selected[0] != null) {
-			select_read_by_index(selected.property("value"));
-			_readname_search.highlighted_index = 0;
-		}
-		return;
-	} else if (key == 40) { // down arrow
-		if (_readname_search.highlighted_index < _readname_search.last_index) {
-			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#ffffff");
-			_readname_search.highlighted_index++;
-			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");	
-		}
-		return;
-	} else if (key == 38) { // up arrow
-		if (_readname_search.highlighted_index > 0) {
-			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#ffffff");
-			_readname_search.highlighted_index--;
-			d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");
-		}
-		return; 
-	}
-
-	if (search_value == _readname_search.last_value) {
-		return;
-	}
-	_readname_search.last_value = search_value;
-
-	var max_suggestions_to_show = 10;
-	var suggestions = "";
-	var num_suggestions = 0;
-	for (var i in _Chunk_alignments) {
-		if (_Chunk_alignments[i].readname.indexOf(search_value) != -1) {
-			var func = "select_read_by_index('" + i + "')";
-			suggestions += '<li value="' + i + '"  id="read_select_' + num_suggestions + '" onclick="' + func + '">' + _Chunk_alignments[i].readname + '</li>';
-			_readname_search.last_index = num_suggestions;
-			num_suggestions++;
-			if (num_suggestions >= max_suggestions_to_show) {
-				suggestions += '<li>. . .</li>';
-				break;
-			}
-		}
-	}
-	if (suggestions == "") {
-		suggestions = "no match";
-	} 
-	
-	d3.select("#readname_livesearch").html(suggestions);
-	d3.select("#readname_livesearch").style("border","1px solid #A5ACB2");
-
-	d3.select("#read_select_" + _readname_search.highlighted_index).style("background-color","#eeeeee");
-
-	
-}
-
-function select_read_by_index(index) {
-	d3.select("#readname_livesearch").html("");
-	d3.select("#readname_livesearch").style("border","0px");
-	d3.select("#readname_search_input").property("value","");
-
-	_current_read_index = index; 
+function search_select_read(d) {
+	_current_read_index = d.index;
 	select_read();
 }
-
-d3.select("#readname_search_input").on("keyup",search_readnames);
 
 d3.select("#min_read_length_input").on("keyup",function() {
 	_settings.min_read_length = parseInt(this.value);
@@ -805,6 +648,13 @@ function apply_ref_filters() {
 
 	_scales.chunk_ref_interval_scale.domain([0,interval_cumulative_position]);
 	_scales.chunk_whole_ref_scale.domain([0,whole_cumulative_position]);
+
+	var chromosomes = d3.keys(_Refs_show_or_hide);
+	chromosomes.sort(function(a, b){return a.length-b.length});
+
+	var chrom_livesearch = d3.livesearch().max_suggestions_to_show(5).search_list(chromosomes).selection_function(search_select_chrom).placeholder(chromosomes[0]);
+	d3.select("#chrom_livesearch").call(chrom_livesearch);
+
 }
 
 function chunk_changed() {
@@ -824,6 +674,10 @@ function chunk_changed() {
 		
 		_current_read_index = 0;
 		select_read();
+
+		var readname_livesearch = d3.livesearch().max_suggestions_to_show(5).search_list(_Chunk_alignments).search_key("readname").selection_function(search_select_read).placeholder(_Chunk_alignments[0].readname);
+		d3.select("#readname_livesearch").call(readname_livesearch); 
+
 	} else {
 		user_message("","");
 	}
@@ -1055,13 +909,12 @@ function show_variant_table() {
 	d3.select("#variant_table").html("");
 
 	var keys = d3.keys(_Variants[0]);
-	var header = ["fetch bam"].concat(keys);
+	var header = ["action"].concat(keys);
 	d3.select("#variant_table").append("tr").selectAll("th").data(header).enter().append("th").html(function(d){return d});
 
 	var rows = d3.select("#variant_table").selectAll("tr.data").data(_Variants).enter().append("tr").attr("class","data")
 	
 	if (_settings.current_input_type == "bam") {
-		
 		// Add click listener to table rows
 		rows.on("click",function(d) {
 			if (!_loading_bam_right_now) {
@@ -1185,6 +1038,7 @@ function all_read_analysis() {
 
 	for (var j in _Chunk_alignments) {
 		var read_record = _Chunk_alignments[j];
+		_Chunk_alignments[j].index = j;
 		// var all_chrs = {};
 		var max_mq = 0;
 		var min_mq = 10000000;

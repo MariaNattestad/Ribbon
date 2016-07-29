@@ -181,9 +181,12 @@
 								<td>Zoom to chromosome</td>
 								<td><p id="chrom_highlighted">all</p></td>
 								<td>
-									<div class="input-group"><input class="form-control"  autocomplete="off" id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"><button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
-									</div>
-									<ul id="chrom_livesearch"></ul>
+									<div id="chrom_livesearch"></div>
+									<!-- <div class="input-group"><input class="form-control"  autocomplete="off" id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"> -->
+									
+									<!-- </div> -->
+									<!-- <ul id="chrom_livesearch"></ul> -->
+									<button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
 								</td>
 							</tr>
 							<tr>
@@ -229,8 +232,9 @@
 							<tr>
 								<td>Read selected</td>
 								<td colspan="2">
-									<input class="snug"  autocomplete="off" type="text" id="readname_search_input">
-									<ul id="readname_livesearch"></ul>
+									<div id="readname_livesearch"></div>
+									<!-- <input class="snug"  autocomplete="off" type="text" id="readname_search_input">
+									<ul id="readname_livesearch"></ul> -->
 								</td>
 							</tr>
 							<tr>
@@ -302,7 +306,6 @@
 <script src="js/bootstrap.min.js"></script>
 
 
-
 <!-- Special range slider -->
 <script src="js/jquery-ui.min.js"></script>
 
@@ -313,6 +316,9 @@
 <script src="js/bam/bam.js"></script>
 <script src="js/bam/bam.iobio.js"></script>
 
+
+<!-- My own d3-livesearch plugin -->
+<script src="js/d3-livesearch.js"></script>
 
 <!-- Cross-browser split -->
 <script src="js/cross-browser-split.js"></script>
