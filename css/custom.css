@@ -99,16 +99,16 @@ input[type="file"] {
 #region_selector_panel, #variant_input_panel, #variant_table_panel {
 	display: none;
 }
-#variant_table table, #variant_table th, #variant_table td {
-	text-align: center;
-	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
-	border: 0.1px solid #eeeeee;
-	font-size: 1vmin;
-	background-color: #ffffff;
-}
+
 #variant_table_box {
 	height: 30%;
 	overflow: scroll;
+}
+
+.d3-superTable-table th, .d3-superTable-table td {
+	text-align: center;
+	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+	border: 1px solid #cccccc;
 }
 
 
@@ -117,7 +117,7 @@ th {
 }
 
 text {
-	font-size: 1.4vmin;
+	font-size: 1vmax;
 	font-family: 'Lato', sans-serif;
 }
 

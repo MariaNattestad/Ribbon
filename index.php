@@ -119,9 +119,9 @@
 				<div class="panel-body">
 					<div id="variant_table_box">
 						<p> For bam files, click on a row in the table to fetch reads around that feature. </p>
-						<table id="variant_table">
-
-						</table>
+						<div id="variant_table_landing">
+						<!-- superTable creates a table here out of _Variants -->
+						</div>
 					</div>
 				</div>
 			</div>
@@ -190,8 +190,13 @@
 								</td>
 							</tr>
 							<tr>
+								<td>Minimum number of alignments</td>
+								<td><p id="min_aligns_for_ref_interval_label">1</p></td>
+								<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
+							</tr>
+							<tr>
 								<td>Maximum length for reference sequences</td>
-								<td><input class="snug" type="number" id="max_ref_length_input"></span> </td>
+								<td><input class="snug" type="number" id="max_ref_length_input"></td>
 								<!-- <td><span id="max_ref_length_input"></span> </td> -->
 								<td> <div class="slider" id="max_ref_length_slider"></div> </td>
 							</tr>
@@ -319,6 +324,7 @@
 
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>
+<script src="js/d3-superTable.js"></script>
 
 <!-- Cross-browser split -->
 <script src="js/cross-browser-split.js"></script>

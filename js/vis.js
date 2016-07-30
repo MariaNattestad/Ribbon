@@ -20,6 +20,7 @@ var _Ref_intervals = [];
 var _Chunk_ref_intervals = [];
 var _Whole_refs = [];
 var _Refs_show_or_hide = {};
+var _Ref_intervals_show_or_hide = {};
 var _Variants = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
@@ -52,6 +53,7 @@ _settings.region_min_mapping_quality = 0;
 _settings.max_num_alignments = 1000000;
 _settings.min_num_alignments = 1;
 _settings.max_ref_length = 0;
+_settings.min_aligns_for_ref_interval = 1;
 _settings.min_read_length = 0;
 
 _settings.ribbon_vs_dotplot = "ribbon";
@@ -208,6 +210,16 @@ $('#min_read_length_slider').slider({
 	}
 });
 
+$('#min_aligns_for_ref_interval_slider').slider({
+	min: 1,
+	max: 20,
+	slide: function(event,ui) {
+		d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
+		_settings.min_aligns_for_ref_interval = ui.value;
+		apply_ref_filters();
+		draw_region_view();
+	}
+})
 $('#max_ref_length_slider').slider({
 	min: 0,
 	max: 1000,
@@ -266,8 +278,8 @@ $('#align_length_slider').slider( {
 
 function max_ref_length_changed() {
 	for (var i in _Whole_refs) {
-			_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
-		}
+		_Refs_show_or_hide[_Whole_refs[i].chrom] = (_Whole_refs[i].size <= _settings.max_ref_length);
+	}
 
 	d3.select("#chrom_highlighted").html("by size");
 	apply_ref_filters();
@@ -424,7 +436,7 @@ function draw_chunk_ref_intervals() {
 	// Zoom into reference intervals where the read maps:
 	_svg2.selectAll("rect.ref_interval").data(_Chunk_ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
-		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
+		.filter(function(d) {return (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval)})
 			.attr("x",function(d) { return _scales.chunk_ref_interval_scale(d.cum_pos); })
 			.attr("y",_positions.chunk.ref_intervals.y)
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
@@ -443,7 +455,7 @@ function draw_chunk_ref_intervals() {
 	// Ref interval mapping back to ref
 	_svg2.selectAll("path.ref_mapping").data(_Chunk_ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
-		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
+		.filter(function(d) {return _Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval})
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined;})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,true)})
 				// .style("stroke-width",2)
@@ -634,8 +646,10 @@ function apply_ref_filters() {
 	var interval_cumulative_position = 0;
 	for (var i in _Chunk_ref_intervals) {
 		if (_Refs_show_or_hide[_Chunk_ref_intervals[i].chrom] == true) {
-			_Chunk_ref_intervals[i].cum_pos = interval_cumulative_position;
-			interval_cumulative_position += _Chunk_ref_intervals[i].size;
+			if (_Chunk_ref_intervals[i].num_alignments >= _settings.min_aligns_for_ref_interval) {
+				_Chunk_ref_intervals[i].cum_pos = interval_cumulative_position;
+				interval_cumulative_position += _Chunk_ref_intervals[i].size;
+			}
 		}
 	}
 	var whole_cumulative_position = 0;
@@ -904,28 +918,29 @@ function calculate_variant_categories() {
 	_scales.variant_color_scale.domain(variant_names).range(colors_for_variants);
 }
 
+function variant_row_click(d) {
+	console.log("row click:", d.name);
+	go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);
+}
+
+function check_bam_done_fetching() {
+	if (_loading_bam_right_now == true) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 function show_variant_table() {
 	d3.select("#variant_table_panel").style("display","block");
-	d3.select("#variant_table").html("");
-
-	var keys = d3.keys(_Variants[0]);
-	var header = ["action"].concat(keys);
-	d3.select("#variant_table").append("tr").selectAll("th").data(header).enter().append("th").html(function(d){return d});
-
-	var rows = d3.select("#variant_table").selectAll("tr.data").data(_Variants).enter().append("tr").attr("class","data")
 	
-	if (_settings.current_input_type == "bam") {
-		// Add click listener to table rows
-		rows.on("click",function(d) {
-			if (!_loading_bam_right_now) {
-				go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1)
-			}
-		});
-		// Show "go to variant" or "..." if already fetching
-		rows.append("td").html("go to variant").attr("class","fetch_table_button");
-	}
-	
-	rows.selectAll("td.data").data(keys).enter().append("td").attr("class","data").html(function(d){return d3.select(this.parentNode).datum()[d]});
+	d3.select("#variant_table_landing").call(
+		d3.superTable()
+			.table_data(_Variants)
+			.num_rows_to_show(15)
+			.click_function(variant_row_click)
+			.check_ready_function(check_bam_done_fetching)
+	);
 }
 
 function bed_input_changed(bed_input) {
@@ -1422,10 +1437,12 @@ function planesweep_consolidate_intervals(starts_and_stops) {
 
 	var intervals = [];
 	var coverage = 0;
+	var alignment_count = 0;
 	var most_recent_start = -1;
 	for (var i = 0; i < starts_and_stops.length; i++) {
 		if (starts_and_stops[i][1]=="s") {
 			coverage++;
+			alignment_count++;
 			if (coverage == 1) { // coverage was 0, now starting new interval
 				most_recent_start = starts_and_stops[i][0];
 			}
@@ -1433,7 +1450,8 @@ function planesweep_consolidate_intervals(starts_and_stops) {
 			coverage--;
 			if (coverage == 0) { // coverage just became 0, ending current interval
 				// Remove margin from the final stop point before recording, avoiding margins on the edges of the intervals
-				intervals.push([most_recent_start,starts_and_stops[i][0]-_static.margin_to_merge_ref_intervals]);
+				intervals.push([most_recent_start, starts_and_stops[i][0]-_static.margin_to_merge_ref_intervals, alignment_count]);
+				alignment_count = 0; // reset
 			}
 		} else {
 			console.log("ERROR: unrecognized code in planesweep_consolidate_intervals must be s or e");
@@ -1718,13 +1736,15 @@ function ref_intervals_from_ref_pieces(ref_pieces) {
 		
 		if (_Ref_sizes_from_header[chrom] != undefined) {
 			var chrom_sum = 0;
+			var chrom_sum_num_alignments = 0;
 			for (var i in ref_intervals_by_chrom[chrom]) {
 				chrom_sum += (ref_intervals_by_chrom[chrom][i][1]-ref_intervals_by_chrom[chrom][i][0]);
+				chrom_sum_num_alignments += ref_intervals_by_chrom[chrom][i][2];
 			}
 			// console.log(chrom_sum*1.0/_Ref_sizes_from_header[chrom]);
 			if (chrom_sum*1.0/_Ref_sizes_from_header[chrom] > _static.fraction_ref_to_show_whole) {
 				// console.log(ref_intervals_by_chrom[chrom]);
-				ref_intervals_by_chrom[chrom] = [[0, _Ref_sizes_from_header[chrom]]];
+				ref_intervals_by_chrom[chrom] = [[0, _Ref_sizes_from_header[chrom], chrom_sum_num_alignments]];
 			}	
 		}
 	}
@@ -1777,7 +1797,7 @@ function organize_references_for_chunk() {
 		var chrom = chromosomes[j];
 		var intervals = ref_intervals_by_chrom[chrom];
 		for (var i in intervals) {
-			_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position});
+			_Chunk_ref_intervals.push({"chrom":chrom,"start":intervals[i][0],"end":intervals[i][1],"size":intervals[i][1]-intervals[i][0],"cum_pos":cumulative_position,"num_alignments":intervals[i][2]});
 			var region_length = intervals[i][1]-intervals[i][0];
 			cumulative_position += region_length;
 			// if (region_length > length_of_longest_region) {
@@ -1790,6 +1810,7 @@ function organize_references_for_chunk() {
 	// if (_focal_region == undefined) {
 	// 	_focal_region = longest_region;	
 	// }
+
 
 	_scales.chunk_ref_interval_scale.domain([0,cumulative_position]);
 
@@ -2412,6 +2433,7 @@ function show_bam_is_ready() {
 }
 
 function go_to_region(chrom,start,end) {
+	_focal_region = {"chrom":chrom,"start":start,"end":end};
 
 	if (_Bam != undefined) {
 		console.log("Fetching bam records at position");
@@ -2493,13 +2515,16 @@ function use_fetched_data(records) {
 	
 	chunk_changed();
 	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
-
 }
 
 
 function region_submitted(event) {
 
 	var chrom = d3.select("#region_chrom").property("value");
+	if (chrom == "") {
+		user_message("Error","No chromosome given");
+		return;
+	}
 	var start = parseInt(d3.select("#region_start").property("value").replace(/,/g,""));
 	var end = start + 1; //parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
 
@@ -2536,7 +2561,6 @@ function region_submitted(event) {
 		// d3.select("#region_end").property("value",end);
 
 		go_to_region(chrom,start,end);
-		_focal_region = {"chrom":chrom,"start":start,"end":end};
 
 	} else {
 		// console.log("Bad");
