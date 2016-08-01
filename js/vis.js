@@ -1112,7 +1112,7 @@ function refresh_ui_elements() {
 	if (_settings.current_input_type == "coords") {
 		$("#min_mq_title").html("Minimum % identity: ");
 		$('#mq_slider').slider("option","step", 0.01);
-		$("#region_min_mq_title").html("Minimum % identity for best alignment: ");
+		$("#region_min_mq_title").html("Minimum % identity of best alignment:");
 		$('#region_mq_slider').slider("option","step", 0.01);
 
 		d3.selectAll(".hide_for_coords").style("color","#dddddd");
@@ -1125,7 +1125,7 @@ function refresh_ui_elements() {
 	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
 		$("#min_mq_title").html("Minimum mapping quality: ");
 		$('#mq_slider').slider("option","step", 1);
-		$("#region_min_mq_title").html("Minimum mapping quality for best alignment: ");
+		$("#region_min_mq_title").html("Minimum mapping quality of best alignment:");
 		$('#region_mq_slider').slider("option","step", 1);
 		
 		d3.selectAll(".hide_for_coords").style("color","black");
@@ -1489,8 +1489,13 @@ function select_read() {
 	user_message("","");
 
 	// Show read info
-	// d3.select("#text_output").html("");
-	d3.select("#text_output").property("value","Read name: " + _Chunk_alignments[_current_read_index].readname);
+	
+
+	d3.select("#text_output").html("Read name: " + _Chunk_alignments[_current_read_index].readname + "<br>Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length);
+	
+
+	// d3.select("#text_output").property("value","Read name: " + _Chunk_alignments[_current_read_index].readname + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length );
+
 	//  + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length
 
 	_settings.min_indel_size = 1000000000; // parse alignments for new read first without indels
@@ -2029,9 +2034,9 @@ function draw_ribbons() {
 
 
 	// Calculate layouts within the svg
-	_positions.read = {"y":_layout.svg_height*0.75, "x":_layout.svg_width*0.10, "width":_layout.svg_width*0.80, "height":_layout.svg_height*0.03};
-	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_layout.svg_width*0.10, "width":_layout.svg_width*0.80, "height":_layout.svg_height*0.03};
-	_positions.ref_intervals = {"y":_layout.svg_height*0.35, "x":_layout.svg_width*0.10, "width":_layout.svg_width*0.80, "height":_layout.svg_height*0.03};
+	_positions.read = {"y":_layout.svg_height*0.75, "x":_layout.svg_width*0.05, "width":_layout.svg_width*0.90, "height":_layout.svg_height*0.03};
+	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
+	_positions.ref_intervals = {"y":_layout.svg_height*0.35, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
 
 	// Draw read
 	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
@@ -2597,7 +2602,7 @@ d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 // d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 if (json_post != "") {
-	d3.select("#igv_stats").html("found something in GET. Check console.");
+	d3.select("#igv_stats").html("found something in POST. Check console.");
 	console.log("json_post:", json_post);
  
  	// Open the "from igv" tab

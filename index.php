@@ -250,23 +250,27 @@
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
 					<table class="settings_table">
+						<col width="45%">
+						<col width="20%">
+						<col width="30%">
+						
 							<tr><th colspan="3">Filter reads</th></tr>
-							<tr><td>Number of alignments</td>
+							<tr><td>Number of alignments:</td>
 								<td> <span id="num_aligns_range_label"></span> </td>
 								<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
 							</tr>
 							<tr>
-								<td>Minimum read length</td>
+								<td>Minimum read length:</td>
 								<!-- <td><span id="min_read_length_input"></span> </td> -->
 								<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
 								<td> <div class="slider" id="min_read_length_slider"></div> </td>
 							</tr>
 							<tr>
-								<td width="45%" id="region_min_mq_title" >Minimum mapping quality for best alignment: </td>
-								<td width="20%"><span id="region_mq_label">0</span></td>
-								<td width="30%"><div class="slider" id="region_mq_slider"></td>
+								<td id="region_min_mq_title" >Minimum mapping quality: </td>
+								<td><span id="region_mq_label">0</span></td>
+								<td><div class="slider" id="region_mq_slider"></td>
 							</tr>
-							<tr><th colspan="3">Filter references</th></tr>
+							<tr><th colspan="3">Filter reference</th></tr>
 							<tr>
 								<td>Zoom to chromosome</td>
 								<td><p id="chrom_highlighted">all</p></td>
@@ -280,19 +284,19 @@
 								</td>
 							</tr>
 							<tr>
-								<td>Minimum number of alignments</td>
+								<td>Minimum number of alignments:</td>
 								<td><p id="min_aligns_for_ref_interval_label">1</p></td>
 								<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
 							</tr>
 							<tr>
-								<td>Maximum length for reference sequences</td>
+								<td>Maximum chromosome length:</td>
 								<td><input class="snug" type="number" id="max_ref_length_input"></td>
 								<!-- <td><span id="max_ref_length_input"></span> </td> -->
 								<td> <div class="slider" id="max_ref_length_slider"></div> </td>
 							</tr>
 							<tr><th colspan="3">Settings</th></tr>
 							<tr>
-								<td>Sort reads vertically</td>
+								<td>Sort reads vertically:</td>
 								<td colspan="2">
 									<select class="form-control" id="read_sorting_dropdown">
 										
@@ -300,7 +304,7 @@
 								</td>
 							</tr>
 							<tr>
-								<td>Color scheme</td>
+								<td>Color scheme:</td>
 								<td colspan="2"> 
 									<select class="form-control" id="color_scheme_dropdown">
 										
@@ -324,19 +328,23 @@
 				<div class="panel-body">
 					<!-- <form> -->
 						<table class="settings_table">
+							<col width="50%">
+							<col width="20%">
+							<col width="30%">
+							
 							<tr>
-								<th>Selected read</th>
+								<th colspan="3">Selected read</th>
 							</tr>
 							<tr>
-								<td colspan="3"><textarea readonly id="text_output"></textarea></td>
+								<td style="width:100%" colspan="3"><div id="text_output"></div></td>
 							</tr>
 							<tr>
-								<th>Settings</th>
+								<th colspan="3">Settings</th>
 							</tr>
+
 							<tr>
 								<td>Search reads:</td>
-								<td></td>
-								<td>
+								<td colspan="2">
 									<div id="readname_livesearch"></div>
 									<!-- <input class="snug"  autocomplete="off" type="text" id="readname_search_input">
 									<ul id="readname_livesearch"></ul> -->
@@ -349,9 +357,9 @@
 							</tr>
 							<tr><th colspan="3">Filter alignments</td></tr>
 							<tr>
-								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
-								<td width="20%"><span id="mq_label">0</span></td>
-								<td width="30%"><div class="slider" id="mq_slider"></td>
+								<td id="min_mq_title">Minimum mapping quality: </td>
+								<td><span id="mq_label">0</span></td>
+								<td><div class="slider" id="mq_slider"></td>
 							</tr>
 							<tr>
 								<td>Minimum alignment length: </td>
@@ -395,14 +403,14 @@
 
 <script>
 	var json_post = undefined;
-	json_post = "<?php 
-		if (isset($_GET['var1'])) {
-			$data=escapeshellcmd($_GET['var1']);
+	json_post = <?php 
+		if (isset($_POST['one_bedpe'])) {
+			$data=$_POST['one_bedpe'];
 		} else {
 			$data="";
 		}
 		echo $data;
-		?>";
+		?>;
 </script>
 
 <!-- Libraries -->

@@ -68,7 +68,7 @@ hr {
 }
 
 #right_panel {
-	font-size: 1vmax;
+	font-size: 1vw;
 	/*padding: 2vmin 2vmin 2vmin 2vmin;*/
 	display: inline-block;
 	visibility: hidden;
@@ -85,7 +85,6 @@ svg {
 
 textarea {
 	padding: 1vmin 1vmin 1vmin 1vmin; 
-	font-size: 1.5vmin; 
 	overflow-y: scroll; 
 	resize: none; 
 	white-space: nowrap; 
@@ -122,7 +121,7 @@ th {
 }
 
 text {
-	font-size: 1vmax;
+	font-size: 1vw;
 	font-family: 'Lato', sans-serif;
 }
 
@@ -138,6 +137,10 @@ text {
 	visibility: hidden;
 }
 
+.settings_table {
+	width: 100%;
+	table-layout: fixed;
+}
 .settings_table table, .settings_table th, .settings_table td {
 	/* top right bottom left */
 	padding: 0.2vmin  0.2vmin 0.2vmin 0.2vmin;
@@ -160,10 +163,16 @@ div.input-group {
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 }
 
-
-#text_output {
+.d3-livesearch-input {
 	width: 100%;
-	white-space: nowrap;
-	overflow-x: auto;
 }
 
+
+#text_output {
+	font-size: 1vw;
+	padding: 1vmin 1vmin 1vmin 1vmin ;
+	white-space: nowrap;
+	overflow-x: scroll;
+	overflow-y: scroll;
+	border: 1px solid #cccccc;
+}
