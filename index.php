@@ -2,10 +2,100 @@
 
 <html>
 
-<?php include "header.html";?>
+<head>
+    <title>Ribbon</title>
+    <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+    
+    <!-- CSS: -->
+	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
+	<!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Special range slider -->
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+
+  <!-- My d3-livesearch plugin -->
+<link href="css/d3-livesearch.css" rel="stylesheet">
+<link href="css/d3-superTable.css" rel="stylesheet">
+
+	<!-- My own styles -->
+	<link href="css/custom.css" rel="stylesheet">
+
+</head>
+
+<!--    NAVIGATION BAR-->
+
+<body role="document">
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href=".">        Ribbon</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav" id="navbar">
+                  <li><a id="click_info_link">Info</a></li>
+                  
+                  <li class="dropdown" id="examples_navbar_item">
+
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu" id="examples_list">
+                    <!-- Examples added here from Ajax call within vis.js -->
+                    </ul>
+                  </li>
+
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+</div>
+
+<!--            End of Navigation Bar                 -->
 
 
 <div id="left_panel">
+	<div id="info_panel">
+		<!-- GITHUB LINK -->
+			<div class="panel panel-default">
+			  <div class="panel-heading"><h3 class="panel-title">Code</h3></div>
+			  <div class="panel-body">
+			      <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+			  </div>
+			</div>
+
+
+			<!-- PAPER LINK -->
+
+			<!-- <div class="panel panel-default">
+			    <div class="panel-heading"><h3 class="panel-title">How to cite SplitThreader</h3></div>
+			    <div class="panel-body">
+			        <p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
+			        Citation information goes here
+			    </div>
+			</div>
+
+			 -->
+			<div class="panel panel-default">
+			    <div class="panel-heading"> <h3 class="panel-title">Contact information</h3></div>
+			    <div class="panel-body">
+			          <!-- <p>Science and web application by <a href="http://marianattestad.com" target="_blank">Maria Nattestad</a></p> -->
+			          <!-- <p>Principal investigator / The Boss: <a href="http://schatzlab.cshl.edu" target="_blank">Mike Schatz</a></p> -->
+			          <!-- <br> -->
+			          <p>For questions contact Maria Nattestad at <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20Ribbon" target="_top">mnattest@cshl.edu</a></p>
+			    </div>
+			</div>		
+	</div>
 	<div id="svg2_panel"></div>
 	<div id="svg1_panel"></div>
 </div>
@@ -166,7 +256,7 @@
 								<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
 							</tr>
 							<tr>
-								<td>Minimum read/query length</td>
+								<td>Minimum read length</td>
 								<!-- <td><span id="min_read_length_input"></span> </td> -->
 								<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
 								<td> <div class="slider" id="min_read_length_slider"></div> </td>
@@ -235,8 +325,18 @@
 					<!-- <form> -->
 						<table class="settings_table">
 							<tr>
-								<td>Read selected</td>
-								<td colspan="2">
+								<th>Selected read</th>
+							</tr>
+							<tr>
+								<td colspan="3"><textarea readonly id="text_output"></textarea></td>
+							</tr>
+							<tr>
+								<th>Settings</th>
+							</tr>
+							<tr>
+								<td>Search reads:</td>
+								<td></td>
+								<td>
 									<div id="readname_livesearch"></div>
 									<!-- <input class="snug"  autocomplete="off" type="text" id="readname_search_input">
 									<ul id="readname_livesearch"></ul> -->
@@ -247,11 +347,11 @@
 								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
 								<td><div class="slider" id="indel_size_slider"></td>
 							</tr>
-							<tr><th colspan="5">Filter alignments</td></tr>
+							<tr><th colspan="3">Filter alignments</td></tr>
 							<tr>
 								<td width="45%" id="min_mq_title">Minimum mapping quality: </td>
-								<td width="15%"><span id="mq_label">0</span></td>
-								<td width="35%"><div class="slider" id="mq_slider"></td>
+								<td width="20%"><span id="mq_label">0</span></td>
+								<td width="30%"><div class="slider" id="mq_slider"></td>
 							</tr>
 							<tr>
 								<td>Minimum alignment length: </td>

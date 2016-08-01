@@ -31,6 +31,8 @@ body {
 	float:left;
 }
 
+
+
 hr {
 	margin: 0.5vmin 0vmin 0.5vmin 0vmin;
 }
@@ -111,6 +113,9 @@ input[type="file"] {
 	border: 1px solid #cccccc;
 }
 
+#svg2_panel .ref_block, #svg2_panel .alignment_groups, #click_info_link {
+	cursor: pointer;
+}
 
 th {
 	font-weight: 900;
@@ -126,7 +131,9 @@ text {
 	font-weight: 900;
 	font-family: 'Lato', sans-serif; 
 }
-
+#info_panel {
+	display: none;
+}
 #settings {
 	visibility: hidden;
 }
@@ -152,3 +159,11 @@ div.input-group {
 	text-align: center;
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 }
+
+
+#text_output {
+	width: 100%;
+	white-space: nowrap;
+	overflow-x: auto;
+}
+
