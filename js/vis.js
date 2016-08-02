@@ -2596,22 +2596,44 @@ function region_submitted(event) {
 	}
 }
 
+
+
 d3.select("#region_go").on("click",region_submitted);
 d3.select("#region_chrom").on("keyup",function(){ if (d3.event.keyCode == 13 && !_loading_bam_right_now) {region_submitted()} });
 d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && !_loading_bam_right_now) {region_submitted()} });
 // d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
-if (json_post != "") {
+
+
+if (splitthreader_data != "") {
+	console.log("Found SplitThreader data");
+	console.log(splitthreader_data);
+
+	console.log("GOOD");
+	_Variants = [];
+	for (var i in splitthreader_data) {
+		_Variants.push({"chrom":splitthreader_data[i].chrom1, "start":splitthreader_data[i].start1, "end":splitthreader_data[i].stop1, "name": splitthreader_data[i].variant_name + ".1", "score": splitthreader_data[i].score, "strand": splitthreader_data[i].strand1,"type":splitthreader_data[i].variant_type});
+		_Variants.push({"chrom":splitthreader_data[i].chrom2, "start":splitthreader_data[i].start2, "end":splitthreader_data[i].stop2, "name": splitthreader_data[i].variant_name + ".2", "score": splitthreader_data[i].score, "strand": splitthreader_data[i].strand2,"type":splitthreader_data[i].variant_type});
+	}
+	// _Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
+
+	update_variants();
+	
+}
+
+
+
+if (igv_data != "") {
 	d3.select("#igv_stats").html("found something in POST. Check console.");
-	console.log("json_post:", json_post);
+	console.log("igv_data:", igv_data);
  
  	// Open the "from igv" tab
  	$('.nav-tabs a[href="#igv"]').tab('show');
 
 	// if input is text of sam file send to sam_input_changed(sam_text)
 	// otherwise make new parser on the fields, similar to what we did for the bam records, and need to treat the header separately too
-
 }
+
 
 // ===========================================================================
 // == Responsiveness

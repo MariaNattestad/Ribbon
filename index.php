@@ -146,6 +146,9 @@
 							Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
 							<h4>Data from IGV:</h4>
 							<pre readonly id="igv_stats">(empty)</pre>
+							<!-- <p> -->
+							<!-- To send POST data to Ribbon from any application, send with names "sam", "bedpe", "bed", etc.  -->
+							<!-- </p> -->
 						</div>
 					</div>
 				</div>
@@ -402,15 +405,24 @@
 </div>
 
 <script>
-	var json_post = undefined;
-	json_post = <?php 
-		if (isset($_POST['one_bedpe'])) {
-			$data=$_POST['one_bedpe'];
+	var splitthreader_data = undefined;
+	splitthreader_data = <?php 
+		if (isset($_POST['splitthreader'])) {
+			echo $_POST['splitthreader'];
 		} else {
-			$data="";
+			echo "''";
 		}
-		echo $data;
 		?>;
+
+	var igv_data = undefined;
+	igv_data = <?php 
+		if (isset($_POST['igv'])) {
+			echo $_POST['igv'];
+		} else {
+			echo "''";
+		}
+		?>;
+
 </script>
 
 <!-- Libraries -->
