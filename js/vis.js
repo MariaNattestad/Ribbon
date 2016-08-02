@@ -677,6 +677,7 @@ function apply_ref_filters() {
 }
 
 function chunk_changed() {
+
 	// Show results only if there is anything to show
 	if (_Chunk_alignments.length > 0) {
 
@@ -698,6 +699,9 @@ function chunk_changed() {
 		d3.select("#readname_livesearch").call(readname_livesearch); 
 
 	} else {
+		_Alignments = [];
+		_Chunk_ref_intervals = [];
+		draw_region_view();
 		user_message("","");
 	}
 	
@@ -2519,8 +2523,6 @@ function parse_bam_record(record) {
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
 	show_bam_is_ready();
-	// console.log(records);
-
 	var consolidated_records = [];
 	if (_settings.keep_duplicate_reads == false) {
 		var used_readnames = {};
@@ -2533,14 +2535,12 @@ function use_fetched_data(records) {
 	} else {
 		consolidated_records = records;
 	}
-	
 
 	_settings.min_indel_size = 100000000000; 
 	_Chunk_alignments = [];
 	for (var i in consolidated_records) {
 		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
 	}
-	
 	chunk_changed();
 	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
 }
