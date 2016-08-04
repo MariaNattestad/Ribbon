@@ -211,7 +211,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
 				<div class="panel-body">
 					<div id="variant_table_box">
-						<p> For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="variant_table_landing">
 						<!-- superTable creates a table here out of _Variants -->
 						</div>

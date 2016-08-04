@@ -500,8 +500,6 @@ function draw_chunk_alignments() {
 	}
 
 
-
-
 	if (_settings.feature_to_sort_reads == "num_alignments") {
 		// sorting by alignment_length
 		chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
@@ -948,10 +946,17 @@ function show_variant_table() {
 		d3.superTable()
 			.table_data(_Variants)
 			.num_rows_to_show(15)
+			.show_advanced_filters(true)
 			.click_function(variant_row_click)
 			.check_ready_function(check_bam_done_fetching)
 	);
+	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
+		console.log("hello");
+		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. Separate multiple filters in the same column with spaces.");
+	});
+
 }
+
 
 function bed_input_changed(bed_input) {
 	var input_text = bed_input.split("\n");
