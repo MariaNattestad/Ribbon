@@ -70,7 +70,19 @@
 			<div class="panel panel-default">
 			  <div class="panel-heading"><h3 class="panel-title">Code</h3></div>
 			  <div class="panel-body">
+			  	  <p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
 			      <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+			      <p>Ribbon stands on the shoulders of giants:</p>
+			      <ul>
+			      	<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
+			      	<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
+			      	<li>Bam files read using code from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab, including code originally from Thomas Down's Dalliance Genome Explorer </li>
+			      </ul>
+			      <p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
+			      <ul>
+			      	<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
+			      	<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
+			      </ul>
 			  </div>
 			</div>
 

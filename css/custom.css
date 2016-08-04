@@ -132,6 +132,7 @@ text {
 }
 #info_panel {
 	display: none;
+	margin: 3vmin;
 }
 #settings {
 	visibility: hidden;
