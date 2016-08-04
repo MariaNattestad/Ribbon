@@ -114,7 +114,7 @@
 						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
 						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
 						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
-						<li><a data-toggle="tab" href="#igv">from igv</a></li>
+						<!-- <li><a data-toggle="tab" href="#igv">from igv</a></li> -->
 					</ul>
 					
 					<div class="tab-content">
@@ -139,17 +139,14 @@
 							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
 						</div>
 					<!-- IGV input -->
-						<div id="igv" class="tab-pane fade">
+						<!-- <div id="igv" class="tab-pane fade">
 							<p> This feature is still being implemented and tested. When the link from IGV works, the instructions here will be as follows:
 							</p>
 							<p>
 							Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
 							<h4>Data from IGV:</h4>
 							<pre readonly id="igv_stats">(empty)</pre>
-							<!-- <p> -->
-							<!-- To send POST data to Ribbon from any application, send with names "sam", "bedpe", "bed", etc.  -->
-							<!-- </p> -->
-						</div>
+						</div> -->
 					</div>
 				</div>
 			</div>
