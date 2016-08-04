@@ -176,7 +176,3 @@ div.input-group {
 	overflow-y: scroll;
 	border: 1px solid #cccccc;
 }
-
-.d3-superTable-table input {
-	width: 100%;
-}

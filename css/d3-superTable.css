@@ -1,6 +1,23 @@
-.selected {
+.d3-superTable-table {
+	border-spacing: 0px;
+}
+
+.d3-superTable-table th, .d3-superTable-table td {
+	text-align: center;
+	padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+	border: 0.1px solid #cccccc;
+}
+
+.d3-superTable-table input {
+	width: 100%;
+}
+
+.d3-superTable-table .selected {
 	background-color: #dddddd;
 }
-.unselected {
+.d3-superTable-table .unselected {
 	background-color: white;
+}
+.d3-superTable-table .d3-superTable-header-row {
+	cursor: pointer;
 }
