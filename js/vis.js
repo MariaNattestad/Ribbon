@@ -159,7 +159,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height+2), "height":_layout.svg2_height*0.07};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "height":_layout.svg2_height*0.07};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -535,7 +535,10 @@ function draw_chunk_variants() {
 					y_top = _positions.chunk.ref_intervals.y,
 
 					x2 = d.cum_pos2,
-					y_bottom = _positions.chunk.variants.y;
+					y_foot = _positions.chunk.variants.y,
+					y_ankle = _positions.chunk.variants.y + _positions.chunk.variants.height/2;
+
+				var arrow = -1*_positions.chunk.variants.height/7;
 
 				var xmid = (x1+x2)/2;
 				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.height*2; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
@@ -543,19 +546,27 @@ function draw_chunk_variants() {
 				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
 					direction2 = Number(d.strand2=="-")*2-1;
 
-				console.log('drawing loop');
 				return (
-					 "M " + (x1+foot_length*direction1) + "," + y_bottom // end of foot
-				 + ", L " + x1                          + "," + y_bottom // breakpoint
-				 + ", L " + x1                          + "," + y_top // up
-				 + ", L " + x1                          + "," + y_bottom // breakpoint
-				 + ", S " + xmid                        + "," + ymid + "," + x2                          + "," + y_bottom // curve to breakpoint
-				 + ", L " + x2                          + "," + y_top // up
-				 + ", L " + x2                          + "," + y_bottom // breakpoint
-				 + ", L " + (x2+foot_length*direction2) + "," + y_bottom) // end of foot
+					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
+				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
+				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
+				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+
+				 + ", L " + x1                          + "," + y_foot // breakpoint
+				 // + ", L " + x1                          + "," + y_top // up
+				 + ", L " + x1                          + "," + y_ankle // ankle
+				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
+				 // + ", L " + x2                          + "," + y_top // up
+				 + ", L " + x2                          + "," + y_foot // breakpoint
+
+				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
+				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
+				 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
 			}
 
-			console.log(variants_in_view);
 			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
 				.append("path").attr("class","bedpe_variants")
 					.attr("d",loop_path_generator)
@@ -580,17 +591,17 @@ function draw_chunk_alignments() {
 		return;
 	}
 	
-	// Focal region
-	if (_focal_region != undefined) {
-		_svg2.append("rect").attr("class","focal_region")
-		.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-		.attr("y",_positions.chunk.ref_intervals.y)
-		.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-		.attr("height", _positions.chunk.ref_intervals.height )
-		.attr("fill","none")
-		.style("stroke-width",5)
-		.style("stroke", "black");	
-	}
+	// // Focal region
+	// if (_focal_region != undefined) {
+	// 	_svg2.append("rect").attr("class","focal_region")
+	// 	.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
+	// 	.attr("y",_positions.chunk.ref_intervals.y)
+	// 	.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
+	// 	.attr("height", _positions.chunk.ref_intervals.height )
+	// 	.attr("fill","none")
+	// 	.style("stroke-width",5)
+	// 	.style("stroke", "black");	
+	// }
 
 	var chunks = [];
 	var counter = 0;
@@ -2341,25 +2352,17 @@ function draw_ribbons() {
 		.call(read_axis);
 
 
-
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	console.log("_Variants");
-	console.log(_Variants);
-	console.log("_Bedpe");
-	console.log(_Bedpe);
-
 
 	if (_Variants.length > 0) {
 		var variants_in_view = [];
 		for (var i in _Variants) {
-			if (closest_map_ref_interval(_Variants[i].chrom,_Variants[i].start) != false || closest_map_ref_interval(_Variants[i].chrom,_Variants[i].end) != false) {
-				var variant = _Variants[i];
-				var start_results = closest_map_ref_interval(variant.chrom,variant.start);
+			var variant = _Variants[i];
+			var start_results = closest_map_ref_interval(variant.chrom,variant.start);
+			var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
+			if (start_results.precision == "exact" && end_results.precision == "exact") {
 				variant.start_cum_pos = _scales.ref_interval_scale(start_results.pos);
 				variant.start_precision = start_results.precision;
-				var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
 				variant.end_cum_pos = _scales.ref_interval_scale(end_results.pos);
 				if (variant.end_cum_pos < variant.start_cum_pos + 4) {
 					variant.start_cum_pos = variant.start_cum_pos -2;
@@ -2396,66 +2399,76 @@ function draw_ribbons() {
 
 	}
 
-	// if (_Bedpe.length > 0) {
+	if (_Bedpe.length > 0) {
 
-	// 		var variants_in_view = []
-	// 		for (var i in _Bedpe) {
-	// 			if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != false && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != false) {
-	// 				var variant = _Bedpe[i];
-	// 				var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
-	// 				variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
+			var variants_in_view = []
+			for (var i in _Bedpe) {
+				var variant = _Bedpe[i];
+				var results1 = closest_map_ref_interval(variant.chrom1,variant.pos1);
+				var results2 = closest_map_ref_interval(variant.chrom2,variant.pos2); 
 
-	// 				var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
-	// 				variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
-	// 				variants_in_view.push(variant);
-	// 			}
-	// 		}
+				if (results1.precision == "exact" && results1.precision == "exact") {
+					variant.cum_pos1 = _scales.ref_interval_scale(results1.pos);
+					variant.cum_pos2 = _scales.ref_interval_scale(results2.pos);
+					variants_in_view.push(variant);
+				}
+			}
 
-	// 		var loop_path_generator = function(d) {
-	// 			var foot_length = _positions.chunk.variants.height;
 
-	// 			var x1 = d.cum_pos1,
-	// 				y_top = _positions.chunk.ref_intervals.y,
+			var loop_path_generator = function(d) {
+				var foot_length = _positions.chunk.variants.height;
 
-	// 				x2 = d.cum_pos2,
-	// 				y_bottom = _positions.chunk.variants.y;
+				var x1 = d.cum_pos1,
+					y_ankle = _positions.ref_intervals.y - _positions.chunk.variants.height/2,
 
-	// 			var xmid = (x1+x2)/2;
-	// 			var ymid = _positions.chunk.variants.y + _positions.chunk.variants.height*2; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+					x2 = d.cum_pos2,
+					y_foot = _positions.ref_intervals.y;
+
+				var arrow = -1*_positions.chunk.variants.height/7;
+
+				var xmid = (x1+x2)/2;
+				var ymid = _positions.ref_intervals.y - 2*_positions.chunk.variants.height;
 				
-	// 			var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
-	// 				direction2 = Number(d.strand2=="-")*2-1;
-
-	// 			console.log('drawing loop');
-	// 			return (
-	// 				 "M " + (x1+foot_length*direction1) + "," + y_bottom // end of foot
-	// 			 + ", L " + x1                          + "," + y_bottom // breakpoint
-	// 			 + ", L " + x1                          + "," + y_top // up
-	// 			 + ", L " + x1                          + "," + y_bottom // breakpoint
-	// 			 + ", S " + xmid                        + "," + ymid + "," + x2                          + "," + y_bottom // curve to breakpoint
-	// 			 + ", L " + x2                          + "," + y_top // up
-	// 			 + ", L " + x2                          + "," + y_bottom // breakpoint
-	// 			 + ", L " + (x2+foot_length*direction2) + "," + y_bottom) // end of foot
-	// 		}
-
-	// 		console.log(variants_in_view);
-	// 		_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
-	// 			.append("path").attr("class","bedpe_variants")
-	// 				.attr("d",loop_path_generator)
-	// 				.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
-	// 				.on('mouseover', function(d) {
-	// 					var text = d.name;
-	// 					if (d.type != undefined) {
-	// 						text = d.name + " (" + d.type + ")";
-	// 					}
-	// 					var x = (d.cum_pos1 + d.cum_pos2)/2;
-	// 					var y =  _positions.chunk.variants.y - _padding.text;
-	// 					show_tooltip(text,x,y,_svg2);
-	// 				})
-	// 				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
-	// 	}
+				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
+					direction2 = Number(d.strand2=="-")*2-1;
 
 
+				return (
+					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
+				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
+				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
+				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+
+				 + ", L " + x1                          + "," + y_foot // breakpoint
+				 // + ", L " + x1                          + "," + y_top // up
+				 + ", L " + x1                          + "," + y_ankle // ankle
+				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
+				 // + ", L " + x2                          + "," + y_top // up
+				 + ", L " + x2                          + "," + y_foot // breakpoint
+
+				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
+				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
+				 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+			}
+
+			_svg.selectAll("path.bedpe_variants").data(variants_in_view).enter()
+				.append("path").attr("class","bedpe_variants")
+					.attr("d",loop_path_generator)
+					.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
+					.on('mouseover', function(d) {
+						var text = d.name;
+						if (d.type != undefined) {
+							text = d.name + " (" + d.type + ")";
+						}
+						var x = (d.cum_pos1 + d.cum_pos2)/2;
+						var y =  _positions.ref_intervals.y - _padding.text;
+						show_tooltip(text,x,y,_svg);
+					})
+					.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+		}
 
 }
 
