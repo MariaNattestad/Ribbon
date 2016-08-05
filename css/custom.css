@@ -97,7 +97,7 @@ input[type="file"] {
 	padding: 0vmin 1vmin 1vmin 1vmin;
 }
 
-#region_selector_panel, #variant_input_panel, #variant_table_panel {
+#region_selector_panel, #variant_input_panel, #variant_table_panel, #bedpe_table_panel {
 	display: none;
 }
 
@@ -135,7 +135,7 @@ text {
 	margin: 3vmin;
 }
 #settings {
-	visibility: hidden;
+	display: none;
 }
 
 .settings_table {
@@ -176,4 +176,9 @@ div.input-group {
 	overflow-x: scroll;
 	overflow-y: scroll;
 	border: 1px solid #cccccc;
+}
+
+path.bedpe_variants {
+	fill: none;
+	stroke-width: 2.5;
 }

@@ -21,6 +21,8 @@ var _Chunk_ref_intervals = [];
 var _Whole_refs = [];
 var _Refs_show_or_hide = {};
 var _Variants = [];
+var _Bedpe = [];
+var _Additional_ref_intervals = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
@@ -157,7 +159,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":_layout.svg2_height*0.90, "height":_layout.svg2_height*0.03};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height+2), "height":_layout.svg2_height*0.07};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -462,6 +464,116 @@ function draw_chunk_ref_intervals() {
 
 }
 
+function draw_chunk_variants() {
+	// Show bed file contents:
+
+	if (_Chunk_alignments.length > 0) {
+		if (_Variants.length > 0) {
+
+			var variants_in_view = []
+			for (var i in _Variants) {
+				if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != false || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != false) {
+					var variant = _Variants[i];
+					var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
+					variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
+					variant.start_precision = start_results.precision;
+					var end_results = closest_map_chunk_ref_interval(variant.chrom,variant.end); 
+					variant.end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
+					if (variant.end_cum_pos < variant.start_cum_pos + 4) {
+						variant.start_cum_pos = variant.start_cum_pos -2;
+						variant.end_cum_pos = variant.start_cum_pos + 4;
+					} else if (variant.end_cum_pos < variant.start_cum_pos) {
+						var tmp = variant.start_cum_pos;
+						variant.start_cum_pos = variant.end_cum_pos;
+						variant.end_cum_pos  = tmp;
+					}
+					variant.end_precision = end_results.precision;
+					variants_in_view.push(variant);
+				}
+			}
+
+			_svg2.selectAll("rect.variants").data(variants_in_view).enter()
+				.append("rect").attr("class","variants")
+					.attr("x",function(d) { return d.start_cum_pos })
+					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+					.attr("y", _positions.chunk.variants.y)
+					.attr("height", _positions.chunk.variants.height)
+					.style("stroke","none")
+					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+					.on('mouseover', function(d) {
+						var text = d.name;
+						if (d.type != undefined) {
+							text = d.name + " (" + d.type + ")";
+						}
+						var x = (d.start_cum_pos + d.end_cum_pos)/2;
+						var y =  _positions.chunk.variants.y +  _positions.chunk.variants.height + _padding.text;
+						show_tooltip(text,x,y,_svg2);
+					})
+					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+		}
+
+
+		if (_Bedpe.length > 0) {
+
+			var variants_in_view = []
+			for (var i in _Bedpe) {
+				if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != false && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != false) {
+					var variant = _Bedpe[i];
+					var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
+					variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
+
+					var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
+					variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
+					variants_in_view.push(variant);
+				}
+			}
+
+			var loop_path_generator = function(d) {
+				var foot_length = _positions.chunk.variants.height;
+
+				var x1 = d.cum_pos1,
+					y_top = _positions.chunk.ref_intervals.y,
+
+					x2 = d.cum_pos2,
+					y_bottom = _positions.chunk.variants.y;
+
+				var xmid = (x1+x2)/2;
+				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.height*2; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+				
+				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
+					direction2 = Number(d.strand2=="-")*2-1;
+
+				console.log('drawing loop');
+				return (
+					 "M " + (x1+foot_length*direction1) + "," + y_bottom // end of foot
+				 + ", L " + x1                          + "," + y_bottom // breakpoint
+				 + ", L " + x1                          + "," + y_top // up
+				 + ", L " + x1                          + "," + y_bottom // breakpoint
+				 + ", S " + xmid                        + "," + ymid + "," + x2                          + "," + y_bottom // curve to breakpoint
+				 + ", L " + x2                          + "," + y_top // up
+				 + ", L " + x2                          + "," + y_bottom // breakpoint
+				 + ", L " + (x2+foot_length*direction2) + "," + y_bottom) // end of foot
+			}
+
+			console.log(variants_in_view);
+			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
+				.append("path").attr("class","bedpe_variants")
+					.attr("d",loop_path_generator)
+					.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
+					.on('mouseover', function(d) {
+						var text = d.name;
+						if (d.type != undefined) {
+							text = d.name + " (" + d.type + ")";
+						}
+						var x = (d.cum_pos1 + d.cum_pos2)/2;
+						var y =  _positions.chunk.variants.y - _padding.text;
+						show_tooltip(text,x,y,_svg2);
+					})
+					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+		}
+	}
+}
+
 function draw_chunk_alignments() {
 
 	if (_Chunk_alignments.length == 0) {
@@ -554,49 +666,6 @@ function draw_chunk_alignments() {
 					show_tooltip(text,x,y,_svg2);
 				})
 				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
-
-	// Show bed file contents:
-
-	var variants_in_view = []
-	for (var i in _Variants) {
-		if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != false || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != false) {
-			var variant = _Variants[i];
-			var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
-			variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
-			variant.start_precision = start_results.precision;
-			var end_results = closest_map_chunk_ref_interval(variant.chrom,variant.end); 
-			variant.end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
-			if (variant.end_cum_pos < variant.start_cum_pos + 4) {
-				variant.start_cum_pos = variant.start_cum_pos -2;
-				variant.end_cum_pos = variant.start_cum_pos + 4;
-			} else if (variant.end_cum_pos < variant.start_cum_pos) {
-				var tmp = variant.start_cum_pos;
-				variant.start_cum_pos = variant.end_cum_pos;
-				variant.end_cum_pos  = tmp;
-			}
-			variant.end_precision = end_results.precision;
-			variants_in_view.push(variant);
-		}
-	}
-
-	_svg2.selectAll("rect.variants").data(variants_in_view).enter()
-		.append("rect").attr("class","variants")
-			.attr("x",function(d) { return d.start_cum_pos })
-			.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-			.attr("y", _positions.chunk.variants.y)
-			.attr("height", _positions.chunk.variants.height)
-			.style("stroke","none")
-			.style("fill",function(d){return _scales.variant_color_scale(d.type)})
-			.on('mouseover', function(d) {
-				var text = d.name;
-				if (d.type != undefined) {
-					text = d.name + " (" + d.type + ")";
-				}
-				var x = (d.start_cum_pos + d.end_cum_pos)/2;
-				var y =  _positions.chunk.variants.y +  _positions.chunk.variants.height + _padding.text;
-				show_tooltip(text,x,y,_svg2);
-			})
-			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 }
 
 
@@ -605,6 +674,7 @@ function draw_region_view() {
 	draw_chunk_ref();
 	draw_chunk_ref_intervals();
 	draw_chunk_alignments();
+	draw_chunk_variants();
 }
 
 
@@ -890,13 +960,13 @@ d3.select("select#color_scheme_dropdown").on("change",function(d) {
 	draw();
 });
 
-function calculate_variant_categories() {
+function calculate_type_colors(variant_list) {
 	var variant_types = {};
-	for (var i in _Variants) {
-		if (variant_types[_Variants[i].type] == undefined) {
-			variant_types[_Variants[i].type] = 1;
+	for (var i in variant_list) {
+		if (variant_types[variant_list[i].type] == undefined) {
+			variant_types[variant_list[i].type] = 1;
 		} else {
-			variant_types[_Variants[i].type]++;
+			variant_types[variant_list[i].type]++;
 		}
 	}
 	var other_colors_index = 0;
@@ -923,11 +993,11 @@ function calculate_variant_categories() {
 			colors_for_variants.push("#eeeeee");
 		}
 	}
-
-	_scales.variant_color_scale.domain(variant_names).range(colors_for_variants);
+	return {"names":variant_names, "colors":colors_for_variants};
 }
 
 function variant_row_click(d) {
+	_Additional_ref_intervals = [{"chrom":d.chrom,"start":d.start,"end":d.end}];
 	go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);
 }
 
@@ -952,11 +1022,37 @@ function show_variant_table() {
 	);
 	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
 		console.log("hello");
-		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. Separate multiple filters in the same column with spaces.");
+		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. You can also apply multiple filters in the same column, just separate them with spaces.");
 	});
 
 }
+function bedpe_row_click(d) {
+	console.log("go to regions:", d.chrom1 , ":",  d.pos1, " and ",  d.chrom2, ":", d.pos2);
+	var regions = [];
+	regions.push({"chrom":d.chrom1,"pos":d.pos1});
+	regions.push({"chrom":d.chrom2,"pos":d.pos2});
+	fetch_regions(regions);
+	_Additional_ref_intervals = [
+		{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1},
+		{"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1}
+	];
+}
 
+function show_bedpe_table() {
+	d3.select("#bedpe_table_panel").style("display","block");
+	
+	d3.select("#bedpe_table_landing").call(
+		d3.superTable()
+			.table_data(_Bedpe)
+			.num_rows_to_show(15)
+			.show_advanced_filters(true)
+			.click_function(bedpe_row_click)
+			.check_ready_function(check_bam_done_fetching)
+	);
+	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
+		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. Separate multiple filters in the same column with spaces.");
+	});
+}
 
 function bed_input_changed(bed_input) {
 	var input_text = bed_input.split("\n");
@@ -983,11 +1079,54 @@ function bed_input_changed(bed_input) {
 	
 	clear_vcf_input();
 	update_variants();
-	
 }
+
+function bedpe_input_changed(bedpe_input) {
+	var input_text = bedpe_input.split("\n");
+	// chrom1, start1, stop1, chrom2, start2, stop2, name, score, strand1, strand2, type
+	
+	_Bedpe = [];
+	for (var i in input_text) {
+		var columns = input_text[i].split(/\s+/);
+		if (columns.length>2) {
+			var chrom1 = columns[0];
+			var start1 = parseInt(columns[1]);
+			var end1 = parseInt(columns[2]);
+			var chrom2 = columns[3];
+			var start2 = parseInt(columns[4]);
+			var end2 = parseInt(columns[5]);
+			var name = columns[6];
+			var score = parseFloat(columns[7]);
+			var strand1 = columns[8];
+			var strand2 = columns[9];
+			var type = columns[10];
+			// if (isNaN(score)) {
+			// 	score = 0;
+			// }
+			if (isNaN(start1) || isNaN(end1)) {
+				user_message("Error","Bedpe file must contain numbers in columns 2,3,5, and 6. Found: <pre>" + columns[1] + ", " + columns[2] + ", " +  columns[4] + ", and " + columns[5] + "</pre>.");
+				return;
+			}
+			_Bedpe.push({"chrom1": chrom1, "pos1":parseInt((start1+end1)/2),"strand1": strand1,"chrom2": chrom2, "pos2":parseInt((start2+end2)/2), "strand2": strand2,"name": name, "score": score, "type": type});
+		}
+	}
+
+	user_message("Info","Loaded " + _Bedpe.length + " bedpe entries");
+	
+	update_bedpe();
+}
+
 function update_variants() {
-	calculate_variant_categories()
+	var color_calculations = calculate_type_colors(_Variants);
+	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
 	show_variant_table();
+	draw_region_view();
+}
+
+function update_bedpe() {
+	var color_calculations = calculate_type_colors(_Bedpe);
+	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
+	show_bedpe_table();
 	draw_region_view();
 }
 
@@ -1650,6 +1789,8 @@ function map_chunk_whole_ref(chrom,position) {
 }
 
 
+
+
 function map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Ref_intervals.length; i++) {
@@ -1662,8 +1803,30 @@ function map_ref_interval(chrom,position) {
 	console.log("ERROR: no chrom,pos match found in map_ref_interval()");
 	console.log(chrom,position);
 	console.log(_Ref_intervals);
-
+	return undefined;
 }
+function closest_map_ref_interval(chrom,position) {
+	// _Ref_intervals has chrom, start, end, size, cum_pos
+	var closest = 0;
+	var best_distance = -1;
+	for (var i = 0; i < _Ref_intervals.length; i++) {
+		if (_Ref_intervals[i].chrom == chrom) {
+			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+				return {"precision":"exact","pos": _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start)};
+			}
+			if (Math.abs(position - _Ref_intervals[i].start) < best_distance || best_distance == -1) {
+				closest = _Ref_intervals[i].cum_pos;
+				best_distance = Math.abs(position - _Ref_intervals[i].start);
+			}
+			if (Math.abs(position - _Ref_intervals[i].end) < best_distance) {
+				closest = _Ref_intervals[i].cum_pos + _Ref_intervals[i].end - _Ref_intervals[i].start;
+				best_distance = Math.abs(position - _Ref_intervals[i].end);
+			}
+		}
+	}
+	return false;
+}
+
 
 
 function closest_map_chunk_ref_interval(chrom,position) {
@@ -1803,6 +1966,17 @@ function organize_references_for_chunk() {
 		ref_pieces[_focal_region.chrom].push([_focal_region.end,"e"]);
 	}
 
+	if (_Additional_ref_intervals != undefined) {
+		for (var i in _Additional_ref_intervals) {
+			var region = _Additional_ref_intervals[i]
+			if (ref_pieces[region.chrom] == undefined) {
+				ref_pieces[region.chrom] = [];
+			}
+			ref_pieces[region.chrom].push([region.start,"s"]);
+			ref_pieces[region.chrom].push([region.end,"e"]);
+		}
+	}
+
 	var ref_intervals_by_chrom = ref_intervals_from_ref_pieces(ref_pieces);
 
 	//////////////////////////////////////////////////////////
@@ -1859,6 +2033,26 @@ function organize_references_for_read() {
 		ref_pieces[_Alignments[i].r].push([Math.max.apply(null,interval),"e"]);
 	}
 
+	if (_focal_region != undefined) {
+		if (ref_pieces[_focal_region.chrom] == undefined) {
+			ref_pieces[_focal_region.chrom] = [];
+		}
+		ref_pieces[_focal_region.chrom].push([_focal_region.start,"s"]);
+		ref_pieces[_focal_region.chrom].push([_focal_region.end,"e"]);
+	}
+
+	if (_Additional_ref_intervals != undefined) {
+		for (var i in _Additional_ref_intervals) {
+			var region = _Additional_ref_intervals[i]
+			if (ref_pieces[region.chrom] == undefined) {
+				ref_pieces[region.chrom] = [];
+			}
+			ref_pieces[region.chrom].push([region.start,"s"]);
+			ref_pieces[region.chrom].push([region.end,"e"]);
+		}
+	}
+
+
 	// For each chromosome, consolidate intervals
 	var ref_intervals_by_chrom = ref_intervals_from_ref_pieces(ref_pieces);
 
@@ -1901,10 +2095,10 @@ function refresh_visibility() {
 	}
 
 	if (_Alignments.length > 0) {
-		d3.select("#settings").style('visibility','visible');
+		d3.select("#settings").style('display','block');
 		d3.select("#svg1_panel").style('visibility','visible');
 	} else {
-		d3.select("#settings").style('visibility','hidden');
+		d3.select("#settings").style('display','none');
 		d3.select("#svg1_panel").style('visibility','hidden');
 	}
 }
@@ -2144,7 +2338,124 @@ function draw_ribbons() {
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
-		.call(read_axis)
+		.call(read_axis);
+
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	console.log("_Variants");
+	console.log(_Variants);
+	console.log("_Bedpe");
+	console.log(_Bedpe);
+
+
+	if (_Variants.length > 0) {
+		var variants_in_view = [];
+		for (var i in _Variants) {
+			if (closest_map_ref_interval(_Variants[i].chrom,_Variants[i].start) != false || closest_map_ref_interval(_Variants[i].chrom,_Variants[i].end) != false) {
+				var variant = _Variants[i];
+				var start_results = closest_map_ref_interval(variant.chrom,variant.start);
+				variant.start_cum_pos = _scales.ref_interval_scale(start_results.pos);
+				variant.start_precision = start_results.precision;
+				var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
+				variant.end_cum_pos = _scales.ref_interval_scale(end_results.pos);
+				if (variant.end_cum_pos < variant.start_cum_pos + 4) {
+					variant.start_cum_pos = variant.start_cum_pos -2;
+					variant.end_cum_pos = variant.start_cum_pos + 4;
+				} else if (variant.end_cum_pos < variant.start_cum_pos) {
+					var tmp = variant.start_cum_pos;
+					variant.start_cum_pos = variant.end_cum_pos;
+					variant.end_cum_pos  = tmp;
+				}
+				variant.end_precision = end_results.precision;
+				variants_in_view.push(variant);
+			}
+		}
+
+		console.log(variants_in_view);
+		_svg.selectAll("rect.variants").data(variants_in_view).enter()
+			.append("rect").attr("class","variants")
+				.attr("x",function(d) { return d.start_cum_pos })
+				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+				.attr("y", _positions.ref_intervals.y + _positions.ref_intervals.height/3)
+				.attr("height", _positions.ref_intervals.height/3)
+				.style("stroke","none")
+				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+	}
+
+	// if (_Bedpe.length > 0) {
+
+	// 		var variants_in_view = []
+	// 		for (var i in _Bedpe) {
+	// 			if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != false && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != false) {
+	// 				var variant = _Bedpe[i];
+	// 				var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
+	// 				variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
+
+	// 				var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
+	// 				variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
+	// 				variants_in_view.push(variant);
+	// 			}
+	// 		}
+
+	// 		var loop_path_generator = function(d) {
+	// 			var foot_length = _positions.chunk.variants.height;
+
+	// 			var x1 = d.cum_pos1,
+	// 				y_top = _positions.chunk.ref_intervals.y,
+
+	// 				x2 = d.cum_pos2,
+	// 				y_bottom = _positions.chunk.variants.y;
+
+	// 			var xmid = (x1+x2)/2;
+	// 			var ymid = _positions.chunk.variants.y + _positions.chunk.variants.height*2; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+				
+	// 			var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
+	// 				direction2 = Number(d.strand2=="-")*2-1;
+
+	// 			console.log('drawing loop');
+	// 			return (
+	// 				 "M " + (x1+foot_length*direction1) + "," + y_bottom // end of foot
+	// 			 + ", L " + x1                          + "," + y_bottom // breakpoint
+	// 			 + ", L " + x1                          + "," + y_top // up
+	// 			 + ", L " + x1                          + "," + y_bottom // breakpoint
+	// 			 + ", S " + xmid                        + "," + ymid + "," + x2                          + "," + y_bottom // curve to breakpoint
+	// 			 + ", L " + x2                          + "," + y_top // up
+	// 			 + ", L " + x2                          + "," + y_bottom // breakpoint
+	// 			 + ", L " + (x2+foot_length*direction2) + "," + y_bottom) // end of foot
+	// 		}
+
+	// 		console.log(variants_in_view);
+	// 		_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
+	// 			.append("path").attr("class","bedpe_variants")
+	// 				.attr("d",loop_path_generator)
+	// 				.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
+	// 				.on('mouseover', function(d) {
+	// 					var text = d.name;
+	// 					if (d.type != undefined) {
+	// 						text = d.name + " (" + d.type + ")";
+	// 					}
+	// 					var x = (d.cum_pos1 + d.cum_pos2)/2;
+	// 					var y =  _positions.chunk.variants.y - _padding.text;
+	// 					show_tooltip(text,x,y,_svg2);
+	// 				})
+	// 				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+	// 	}
+
+
 
 }
 
@@ -2226,6 +2537,23 @@ add_examples_to_navbar();
 // == Load bed file
 // ===========================================================================
 
+function open_bedpe_file(event) {
+	if (this.files[0].size > 1000000) {
+		user_message("Warning","Loading large file may take a while.");
+	}
+	
+	var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
+	if (file_extension == "bedpe") {
+		var raw_data;
+		var reader = new FileReader();
+		reader.readAsText(this.files[0]);
+		reader.onload = function(event) {
+			raw_data = event.target.result;
+			bedpe_input_changed(raw_data);
+			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+		}
+	}
+}
 function open_variant_file(event) {
 	if (this.files[0].size > 1000000) {
 		user_message("Warning","Loading large file may take a while.");
@@ -2254,13 +2582,13 @@ function open_variant_file(event) {
 			bed_input_changed(raw_data);
 			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
 		}
-
 	} else {
 		user_message("Error", "File extension must be .bed or .vcf");
 	}
 }
 
 d3.select("#variant_file").on("change",open_variant_file);
+d3.select("#bedpe_file").on("change",open_bedpe_file);
 
 
 // ===========================================================================
@@ -2353,6 +2681,7 @@ function clear_coords_input() {
 function clear_bed_input() {
 	d3.select('#bed_input').property("value","");
 }
+
 function clear_vcf_input() {
 	d3.select('#vcf_input').property("value","");
 }
@@ -2379,11 +2708,12 @@ function bam_loaded() {
 
 	d3.select("#region_selector_panel").style("display","block");
 	d3.select("#variant_input_panel").style("display","block");
-
-	user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");
-
-	
-
+	if (_Bedpe.length > 0 || _Variants.length > 0) {
+		d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+		user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Click on rows in the table to fetch reads in those regions.");
+	} else {
+		user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");	
+	}
 	refresh_visibility();
 }
 
@@ -2467,6 +2797,66 @@ function show_bam_is_ready() {
 	d3.select("#region_go").style("color","black");
 	d3.selectAll(".fetch_table_button").html("go to variant");
 	_loading_bam_right_now = false;
+}
+
+
+var _Bam_records_from_multiregions = [];
+var _num_loaded_regions = 0;
+var _num_bam_records_to_load = 0;
+
+function fetch_regions(regions) {
+	if (_Bam != undefined) {
+		console.log("Fetching bam records at position");
+		show_waiting_for_bam();
+
+		_num_bam_records_to_load = regions.length;
+		_num_loaded_regions = 0;
+		_Bam_records_from_multiregions = [];
+
+		for (var i in regions) {
+			_Bam.fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
+		}
+	} else {
+		console.log("No bam file");
+		user_message("Error","No bam file");
+	}
+}
+
+function check_if_all_bam_records_loaded() {
+	if (_num_loaded_regions >= _num_bam_records_to_load) {
+		// All bam records loaded, now consolidate to prevent duplicate reads:
+		console.log("Bam record finished loading");
+		show_bam_is_ready();
+		var consolidated_records = [];
+		if (_settings.keep_duplicate_reads == false) {
+			var used_readnames = {};
+			for (var i in _Bam_records_from_multiregions) {
+				if (used_readnames[_Bam_records_from_multiregions[i].readName] == undefined) {
+					consolidated_records.push(_Bam_records_from_multiregions[i]);
+					used_readnames[_Bam_records_from_multiregions[i].readName] = true;
+				}
+			}
+		} else {
+			consolidated_records = _Bam_records_from_multiregions;
+		}
+		_Bam_records_from_multiregions = []; // reset to empty
+
+		_settings.min_indel_size = 100000000000; 
+		_Chunk_alignments = [];
+		for (var i in consolidated_records) {
+			_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
+		}
+		chunk_changed();
+		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+
+	}
+}
+
+
+function use_additional_fetched_data(records) {
+	_Bam_records_from_multiregions = _Bam_records_from_multiregions.concat(records);
+	_num_loaded_regions++;
+	check_if_all_bam_records_loaded();
 }
 
 function go_to_region(chrom,start,end) {
@@ -2595,6 +2985,8 @@ function region_submitted(event) {
 
 		go_to_region(chrom,start,end);
 
+		_Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":start+1}];
+
 	} else {
 		// console.log("Bad");
 		user_message("Error","Chromosome does not exist in reference");
@@ -2612,18 +3004,14 @@ d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 
 if (splitthreader_data != "") {
 	console.log("Found SplitThreader data");
-	console.log(splitthreader_data);
-
-	console.log("GOOD");
-	_Variants = [];
+	_Bedpe = [];
 	for (var i in splitthreader_data) {
-		_Variants.push({"chrom":splitthreader_data[i].chrom1, "start":splitthreader_data[i].start1, "end":splitthreader_data[i].stop1, "name": splitthreader_data[i].variant_name + ".1", "score": splitthreader_data[i].score, "strand": splitthreader_data[i].strand1,"type":splitthreader_data[i].variant_type});
-		_Variants.push({"chrom":splitthreader_data[i].chrom2, "start":splitthreader_data[i].start2, "end":splitthreader_data[i].stop2, "name": splitthreader_data[i].variant_name + ".2", "score": splitthreader_data[i].score, "strand": splitthreader_data[i].strand2,"type":splitthreader_data[i].variant_type});
+		_Bedpe.push({"chrom1":splitthreader_data[i].chrom1, "pos1":parseInt(splitthreader_data[i].pos1),"strand1": splitthreader_data[i].strand1,"chrom2":splitthreader_data[i].chrom2, "pos2":parseInt(splitthreader_data[i].pos2), "strand2": splitthreader_data[i].strand2,"name": splitthreader_data[i].variant_name, "score": splitthreader_data[i].score, "type":splitthreader_data[i].variant_type});
 	}
-	// _Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
+	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
+	$('.nav-tabs a[href="#bam"]').tab('show');
 
-	update_variants();
-	
+	update_bedpe();	
 }
 
 

@@ -112,144 +112,10 @@
 	<div id="svg1_panel"></div>
 </div>
 
+
 <div id="right_panel">
-	<div class="panel-group">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_alignment_input_box">Inputs</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
-				<div class="panel-body">
-					<ul class="nav nav-tabs">
-						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
-						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
-						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
-						<!-- <li><a data-toggle="tab" href="#igv">from igv</a></li> -->
-					</ul>
-					
-					<div class="tab-content">
-					<!-- Sam input -->
-						<div id="sam" class="tab-pane fade in active">
-							<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
-							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Show example</span>
-						</div>
-					<!-- Bam input -->
-						<div id="bam" class="tab-pane fade">
-							<p>Select bam and corresponding bam.bai</p>
-							<input type="file" name="files[]" id="bam_file"	multiple />
-							<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
-						</div>
-					<!-- Coords input -->
-						<div id="coords" class="tab-pane fade">
-							<p>Paste coordinates here:</p>
-							<textarea class="form-control" placeholder="Paste lines from a coordinates file (show-coords -lTH)"  id="coords_input"></textarea>
-							<hr>
-							<p>or upload a file:</p>
-							<input type="file" id="coords_file" />
-							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
-						</div>
-					<!-- IGV input -->
-						<!-- <div id="igv" class="tab-pane fade">
-							<p> This feature is still being implemented and tested. When the link from IGV works, the instructions here will be as follows:
-							</p>
-							<p>
-							Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
-							<h4>Data from IGV:</h4>
-							<pre readonly id="igv_stats">(empty)</pre>
-						</div> -->
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div class="panel-group" id="variant_input_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_variant_upload_box">Upload variants</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_variant_upload_box">
-				<div class="panel-body">
-
-					<ul class="nav nav-tabs">
-						<li class="active"><a data-toggle="tab" href="#upload_variants">upload bed or vcf</a></li>
-						<li><a data-toggle="tab" href="#bed">paste bed</a></li>
-						<li><a data-toggle="tab" href="#vcf">paste vcf</a></li>
-					</ul>
-					
-					<div class="tab-content">
-					<!-- upload variant file -->
-						<div id="upload_variants" class="tab-pane fade in active">
-							<p>Upload a .vcf or .bed file</p>
-							<input type="file" id="variant_file" />
-							<p><span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .vcf file</span></p>
-							<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
-						</div>
-					<!-- paste bed file -->
-						<div id="bed" class="tab-pane fade">
-							<p>Paste lines from a bed file here:</p>
-							<textarea class="form-control" placeholder="Paste lines from a bed file"  id="bed_input"></textarea>
-							<span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
-						</div>
-					<!-- paste vcf file -->
-						<div id="vcf" class="tab-pane fade">
-							<p>Paste lines from a vcf file here:</p>
-							<textarea class="form-control" placeholder="Paste lines from a vcf file"  id="vcf_input"></textarea>
-							<span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div id="user_message" class="alert alert-default" role="alert"></div>
 
 
-	<div class="panel-group" id="variant_table_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_variant_table_box">Inspect variants</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
-				<div class="panel-body">
-					<div id="variant_table_box">
-						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
-						<div id="variant_table_landing">
-						<!-- superTable creates a table here out of _Variants -->
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-	<div class="panel-group" id="region_selector_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_region_picking_box">Select position</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
-				<div class="panel-body">
-					<div id="region_box">
-						<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
-						<input class="small_input" type="number" id="region_start" placeholder="123456789">
-						<!-- - <input class="small_input" id="region_end" value="100000"> -->
-						<button id="region_go">Go</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 
 
 	<div class="panel-group" id="region_settings_panel">
@@ -411,6 +277,217 @@
 			</div>
 		</div>
 	</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<div class="panel-group">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_alignment_input_box">Input alignments</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
+				<div class="panel-body">
+					<ul class="nav nav-tabs">
+						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
+						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
+						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
+						<!-- <li><a data-toggle="tab" href="#igv">from igv</a></li> -->
+					</ul>
+					
+					<div class="tab-content">
+					<!-- Sam input -->
+						<div id="sam" class="tab-pane fade in active">
+							<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
+							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Show example</span>
+						</div>
+					<!-- Bam input -->
+						<div id="bam" class="tab-pane fade">
+							<p>Select bam and corresponding bam.bai</p>
+							<input type="file" name="files[]" id="bam_file"	multiple />
+							<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
+						</div>
+					<!-- Coords input -->
+						<div id="coords" class="tab-pane fade">
+							<p>Paste coordinates here:</p>
+							<textarea class="form-control" placeholder="Paste lines from a coordinates file (show-coords -lTH)"  id="coords_input"></textarea>
+							<hr>
+							<p>or upload a file:</p>
+							<input type="file" id="coords_file" />
+							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
+						</div>
+					<!-- IGV input -->
+						<!-- <div id="igv" class="tab-pane fade">
+							<p> This feature is still being implemented and tested. When the link from IGV works, the instructions here will be as follows:
+							</p>
+							<p>
+							Update to the newest version of IGV. Click on a read of interest within IGV and choose "Send to Ribbon"</p>
+							<h4>Data from IGV:</h4>
+							<pre readonly id="igv_stats">(empty)</pre>
+						</div> -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel-group" id="variant_input_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_variant_upload_box">Upload variants</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_variant_upload_box">
+				<div class="panel-body">
+
+					<ul class="nav nav-tabs">
+						<li class="active"><a data-toggle="tab" href="#upload_variants">upload vcf or bed</a></li>
+						<li><a data-toggle="tab" href="#upload_bedpe">upload bedpe</a></li>
+						<li><a data-toggle="tab" href="#bed">paste bed</a></li>
+						<li><a data-toggle="tab" href="#vcf">paste vcf</a></li>
+					</ul>
+					
+					<div class="tab-content">
+					<!-- upload variant file -->
+						<div id="upload_variants" class="tab-pane fade in active">
+							<p>Upload a .vcf or .bed file</p>
+							<input type="file" id="variant_file" />
+							<p><span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .vcf file</span></p>
+							<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
+						</div>
+					<!-- upload bedpe file -->
+						<div id="upload_bedpe" class="tab-pane fade">
+							<p>Upload a .bedpe file</p>
+							<input type="file" id="bedpe_file" />
+						</div>
+					<!-- paste bed file -->
+						<div id="bed" class="tab-pane fade">
+							<p>Paste lines from a bed file here:</p>
+							<textarea class="form-control" placeholder="Paste lines from a bed file"  id="bed_input"></textarea>
+							<span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
+						</div>
+					<!-- paste vcf file -->
+						<div id="vcf" class="tab-pane fade">
+							<p>Paste lines from a vcf file here:</p>
+							<textarea class="form-control" placeholder="Paste lines from a vcf file"  id="vcf_input"></textarea>
+							<span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="user_message" class="alert alert-default" role="alert"></div>
+
+
+	<div class="panel-group" id="variant_table_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_variant_table_box">Inspect variants</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
+				<div class="panel-body">
+					<div id="variant_table_box">
+						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<div id="variant_table_landing">
+							<!-- superTable creates a table here out of _Variants -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel-group" id="bedpe_table_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_bedpe_table_box">Inspect rearrangements</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
+				<div class="panel-body">
+					<div id="variant_table_box">
+						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<div id="bedpe_table_landing">
+							<!-- superTable creates a table here out of _Bedpe -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+
+	<div class="panel-group" id="region_selector_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_region_picking_box">Select position</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
+				<div class="panel-body">
+					<div id="region_box">
+						<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
+						<input class="small_input" type="number" id="region_start" placeholder="123456789">
+						<!-- - <input class="small_input" id="region_end" value="100000"> -->
+						<button id="region_go">Go</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
 
 <script>
