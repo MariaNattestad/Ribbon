@@ -169,7 +169,7 @@ div.input-group {
 }
 
 
-#text_output {
+#text_read_output, #text_region_output {
 	font-size: 1vw;
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 	white-space: nowrap;
@@ -178,7 +178,24 @@ div.input-group {
 	border: 1px solid #cccccc;
 }
 
+
+rect.variants {
+	stroke: none;
+	fill-opacity: 0.5;
+}
+rect.variants.highlight {
+	stroke: #000000;
+	stroke-width: 2;
+	fill-opacity: 1;
+}
+
 path.bedpe_variants {
 	fill: none;
-	stroke-width: 2.5;
+	stroke-width: 2;
+	stroke-opacity: 0.6;
 }
+path.bedpe_variants.highlight {
+	stroke-opacity: 1;
+	stroke-width: 4;
+}
+

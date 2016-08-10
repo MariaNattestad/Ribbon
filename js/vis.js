@@ -70,6 +70,7 @@ _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "original";
 
 _settings.current_input_type = "";
+_settings.ref_match_chunk_ref_intervals = true;
 
 
 var _ui_properties = {};
@@ -159,7 +160,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "height":_layout.svg2_height*0.07};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "height":_layout.svg2_height*0.04};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -218,6 +219,9 @@ $('#min_aligns_for_ref_interval_slider').slider({
 		_settings.min_aligns_for_ref_interval = ui.value;
 		apply_ref_filters();
 		draw_region_view();
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			select_read();
+		}
 	}
 })
 $('#max_ref_length_slider').slider({
@@ -320,12 +324,15 @@ d3.select("#max_ref_length_input").on("keyup",function() {
 	max_ref_length_changed();
 });
 
-
-
 $("#show_all_refs").click(function() {
 	show_all_chromosomes();
 	apply_ref_filters();
 	draw_region_view();
+})
+
+$("#ref_match_region_view").change(function() {
+	_settings.ref_match_chunk_ref_intervals = this.checked;
+	select_read(); // need to recalculate ref intervals
 })
 
 $('#colors_checkbox').change(function() {
@@ -493,12 +500,12 @@ function draw_chunk_variants() {
 			}
 
 			_svg2.selectAll("rect.variants").data(variants_in_view).enter()
-				.append("rect").attr("class","variants")
+				.append("rect")
+					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
 					.attr("y", _positions.chunk.variants.y)
 					.attr("height", _positions.chunk.variants.height)
-					.style("stroke","none")
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -568,9 +575,10 @@ function draw_chunk_variants() {
 			}
 
 			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
-				.append("path").attr("class","bedpe_variants")
+				.append("path")
+					.attr("class",function(d) {if (d.highlight == true) {return "bedpe_variants highlight"} else {return "bedpe_variants"}})
 					.attr("d",loop_path_generator)
-					.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
+					.style("stroke", function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
 						if (d.type != undefined) {
@@ -992,9 +1000,9 @@ function calculate_type_colors(variant_list) {
 		} else if (type.toUpperCase().indexOf("INV") != -1) {
 			colors_for_variants.push("orange");
 		} else if (type.toUpperCase().indexOf("TRA") != -1) {
-			colors_for_variants.push("purple");	
+			colors_for_variants.push("black");	
 		} else if (type.toUpperCase().indexOf("BND") != -1) {
-			colors_for_variants.push("purple");	
+			colors_for_variants.push("black");	
 		} else if (type.toUpperCase().indexOf("DUP") != -1) {
 			colors_for_variants.push("green");	
 		} else if (variant_types[type] > 1) {
@@ -1007,8 +1015,14 @@ function calculate_type_colors(variant_list) {
 	return {"names":variant_names, "colors":colors_for_variants};
 }
 
+
 function variant_row_click(d) {
 	_Additional_ref_intervals = [{"chrom":d.chrom,"start":d.start,"end":d.end}];
+	d3.select("#text_region_output").html("Selected variant: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
+	// Mark variant as selected:
+	for (var i in _Variants) {
+		_Variants[i].highlight = (_Variants[i].name == d.name);
+	}
 	go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);
 }
 
@@ -1047,6 +1061,14 @@ function bedpe_row_click(d) {
 		{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1},
 		{"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1}
 	];
+
+	d3.select("#text_region_output").html("Selected bedpe variant: "  + d.name + " (" + d.type + ") at " + d.chrom1 + ":" + d.pos1 + " and " +  d.chrom2 + ":" + d.pos2);
+
+	// Mark variant as selected:
+	for (var i in _Bedpe) {
+		_Bedpe[i].highlight = (_Bedpe[i].name == d.name);
+	}
+
 }
 
 function show_bedpe_table() {
@@ -1178,6 +1200,9 @@ function vcf_input_changed(vcf_input) {
 							}
 						}
 					}
+				}
+				if (type == "") {
+					type = columns[4];
 				}
 				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[2], "score":score,"strand":strand,"type":type});
 			}
@@ -1650,10 +1675,10 @@ function select_read() {
 	// Show read info
 	
 
-	d3.select("#text_output").html("Read name: " + _Chunk_alignments[_current_read_index].readname + "<br>Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length);
+	d3.select("#text_read_output").html("Read name: " + _Chunk_alignments[_current_read_index].readname + "<br>Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length);
 	
 
-	// d3.select("#text_output").property("value","Read name: " + _Chunk_alignments[_current_read_index].readname + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length );
+	// d3.select("#text_read_output").property("value","Read name: " + _Chunk_alignments[_current_read_index].readname + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length );
 
 	//  + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length
 
@@ -1679,8 +1704,12 @@ function select_read() {
 	_settings.min_align_length = 0;
 	_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
 
-	organize_references_for_read();
-
+	if (_settings.ref_match_chunk_ref_intervals) {
+		organize_refs_for_read_same_as_chunk();
+	} else {
+		organize_references_for_read();
+	}
+	
 	_scales.read_scale.domain([0,_Alignments[_Alignments.length-1].read_length]);
 
 
@@ -1721,16 +1750,27 @@ function natural_sort(a, b) {
 
 function ribbon_alignment_path_generator(d) {
 
-	var bottom_y = _positions.read.y;
 
+	var bottom_y = _positions.read.y;
 	var top_y = _positions.ref_intervals.y + _positions.ref_intervals.height;
 	
-	var output = "M " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[0].R)) + "," + top_y; // ref start
+	function get_top_coords(datum,index) {
+		// if ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[datum.r] && d.num_alignments >= _settings.min_aligns_for_ref_interval)) {
+		var cum_pos = map_ref_interval(datum.r,datum.path[index].R);
+		if (cum_pos != undefined) {
+			return _scales.ref_interval_scale(map_ref_interval(datum.r,datum.path[index].R))  + "," + top_y;
+		}
+		else {
+			return _scales.read_scale(datum.path[index].Q)  + "," + (top_y+(bottom_y-top_y)*2./3.);
+		}
+	}
+
+	var output = "M " + get_top_coords(d,0) ; // ref start
 	output += ", L " + _scales.read_scale(d.path[0].Q)      + "," + bottom_y; // read start
 
 	for (var i = 1; i < d.path.length; i++) {
-		var ref_coord = ", L " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[i].R))      + "," + top_y; // ref 
-		var read_coord = ", L " + _scales.read_scale(d.path[i].Q)      															+ "," + bottom_y; // read 
+		var ref_coord = ", L " + get_top_coords(d,i); // ref 
+		var read_coord = ", L " + _scales.read_scale(d.path[i].Q)     	+ "," + bottom_y; // read 
 		if (i % 2 == 0) { // alternate reference and read side so top goes to top
 			output += ref_coord + read_coord;
 		} else {
@@ -1738,7 +1778,7 @@ function ribbon_alignment_path_generator(d) {
 		}
 	}
 	
-	output += ", L " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[0].R)) + "," + top_y; // ref start
+	output += ", L " + get_top_coords(d,0); // ref start
 	output += ", L " + _scales.read_scale(d.path[0].Q)      + "," + bottom_y; // read start
 
 	return output;
@@ -1800,20 +1840,18 @@ function map_chunk_whole_ref(chrom,position) {
 }
 
 
-
-
 function map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Ref_intervals.length; i++) {
 		if (_Ref_intervals[i].chrom == chrom) {
-			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start);
 			}
 		}
 	}
-	console.log("ERROR: no chrom,pos match found in map_ref_interval()");
-	console.log(chrom,position);
-	console.log(_Ref_intervals);
+	// console.log("ERROR: no chrom,pos match found in map_ref_interval()");
+	// console.log(chrom,position);
+	// console.log(_Ref_intervals);
 	return undefined;
 }
 function closest_map_ref_interval(chrom,position) {
@@ -1822,7 +1860,7 @@ function closest_map_ref_interval(chrom,position) {
 	var best_distance = -1;
 	for (var i = 0; i < _Ref_intervals.length; i++) {
 		if (_Ref_intervals[i].chrom == chrom) {
-			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start)};
 			}
 			if (Math.abs(position - _Ref_intervals[i].start) < best_distance || best_distance == -1) {
@@ -1841,7 +1879,7 @@ function closest_map_ref_interval(chrom,position) {
 
 
 function closest_map_chunk_ref_interval(chrom,position) {
-	// _Ref_intervals has chrom, start, end, size, cum_pos
+	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
 	var closest = 0;
 	var best_distance = -1;
 	for (var i in _Chunk_ref_intervals) {
@@ -1866,7 +1904,7 @@ function closest_map_chunk_ref_interval(chrom,position) {
 }
 
 function map_chunk_ref_interval(chrom,position) {
-	// _Ref_intervals has chrom, start, end, size, cum_pos
+	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
 		if (_Chunk_ref_intervals[i].chrom == chrom) {
 			if (_Chunk_ref_intervals[i].cum_pos != -1 && position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
@@ -1983,8 +2021,13 @@ function organize_references_for_chunk() {
 			if (ref_pieces[region.chrom] == undefined) {
 				ref_pieces[region.chrom] = [];
 			}
-			ref_pieces[region.chrom].push([region.start,"s"]);
-			ref_pieces[region.chrom].push([region.end,"e"]);
+			var start = region.start - 1000;
+			if (start < 0) {
+				start = 0;
+			}
+			var end = region.end + 1000;
+			ref_pieces[region.chrom].push([start,"s"]);
+			ref_pieces[region.chrom].push([end,"e"]);
 		}
 	}
 
@@ -2029,6 +2072,10 @@ function organize_references_for_chunk() {
 	refresh_visibility();
 }
 
+function organize_refs_for_read_same_as_chunk() {
+	_Ref_intervals = _Chunk_ref_intervals;
+	_scales.ref_interval_scale.domain(_scales.chunk_ref_interval_scale.domain());
+}
 
 function organize_references_for_read() {
 	////////////////   Select reference chromosomes to show:   ////////////////////
@@ -2058,10 +2105,16 @@ function organize_references_for_read() {
 			if (ref_pieces[region.chrom] == undefined) {
 				ref_pieces[region.chrom] = [];
 			}
-			ref_pieces[region.chrom].push([region.start,"s"]);
-			ref_pieces[region.chrom].push([region.end,"e"]);
+			var start = region.start - 1000;
+			if (start < 0) {
+				start = 0;
+			}
+			var end = region.end + 1000;
+			ref_pieces[region.chrom].push([start,"s"]);
+			ref_pieces[region.chrom].push([end,"e"]);
 		}
 	}
+
 
 
 	// For each chromosome, consolidate intervals
@@ -2250,7 +2303,7 @@ function draw_ribbons() {
 	// Calculate layouts within the svg
 	_positions.read = {"y":_layout.svg_height*0.75, "x":_layout.svg_width*0.05, "width":_layout.svg_width*0.90, "height":_layout.svg_height*0.03};
 	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
-	_positions.ref_intervals = {"y":_layout.svg_height*0.35, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
+	_positions.ref_intervals = {"y":_positions.ref_block.y + _layout.svg_height*0.20, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
 
 	// Draw read
 	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
@@ -2302,23 +2355,24 @@ function draw_ribbons() {
 	// Zoom into reference intervals where the read maps:
 	_svg.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
-			.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
-			.attr("y",_positions.ref_intervals.y)
-			.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-			.attr("height", _positions.ref_intervals.height)
-			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
-			.style("stroke-width",1).style("stroke", "black")
-			.on('mouseover', function(d) {
-				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-				var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = _positions.ref_intervals.y - _padding.text;
-				show_tooltip(text,x,y,_svg);
-			})
-			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
+				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
+				.attr("y",_positions.ref_intervals.y)
+				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
+				.attr("height", _positions.ref_intervals.height)
+				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
+				.style("stroke-width",1).style("stroke", "black")
+				.on('mouseover', function(d) {
+					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
+					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+					var y = _positions.ref_intervals.y - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 
 	_svg.selectAll("path.ref_mapping").data(_Ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
-			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined;})
+			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined && ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,false)})
 				// .style("stroke-width",2)
 				// .style("stroke","black")
@@ -2329,20 +2383,20 @@ function draw_ribbons() {
 	_svg.selectAll("path.alignment").data(_Alignments).enter()
 		.append("path")
 			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
-			.attr("class","alignment")
-			.attr("d",ribbon_alignment_path_generator)
-			.style("stroke-width",function() { if (_settings.ribbon_outline) {return 1;} else {return 0;} })
-			.style("stroke","black")
-			.style("stroke-opacity",1)
-			.attr("fill",function(d) {return _scales.ref_color_scale(d.r);})
-			.attr("fill-opacity",_static.alignment_alpha)
-			.on('mouseover', function(d) {
-				var text = Math.abs(d.qe-d.qs) + " bp"; 
-				var x = _scales.read_scale((d.qs+d.qe)/2);
-				var y = _positions.read.y - _padding.text;
-				show_tooltip(text,x,y,_svg);
-			})
-			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+				.attr("class","alignment")
+				.attr("d",ribbon_alignment_path_generator)
+				.style("stroke-width",function() { if (_settings.ribbon_outline) {return 1;} else {return 0;} })
+				.style("stroke","black")
+				.style("stroke-opacity",1)
+				.attr("fill",function(d) {return _scales.ref_color_scale(d.r);})
+				.attr("fill-opacity",_static.alignment_alpha)
+				.on('mouseover', function(d) {
+					var text = Math.abs(d.qe-d.qs) + " bp"; 
+					var x = _scales.read_scale((d.qs+d.qe)/2);
+					var y = _positions.read.y - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 
 
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("bottom").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
@@ -2379,7 +2433,8 @@ function draw_ribbons() {
 
 		console.log(variants_in_view);
 		_svg.selectAll("rect.variants").data(variants_in_view).enter()
-			.append("rect").attr("class","variants")
+			.append("rect")
+			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 				.attr("x",function(d) { return d.start_cum_pos })
 				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
 				.attr("y", _positions.ref_intervals.y + _positions.ref_intervals.height/3)
@@ -2406,32 +2461,37 @@ function draw_ribbons() {
 				var variant = _Bedpe[i];
 				var results1 = closest_map_ref_interval(variant.chrom1,variant.pos1);
 				var results2 = closest_map_ref_interval(variant.chrom2,variant.pos2); 
-
-				if (results1.precision == "exact" && results1.precision == "exact") {
+				
+				if (results1.precision == "exact" && results2.precision == "exact") {
 					variant.cum_pos1 = _scales.ref_interval_scale(results1.pos);
 					variant.cum_pos2 = _scales.ref_interval_scale(results2.pos);
 					variants_in_view.push(variant);
 				}
 			}
 
-
 			var loop_path_generator = function(d) {
 				var foot_length = _positions.chunk.variants.height;
 
+				var bottom_y = _positions.ref_intervals.y - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
+				var highest_point = (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
 				var x1 = d.cum_pos1,
-					y_ankle = _positions.ref_intervals.y - _positions.chunk.variants.height/2,
+					y_ankle = bottom_y - highest_point/2,
 
 					x2 = d.cum_pos2,
-					y_foot = _positions.ref_intervals.y;
+					y_foot = bottom_y;
 
-				var arrow = -1*_positions.chunk.variants.height/7;
+				var arrow = -1*highest_point/7;
 
 				var xmid = (x1+x2)/2;
-				var ymid = _positions.ref_intervals.y - 2*_positions.chunk.variants.height;
+				var ymid = bottom_y - highest_point*2;  // bezier curve pointing toward 2*highest_point ends up around highest_point at the top of the curve
 				
 				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
 					direction2 = Number(d.strand2=="-")*2-1;
 
+				if (isNaN(xmid) == true) {
+					console.log("xmid is not a number");
+					console.log(d);
+				}
 
 				return (
 					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
@@ -2455,9 +2515,10 @@ function draw_ribbons() {
 			}
 
 			_svg.selectAll("path.bedpe_variants").data(variants_in_view).enter()
-				.append("path").attr("class","bedpe_variants")
+				.append("path")
+					.attr("class",function(d) {if (d.highlight == true) {return "bedpe_variants highlight"} else {return "bedpe_variants"}})
 					.attr("d",loop_path_generator)
-					.style("stroke","black")// function(d){return _scales.variant_color_scale(d.type)})
+					.style("stroke", function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
 						if (d.type != undefined) {

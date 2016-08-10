@@ -131,7 +131,14 @@
 						<col width="45%">
 						<col width="20%">
 						<col width="30%">
-						
+							<tr>
+								<th colspan="3">Selected region</th>
+							</tr>
+							<tr>
+								<td style="width:100%" colspan="3"><div id="text_region_output"></div></td>
+							</tr>
+
+
 							<tr><th colspan="3">Filter reads</th></tr>
 							<tr><td>Number of alignments:</td>
 								<td> <span id="num_aligns_range_label"></span> </td>
@@ -214,7 +221,7 @@
 								<th colspan="3">Selected read</th>
 							</tr>
 							<tr>
-								<td style="width:100%" colspan="3"><div id="text_output"></div></td>
+								<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
 							</tr>
 							<tr>
 								<th colspan="3">Settings</th>
@@ -228,6 +235,9 @@
 									<ul id="readname_livesearch"></ul> -->
 								</td>
 							</tr>
+							<tr>
+								<td>Match reference from region view </td>
+								<td><input id="ref_match_region_view" type="checkbox" checked></td>
 							<tr>
 								<td class="hide_for_coords">Minimum indel size to split: </td>
 								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
