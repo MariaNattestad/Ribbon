@@ -40,8 +40,8 @@ _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
 _static.margin_to_merge_ref_intervals = 10000;
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
-_static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"position","description":"Position of longest alignment"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
-_static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"longest",description:"By longest alignment"},{id:"focus",description:"By read in focal region"}];
+_static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"longest","description":"Position of longest alignment"},{"id":"priamry","description":"Position of primary alignment in SAM/BAM entry"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
+_static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"reverse",description:"Reverse orientation"}, {id:"longest",description:"Orientation of longest alignment"},{id:"primary",description:"Orientation of primary alignment in SAM/BAM entry"}];
 _static.color_schemes = [
 	{"name":"Color scheme 1", "colors": 0},
 	{"name":"Color scheme 2", "colors": 1},
@@ -651,31 +651,39 @@ function draw_chunk_alignments() {
 	} else if (_settings.feature_to_sort_reads == "original") {
 		chunks.sort(function(a, b){return a.index-b.index});
 		// sorting by readname
-	} else if (_settings.feature_to_sort_reads == "position") {
+	} else if (_settings.feature_to_sort_reads == "longest") {
 		for (var i in chunks) {
 			if (chunks[i].longest_ref_pos == undefined) {
-				var index_longest = 0;
-				for (var j in chunks[i].alignments) {
-					if (chunks[i].alignments[j].aligned_length > chunks[i].alignments[index_longest].aligned_length) {
-						index_longest = j;
-					}
-				}
-				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[index_longest].r, chunks[i].alignments[index_longest].rs));
+				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[chunks[i].index_longest].r, chunks[i].alignments[chunks[i].index_longest].rs));
 			}
 		}
-
 		chunks.sort(function(a, b){return a.longest_ref_pos-b.longest_ref_pos});
+		// sorting by readname
+	} else if (_settings.feature_to_sort_reads == "primary") {
+		for (var i in chunks) {
+			if (chunks[i].primary_ref_pos == undefined) {
+				chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[chunks[i].index_primary].r, chunks[i].alignments[chunks[i].index_primary].rs));
+			}
+		}
+		chunks.sort(function(a, b){return a.primary_ref_pos-b.primary_ref_pos});
 		// sorting by readname
 	}
 
 	var num_reads_to_show  = chunks.length;
 
 	for (var i = 0; i < chunks.length; i++) {
-		// ??????????????????????????????????
-		// console.log(chunks[i]);
+		// Whether to flip orientation across all alignments of the read
+		if (_settings.orient_reads_by == "primary") {
+			chunks[i].flip = (chunks[i].alignments[chunks[i].index_primary].qe - chunks[i].alignments[chunks[i].index_primary].qs < 0);
+		} else if (_settings.orient_reads_by == "longest") {
+			chunks[i].flip = (chunks[i].alignments[chunks[i].index_longest].qe - chunks[i].alignments[chunks[i].index_longest].qs < 0);
+		} else if (_settings.orient_reads_by == "reverse") {
+			chunks[i].flip = true;
+		} else {
+			chunks[i].flip = false;
+		}
 
-
-		// ??????????????????????????????????
+		// Vertical position:
 		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
@@ -691,7 +699,13 @@ function draw_chunk_alignments() {
 				.attr("y1",0)
 				.attr("y2",0)
 				.style("stroke-width",3)
-				.style("stroke",function(d) {if (d.qs < d.qe) {return "blue"} else {return "red"}})
+				.style("stroke",function(d) {
+					if (d3.select(this.parentNode).datum().flip == false) {
+						if (d.qs < d.qe) {return "blue"} else {return "red"}	
+					} else {
+						if (d.qs < d.qe) {return "red"} else {return "blue"}
+					}
+				})
 				.style("stroke-opacity",0.5)
 				.on('mouseover', function(d) {
 					var text = "select read";
@@ -903,7 +917,7 @@ function parse_coords_columns(columns) {
 		max_indel: null // no indel in coordinates, disable the indel options upon null
 
 	}
-	alignment.aligned_length = Math.abs(alignment.qe - alignment.qs);
+	alignment.aligned_length = Math.abs(alignment.re - alignment.rs);
 
 	alignment.path = [];
 	alignment.path.push({"R":alignment.rs, "Q":alignment.qs});
@@ -991,6 +1005,7 @@ d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.r
 d3.select("select#read_orientation_dropdown").on("change",function(d) {
 	_settings.orient_reads_by = this.options[this.selectedIndex].value;
 	draw_region_view();
+	draw();
 });
 
 d3.select("select#read_sorting_dropdown").selectAll("option").data(_static.read_sort_options).enter()
@@ -1290,6 +1305,7 @@ function all_read_analysis() {
 		}
 
 		// var min_mq = 100000;
+		var index_longest = 0;
 		for (var i in read_record.alignments) {
 			if (read_record.alignments[i].mq > max_mq) {
 				max_mq = read_record.alignments[i].mq;
@@ -1298,8 +1314,13 @@ function all_read_analysis() {
 				min_mq = read_record.alignments[i].mq;
 			}
 
+			if (read_record.alignments[i].aligned_length > read_record.alignments[index_longest].aligned_length) {
+				index_longest = i;
+			}
 			// all_chrs[read_record.alignments[i].r] = true;
 		}
+		_Chunk_alignments[j].index_longest = index_longest;
+
 		_Chunk_alignments[j].max_mq = max_mq;
 		if (max_mq > overall_max_mq) {
 			overall_max_mq = max_mq;
@@ -1311,6 +1332,9 @@ function all_read_analysis() {
 		if (_Chunk_alignments[j].alignments.length > overall_max_num_alignments) {
 			overall_max_num_alignments = _Chunk_alignments[j].alignments.length;
 		}
+
+		_Chunk_alignments[j].index_primary = _Chunk_alignments[j].alignments.length - 1; // for sam and bam we put in the SA tags and then added the main alignment at the end
+
 	}
 
 	_ui_properties.region_mq_slider_max = overall_max_mq; 
@@ -2371,7 +2395,7 @@ function draw_ribbons() {
 
 	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
-	_scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
+	
 	_scales.whole_ref_scale.range([_positions.ref_block.x, _positions.ref_block.x + _positions.ref_block.width]);
 	_scales.ref_interval_scale.range([_positions.ref_intervals.x, _positions.ref_intervals.x+_positions.ref_intervals.width]);
 	
@@ -2431,6 +2455,25 @@ function draw_ribbons() {
 
 
 	// Alignments
+	var flip = false;
+	
+	if (_settings.orient_reads_by == "primary") {
+		var primary_alignment = _Chunk_alignments[_current_read_index].alignments[_Chunk_alignments[_current_read_index].index_primary];
+		flip = (primary_alignment.qe - primary_alignment.qs < 0);
+	} else if (_settings.orient_reads_by == "longest") {
+		var longest_alignment = _Chunk_alignments[_current_read_index].alignments[_Chunk_alignments[_current_read_index].index_longest];
+		flip = (longest_alignment.qe - longest_alignment.qs < 0);
+	} else if (_settings.orient_reads_by == "reverse") {
+		flip = true;
+	} else {
+		flip = false;
+	}
+
+	if (flip == true) {
+		_scales.read_scale.range([ _positions.read.x+_positions.read.width, _positions.read.x]);
+	} else {
+		_scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]);
+	}
 	_svg.selectAll("path.alignment").data(_Alignments).enter()
 		.append("path")
 			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
