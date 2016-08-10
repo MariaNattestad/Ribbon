@@ -41,6 +41,7 @@ _static.dotplot_ref_opacity = 0.5;
 _static.margin_to_merge_ref_intervals = 10000;
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
 _static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"position","description":"Position of longest alignment"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
+_static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"longest",description:"By longest alignment"},{id:"focus",description:"By read in focal region"}];
 _static.color_schemes = [
 	{"name":"Color scheme 1", "colors": 0},
 	{"name":"Color scheme 2", "colors": 1},
@@ -68,6 +69,7 @@ _settings.ribbon_outline = false;
 _settings.show_only_known_references = true;
 _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "original";
+_settings.orient_reads_by = "original";
 
 _settings.current_input_type = "";
 _settings.ref_match_chunk_ref_intervals = true;
@@ -231,6 +233,10 @@ $('#max_ref_length_slider').slider({
 		d3.select("#max_ref_length_input").property("value",ui.value);
 		_settings.max_ref_length = ui.value;
 		max_ref_length_changed();
+		apply_ref_filters();
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			select_read();
+		}
 	}
 });
 
@@ -297,6 +303,11 @@ function search_select_chrom(chrom) {
 	d3.select("#max_ref_length_input").property("value",_settings.max_ref_length);
 
 	highlight_chromosome(chrom);
+
+	if (_settings.ref_match_chunk_ref_intervals == true) {
+		apply_ref_filters();
+		select_read();
+	}
 }
 
 function search_select_read(d) {
@@ -443,7 +454,7 @@ function draw_chunk_ref_intervals() {
 	// Zoom into reference intervals where the read maps:
 	_svg2.selectAll("rect.ref_interval").data(_Chunk_ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
-		.filter(function(d) {return (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval)})
+		.filter(function(d) {return d.cum_pos != -1})
 			.attr("x",function(d) { return _scales.chunk_ref_interval_scale(d.cum_pos); })
 			.attr("y",_positions.chunk.ref_intervals.y)
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
@@ -462,7 +473,7 @@ function draw_chunk_ref_intervals() {
 	// Ref interval mapping back to ref
 	_svg2.selectAll("path.ref_mapping").data(_Chunk_ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
-		.filter(function(d) {return _Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval})
+		.filter(function(d) {return d.cum_pos != -1})
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined;})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,true)})
 				// .style("stroke-width",2)
@@ -479,7 +490,7 @@ function draw_chunk_variants() {
 
 			var variants_in_view = []
 			for (var i in _Variants) {
-				if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != false || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != false) {
+				if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != undefined || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != undefined) {
 					var variant = _Variants[i];
 					var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
 					variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
@@ -524,7 +535,7 @@ function draw_chunk_variants() {
 
 			var variants_in_view = []
 			for (var i in _Bedpe) {
-				if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != false && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != false) {
+				if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != undefined && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != undefined) {
 					var variant = _Bedpe[i];
 					var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
 					variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
@@ -660,6 +671,11 @@ function draw_chunk_alignments() {
 	var num_reads_to_show  = chunks.length;
 
 	for (var i = 0; i < chunks.length; i++) {
+		// ??????????????????????????????????
+		// console.log(chunks[i]);
+
+
+		// ??????????????????????????????????
 		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
@@ -667,10 +683,9 @@ function draw_chunk_alignments() {
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
 		.on("click",function(d) { _current_read_index = d.index; select_read();})
 
-
 	alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
 		.append("line")
-			.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != false)})
+			.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
 				.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
 				.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
 				.attr("y1",0)
@@ -742,6 +757,8 @@ function apply_ref_filters() {
 			} else {
 				_Chunk_ref_intervals[i].cum_pos = -1;
 			}
+		} else {
+			_Chunk_ref_intervals[i].cum_pos = -1;
 		}
 	}
 	var whole_cumulative_position = 0;
@@ -798,6 +815,11 @@ function chunk_changed() {
 
 function sam_input_changed(sam_input_value) {
 		_settings.current_input_type = "sam";
+		// Check match refs from region view checkbox by default
+		_settings.ref_match_chunk_ref_intervals = true;
+		d3.select("#ref_match_region_view").property("checked",true);
+		
+
 
 		clear_data();
 		clear_coords_input();
@@ -894,6 +916,11 @@ function parse_coords_columns(columns) {
 function coords_input_changed(coords_input_value) {
 	_settings.current_input_type = "coords";
 
+	// Uncheck match refs from region view checkbox by default
+	_settings.ref_match_chunk_ref_intervals = false;
+	d3.select("#ref_match_region_view").property("checked",false);
+
+
 	clear_data();
 	clear_sam_input();
 	remove_bam_file();
@@ -943,7 +970,6 @@ function coords_input_changed(coords_input_value) {
 	refresh_visibility();
 	chunk_changed();
 	d3.select("#text_region_output").html("Showing coordinate input");
-
 }
 
 
@@ -956,6 +982,16 @@ d3.select("#coords_info_icon").on("click", function() {
 	coords_input_changed(example);
 });
 
+
+d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
+	.append("option")
+		.text(function(d){return d.description})
+		.property("value",function(d){return d.id});
+
+d3.select("select#read_orientation_dropdown").on("change",function(d) {
+	_settings.orient_reads_by = this.options[this.selectedIndex].value;
+	draw_region_view();
+});
 
 d3.select("select#read_sorting_dropdown").selectAll("option").data(_static.read_sort_options).enter()
 	.append("option")
@@ -1752,7 +1788,6 @@ function natural_sort(a, b) {
 
 function ribbon_alignment_path_generator(d) {
 
-
 	var bottom_y = _positions.read.y;
 	var top_y = _positions.ref_intervals.y + _positions.ref_intervals.height;
 	
@@ -1906,6 +1941,7 @@ function closest_map_chunk_ref_interval(chrom,position) {
 }
 
 function map_chunk_ref_interval(chrom,position) {
+	
 	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
 		if (_Chunk_ref_intervals[i].chrom == chrom) {
@@ -1914,10 +1950,11 @@ function map_chunk_ref_interval(chrom,position) {
 			}
 		}
 	}
-	return false;
-	console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
-	console.log(chrom,position);
-	console.log(_Chunk_ref_intervals);
+	
+	return undefined;
+	// console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
+	// console.log(chrom,position);
+	// console.log(_Chunk_ref_intervals);
 }
 
 function get_chromosome_sizes(ref_intervals_by_chrom) {
@@ -2211,6 +2248,8 @@ function reset_svg() {
 }
 
 function dotplot_alignment_path_generator(d) {
+
+
 	var output = "M " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[0].R)) + "," + _scales.read_scale(d.path[0].Q);
 	for (var i = 1; i < d.path.length; i++) {
 		output += ", L " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[i].R)) + "," + _scales.read_scale(d.path[i].Q);		
@@ -2259,6 +2298,7 @@ function draw_dotplot() {
 
 	canvas.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
+			.filter(function(d) {return d.cum_pos != -1})
 			.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
 			.attr("y",0)
 			.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
@@ -2281,6 +2321,7 @@ function draw_dotplot() {
 		.append("g").attr("class","alignment");
 	a_groups.append("path")
 			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
+			.filter(function(d) {return map_ref_interval(d.r,d.rs) != undefined && map_ref_interval(d.r,d.re) != undefined})
 				.attr("d",dotplot_alignment_path_generator)
 				.style("stroke-width",2)
 				.style("stroke","black")
@@ -2773,6 +2814,9 @@ function clear_vcf_input() {
 
 function bam_loaded() {
 	_settings.current_input_type = "bam";
+	// Check match refs from region view checkbox by default
+	_settings.ref_match_chunk_ref_intervals = true;
+	d3.select("#ref_match_region_view").property("checked",true);
 
 	clear_sam_input();
 	clear_coords_input();

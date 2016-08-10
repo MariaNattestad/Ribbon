@@ -189,6 +189,14 @@
 								</td>
 							</tr>
 							<tr>
+								<td>Orient reads by:</td>
+								<td colspan="2">
+									<select class="form-control" id="read_orientation_dropdown">
+										
+									 </select>
+								</td>
+							</tr>
+							<tr>
 								<td>Color scheme:</td>
 								<td colspan="2"> 
 									<select class="form-control" id="color_scheme_dropdown">
