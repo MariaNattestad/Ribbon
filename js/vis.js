@@ -836,6 +836,7 @@ function sam_input_changed(sam_input_value) {
 		
 		refresh_visibility();
 		chunk_changed();
+		d3.select("#text_region_output").html("Showing sam input");
 	
 }
 
@@ -941,6 +942,7 @@ function coords_input_changed(coords_input_value) {
 	
 	refresh_visibility();
 	chunk_changed();
+	d3.select("#text_region_output").html("Showing coordinate input");
 
 }
 
@@ -2187,6 +2189,14 @@ function reset_svg2() {
 		.attr("width",_layout.svg2_width)
 		.attr("height",_layout.svg2_height);
 
+	_svg2.append("text")
+			.attr("id","no_alignments_message")
+			.attr("x",_layout.svg2_width/2)
+			.attr("y",_layout.svg2_height/2)
+			.style('text-anchor',"middle").attr("dominant-baseline","middle")
+			// .attr("fill","orange")
+			// .text("No reads in the bam file at this location");
+
 	d3.select("#svg2_panel").style('visibility','visible');
 }
 
@@ -2431,7 +2441,6 @@ function draw_ribbons() {
 			}
 		}
 
-		console.log(variants_in_view);
 		_svg.selectAll("rect.variants").data(variants_in_view).enter()
 			.append("rect")
 			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
@@ -2863,6 +2872,10 @@ function show_waiting_for_bam() {
 	d3.select("#region_go").style("color","gray");
 	d3.selectAll(".fetch_table_button").html("...");
 	_loading_bam_right_now = true;
+
+	_svg2.select("#no_alignments_message")
+			.attr("fill","blue")
+			.text("Fetching from bam file...");
 }
 
 function show_bam_is_ready() {
@@ -2921,7 +2934,7 @@ function check_if_all_bam_records_loaded() {
 			_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
 		}
 		chunk_changed();
-		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+		tell_user_how_many_records_loaded();
 
 	}
 }
@@ -3011,9 +3024,23 @@ function use_fetched_data(records) {
 		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
 	}
 	chunk_changed();
-	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+	tell_user_how_many_records_loaded();
+	
 }
 
+function tell_user_how_many_records_loaded() {
+	if (_Chunk_alignments.length == 0) {
+		_svg2.select("#no_alignments_message")
+			.attr("fill","red")
+			.text("No reads in the bam file at this location");
+			
+	} else {
+		_svg2.select("#no_alignments_message")
+			.attr("fill","white")
+			.text("");
+	}
+	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+}
 
 function region_submitted(event) {
 
@@ -3059,8 +3086,8 @@ function region_submitted(event) {
 
 		go_to_region(chrom,start,end);
 
-		_Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":start+1}];
-
+		_Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":end}];
+		d3.select("#text_region_output").html("Showing reads at position: " + chrom + ": " + start);
 	} else {
 		// console.log("Bad");
 		user_message("Error","Chromosome does not exist in reference");

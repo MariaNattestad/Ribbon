@@ -199,3 +199,6 @@ path.bedpe_variants.highlight {
 	stroke-width: 4;
 }
 
+#no_alignments_message {
+	font-size: 2vw;
+}
