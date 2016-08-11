@@ -208,7 +208,10 @@
 								<td>Show only the selected variants</td>
 								<td><input id="show_only_selected_variants" type="checkbox"></td>
 							<tr>
-
+							<tr>
+								<td>Collapse reference sequences within distance:</td>
+								<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
+							<tr>
 					</table>
 				</div>
 			</div>

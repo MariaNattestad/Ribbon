@@ -38,7 +38,7 @@ var _region = {}; // chrom, start, end
 var _static = {};
 _static.alignment_alpha = 0.5;
 _static.dotplot_ref_opacity = 0.5;
-_static.margin_to_merge_ref_intervals = 10000;
+
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
 _static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"longest","description":"Position of longest alignment"},{"id":"priamry","description":"Position of primary alignment in SAM/BAM entry"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
 _static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"reverse",description:"Reverse orientation"}, {id:"longest",description:"Orientation of longest alignment"},{id:"primary",description:"Orientation of primary alignment in SAM/BAM entry"}];
@@ -74,6 +74,7 @@ _settings.orient_reads_by = "original";
 _settings.current_input_type = "";
 _settings.ref_match_chunk_ref_intervals = true;
 _settings.show_only_selected_variants = false;
+_settings.margin_to_merge_ref_intervals = 10000;
 
 
 var _ui_properties = {};
@@ -204,6 +205,7 @@ $('#region_mq_slider').slider( {
 	}
 });
 
+
 $('#min_read_length_slider').slider({
 	min: 0,
 	max: 1000,
@@ -331,6 +333,20 @@ d3.select("#max_ref_length_input").on("keyup",function() {
 	$('#max_ref_length_slider').slider("option","value", _settings.max_ref_length);
 	max_ref_length_changed();
 });
+
+
+d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
+	_settings.margin_to_merge_ref_intervals = parseInt(this.value);
+	if (isNaN(_settings.margin_to_merge_ref_intervals)) {
+		_settings.margin_to_merge_ref_intervals = 0;
+	}
+	organize_references_for_chunk();
+	apply_ref_filters();
+	draw_region_view();
+	select_read();
+})
+
+
 
 $("#show_all_refs").click(function() {
 	show_all_chromosomes();
@@ -1045,7 +1061,6 @@ d3.select("select#read_sorting_dropdown").on("change",function(d) {
 });
 
 
-
 d3.select("select#color_scheme_dropdown").selectAll("option").data(_static.color_schemes).enter()
 	.append("option")
 		.text(function(d){return d.name})
@@ -1726,7 +1741,7 @@ function planesweep_consolidate_intervals(starts_and_stops) {
 	// Add margin to the stop points
 	for (var i = 0; i < starts_and_stops.length; i++) {
 		if (starts_and_stops[i][1] == "e") {
-			starts_and_stops[i][0] = starts_and_stops[i][0]+_static.margin_to_merge_ref_intervals;
+			starts_and_stops[i][0] = starts_and_stops[i][0]+_settings.margin_to_merge_ref_intervals;
 		}
 	}
 	
@@ -1747,7 +1762,7 @@ function planesweep_consolidate_intervals(starts_and_stops) {
 			coverage--;
 			if (coverage == 0) { // coverage just became 0, ending current interval
 				// Remove margin from the final stop point before recording, avoiding margins on the edges of the intervals
-				intervals.push([most_recent_start, starts_and_stops[i][0]-_static.margin_to_merge_ref_intervals, alignment_count]);
+				intervals.push([most_recent_start, starts_and_stops[i][0]-_settings.margin_to_merge_ref_intervals, alignment_count]);
 				alignment_count = 0; // reset
 			}
 		} else {
