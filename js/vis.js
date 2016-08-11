@@ -73,6 +73,7 @@ _settings.orient_reads_by = "original";
 
 _settings.current_input_type = "";
 _settings.ref_match_chunk_ref_intervals = true;
+_settings.show_only_selected_variants = false;
 
 
 var _ui_properties = {};
@@ -162,7 +163,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "height":_layout.svg2_height*0.04};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -339,6 +340,10 @@ $("#show_all_refs").click(function() {
 	show_all_chromosomes();
 	apply_ref_filters();
 	draw_region_view();
+	if (_settings.ref_match_chunk_ref_intervals == true) {
+		apply_ref_filters();
+		select_read();
+	}
 })
 
 $("#ref_match_region_view").change(function() {
@@ -350,6 +355,14 @@ $('#colors_checkbox').change(function() {
 	_settings.colorful = this.checked
 	draw();
 });
+
+
+$('#show_only_selected_variants').change(function() {
+	_settings.show_only_selected_variants = this.checked
+	draw_region_view();
+	draw();
+});
+
 
 $('#outline_checkbox').change(function() {
 	_settings.ribbon_outline = this.checked
@@ -490,23 +503,25 @@ function draw_chunk_variants() {
 
 			var variants_in_view = []
 			for (var i in _Variants) {
-				if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != undefined || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != undefined) {
-					var variant = _Variants[i];
-					var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
-					variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
-					variant.start_precision = start_results.precision;
-					var end_results = closest_map_chunk_ref_interval(variant.chrom,variant.end); 
-					variant.end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
-					if (variant.end_cum_pos < variant.start_cum_pos + 4) {
-						variant.start_cum_pos = variant.start_cum_pos -2;
-						variant.end_cum_pos = variant.start_cum_pos + 4;
-					} else if (variant.end_cum_pos < variant.start_cum_pos) {
-						var tmp = variant.start_cum_pos;
-						variant.start_cum_pos = variant.end_cum_pos;
-						variant.end_cum_pos  = tmp;
+				if (_settings.show_only_selected_variants == false || _Variants[i].highlight == true) {
+					if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != undefined || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != undefined) {
+						var variant = _Variants[i];
+						var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
+						variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
+						variant.start_precision = start_results.precision;
+						var end_results = closest_map_chunk_ref_interval(variant.chrom,variant.end); 
+						variant.end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
+						if (variant.end_cum_pos < variant.start_cum_pos + 4) {
+							variant.start_cum_pos = variant.start_cum_pos -2;
+							variant.end_cum_pos = variant.start_cum_pos + 4;
+						} else if (variant.end_cum_pos < variant.start_cum_pos) {
+							var tmp = variant.start_cum_pos;
+							variant.start_cum_pos = variant.end_cum_pos;
+							variant.end_cum_pos  = tmp;
+						}
+						variant.end_precision = end_results.precision;
+						variants_in_view.push(variant);
 					}
-					variant.end_precision = end_results.precision;
-					variants_in_view.push(variant);
 				}
 			}
 
@@ -535,31 +550,33 @@ function draw_chunk_variants() {
 
 			var variants_in_view = []
 			for (var i in _Bedpe) {
-				if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != undefined && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != undefined) {
-					var variant = _Bedpe[i];
-					var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
-					variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
+				if (_settings.show_only_selected_variants == false || _Bedpe[i].highlight == true) {
+					if (map_chunk_ref_interval(_Bedpe[i].chrom1,_Bedpe[i].pos1) != undefined && map_chunk_ref_interval(_Bedpe[i].chrom2,_Bedpe[i].pos2) != undefined) {
+						var variant = _Bedpe[i];
+						var results1 = closest_map_chunk_ref_interval(variant.chrom1,variant.pos1);
+						variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
 
-					var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
-					variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
-					variants_in_view.push(variant);
+						var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
+						variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
+						variants_in_view.push(variant);
+					}
 				}
 			}
 
 			var loop_path_generator = function(d) {
-				var foot_length = _positions.chunk.variants.height;
+				var foot_length = _positions.chunk.variants.foot_length;
 
 				var x1 = d.cum_pos1,
 					y_top = _positions.chunk.ref_intervals.y,
 
 					x2 = d.cum_pos2,
 					y_foot = _positions.chunk.variants.y,
-					y_ankle = _positions.chunk.variants.y + _positions.chunk.variants.height/2;
+					y_ankle = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height;
 
-				var arrow = -1*_positions.chunk.variants.height/7;
+				var arrow = -1*_positions.chunk.variants.arrow_size;
 
 				var xmid = (x1+x2)/2;
-				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.height*2; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height + _positions.chunk.variants.bezier_height; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
 				
 				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
 					direction2 = Number(d.strand2=="-")*2-1;
@@ -621,6 +638,19 @@ function draw_chunk_alignments() {
 	// 	.style("stroke-width",5)
 	// 	.style("stroke", "black");	
 	// }
+ 
+	if (_Additional_ref_intervals.length > 0) {
+		_svg2.selectAll("rect.focal_regions").data(_Additional_ref_intervals).enter()
+			.append("rect").attr("class","focal_regions")
+				.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start)); })
+				.attr("y",_positions.chunk.ref_intervals.y)
+				.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start));})
+				.attr("height", _positions.chunk.ref_intervals.height )
+				.attr("fill","none")
+				.style("stroke-width",4)
+				.style("stroke", "black");	
+	}
+
 
 	var chunks = [];
 	var counter = 0;
@@ -844,7 +874,7 @@ function sam_input_changed(sam_input_value) {
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
 		var unique_readnames = {};
-		_settings.min_indel_size = 100000000000; 
+		_settings.min_indel_size = 1000; 
 
 		for (var i = 0; i < input_text.length; i++) {
 			var columns = input_text[i].split(/\s+/);
@@ -879,14 +909,17 @@ function sam_input_changed(sam_input_value) {
 $('#sam_input').bind('input propertychange', function() {sam_input_changed(this.value)});
 
 d3.select("#sam_info_icon").on("click", function() {
-	var example = "forward 0  chr2  32866713  60  1000H1000M1000D1000M3000H\nreverse 16  chr2  32866713  60  3000H1000M1000D1000M1000H\nboth 0  chr2  32866713  60  1000H1000M1000D1000M3000H SA:Z:chr2,32866713,-,3000H1000M1000D1000M1000H,60,1;\nindels 0  chr2  32866713  60  100H100M100D100M50I100M40D10M30I100M300H";
-	d3.select('#sam_input').property("value",example);
-	sam_input_changed(example);
+	user_message("Instructions","Create a sam file using an aligner such as BWA, BLASR, or NGM-LR. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
 });
 
 
 d3.select("#bam_info_icon").on("click", function() {
 	user_message("Instructions","Create a bam file using an aligner such as BWA, BLASR, or NGM-LR. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, upload the my_file.sorted.bam and the my_file.sorted.bam.bai files");
+});
+
+
+d3.select("#coords_info_icon").on("click", function() {
+	user_message("Instructions","The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>");
 });
 
 
@@ -941,7 +974,7 @@ function coords_input_changed(coords_input_value) {
 
 	var input_text = coords_input_value.split("\n");
 	_Ref_sizes_from_header = {};
-	_settings.min_indel_size = 100000000000;
+	_settings.min_indel_size = 1000;
 
 	var alignments_by_query = {};
 
@@ -988,13 +1021,6 @@ function coords_input_changed(coords_input_value) {
 
 
 $('#coords_input').bind('input propertychange', function() {remove_coords_file(); coords_input_changed(this.value)});
-
-
-d3.select("#coords_info_icon").on("click", function() {
-	var example = "1000 2000 3000 4000 0 0 97.69 3000 5000 chr5 read1";
-	d3.select('#coords_input').property("value",example);
-	coords_input_changed(example);
-});
 
 
 d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
@@ -1207,6 +1233,7 @@ function update_variants() {
 	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
 	show_variant_table();
 	draw_region_view();
+	refresh_ui_elements();
 }
 
 function update_bedpe() {
@@ -1214,6 +1241,7 @@ function update_bedpe() {
 	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
 	show_bedpe_table();
 	draw_region_view();
+	refresh_ui_elements();
 }
 
 $('#bed_input').bind('input propertychange', function() {remove_variant_file(); bed_input_changed(this.value)});
@@ -1223,6 +1251,7 @@ function vcf_input_changed(vcf_input) {
 	var input_text = vcf_input.split("\n");
 	
 	_Variants = [];
+	var ID_counter = 1;
 	for (var i in input_text) {
 		if (input_text[i][0] != "#") {
 			var columns = input_text[i].split(/\s+/);
@@ -1232,6 +1261,11 @@ function vcf_input_changed(vcf_input) {
 				var type = "";
 				var strand = "";
 				var score = parseFloat(columns[4]);
+				var name = columns[2];
+				if (name == ".") {
+					name = "#" + ID_counter;
+					ID_counter++;
+				}
 				if (isNaN(score)) {
 					score = 0;
 				}
@@ -1257,7 +1291,7 @@ function vcf_input_changed(vcf_input) {
 				if (type == "") {
 					type = columns[4];
 				}
-				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[2], "score":score,"strand":strand,"type":type});
+				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":name, "score":score,"strand":strand,"type":type});
 			}
 		}
 	}
@@ -1347,9 +1381,9 @@ function all_read_analysis() {
 	_settings.min_num_alignments = 1;
 	_settings.region_min_mapping_quality = overall_min_mq;
 	_settings.min_mapping_quality = overall_min_mq;
-	_settings.min_indel_size = 1000000;
+	_settings.min_indel_size = 1000;
 	_settings.min_align_length = 0;
-	_settings.min_aligns_for_ref_interval_slider = 0;
+	// _settings.min_aligns_for_ref_interval = 0;
 	_settings.min_read_length = 0;
 }
 
@@ -1382,6 +1416,14 @@ function refresh_ui_elements() {
 		$("#only_header_refs_checkbox").attr("disabled",false);
 	}
 
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		d3.selectAll(".when_variants_only").style("color","black");
+		$("#show_only_selected_variants").attr("disabled",false);
+	} else {
+		d3.selectAll(".when_variants_only").style("color","#dddddd");
+		$("#show_only_selected_variants").attr("disabled",true);
+	}
+
 	// Mapping quality in region view
 	$('#region_mq_slider').slider("option","max", _ui_properties.region_mq_slider_max);
 	$('#region_mq_slider').slider("option","min", _ui_properties.region_mq_slider_min);
@@ -1398,7 +1440,7 @@ function refresh_ui_elements() {
 	d3.select("#min_read_length_input").property("value", _settings.min_read_length);
 
 	// Number of alignments for reference intervals:
-	d3.select("#min_aligns_for_ref_interval_slider").property("value", _settings.min_read_length);
+	// d3.select("#min_aligns_for_ref_interval_slider").property("value", _settings.min_aligns_for_ref_interval);
 
 	// Number of alignments in region view
 	$( "#num_aligns_range_slider" ).slider("option","max",_ui_properties.num_alignments_slider_max);
@@ -1744,7 +1786,7 @@ function select_read() {
 
 	//  + "\n" + "Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length
 
-	_settings.min_indel_size = 1000000000; // parse alignments for new read first without indels
+	// _settings.min_indel_size = 1000000000; // parse alignments for new read first without indels
 	_Alignments = reparse_read(_Chunk_alignments[_current_read_index]).alignments;
 	
 	_ui_properties.mq_slider_max = 0;
@@ -1764,7 +1806,7 @@ function select_read() {
 	}
 
 	_settings.min_align_length = 0;
-	_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
+	// _settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
 
 	if (_settings.ref_match_chunk_ref_intervals) {
 		organize_refs_for_read_same_as_chunk();
@@ -2289,15 +2331,26 @@ function draw_dotplot() {
 		return;
 	}
 
-	// Make square
-	var square = Math.min(_layout.svg_height,_layout.svg_width);
+	var square = false;
 
-	_positions.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
-	_positions.padding = {"top": square * _positions.fractions.top_right, "right": square * _positions.fractions.top_right, "bottom": square * _positions.fractions.bottom_left, "left": square * _positions.fractions.bottom_left};
-	_positions.main = square*_positions.fractions.main;
-	// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions._padding.top,'width':_positions.main,'height':_positions.main};
-	_positions.canvas = {'x':_layout.svg_width/2-_positions.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
-	
+	if (square == true) {
+
+		// Make square
+		var square = Math.min(_layout.svg_height,_layout.svg_width);
+
+		_positions.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
+		_positions.padding = {"top": square * _positions.fractions.top_right, "right": square * _positions.fractions.top_right, "bottom": square * _positions.fractions.bottom_left, "left": square * _positions.fractions.bottom_left};
+		_positions.main = square*_positions.fractions.main;
+		// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions._padding.top,'width':_positions.main,'height':_positions.main};
+		_positions.canvas = {'x':_layout.svg_width/2-_positions.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
+		
+	} else {
+		draw_singleview_header();
+		_positions.canvas = {'x':_positions.ref_intervals.x,'y':_positions.ref_intervals.y + _positions.ref_intervals.height,'width':_positions.ref_intervals.width,'height':_layout.svg_height - (_positions.ref_intervals.y + _positions.ref_intervals.height) - _layout.svg_height*0.05};
+		
+	}
+
+
 	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")");
 	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.canvas.width).attr("height",_positions.canvas.height);
 
@@ -2316,7 +2369,7 @@ function draw_dotplot() {
 	canvas.append("text").text("Reference").attr("x",(_positions.ref.left+_positions.ref.right)/2).attr("y",_positions.ref.y+_padding.text*2).style('text-anchor',"middle").attr("dominant-baseline","top");
 
 
-	_scales.read_scale.range([_positions.read.bottom, _positions.read.top]);
+	
 	_scales.ref_interval_scale.range([_positions.ref.left, _positions.ref.right]);
 	
 
@@ -2341,6 +2394,30 @@ function draw_dotplot() {
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 
 	// Alignments
+
+	var flip = false;
+	
+	if (_settings.orient_reads_by == "primary") {
+		var primary_alignment = _Chunk_alignments[_current_read_index].alignments[_Chunk_alignments[_current_read_index].index_primary];
+		flip = (primary_alignment.qe - primary_alignment.qs < 0);
+	} else if (_settings.orient_reads_by == "longest") {
+		var longest_alignment = _Chunk_alignments[_current_read_index].alignments[_Chunk_alignments[_current_read_index].index_longest];
+		flip = (longest_alignment.qe - longest_alignment.qs < 0);
+	} else if (_settings.orient_reads_by == "reverse") {
+		flip = true;
+	} else {
+		flip = false;
+	}
+
+	if (flip == true) {
+		// _scales.read_scale.range([ _positions.read.x+_positions.read.width, _positions.read.x]); // from ribbon plot
+		_scales.read_scale.range([_positions.read.top, _positions.read.bottom]);
+	} else {
+		// _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
+		_scales.read_scale.range([_positions.read.bottom, _positions.read.top]);
+	}
+
+
 	var a_groups = canvas.selectAll("g.alignment").data(_Alignments).enter()
 		.append("g").attr("class","alignment");
 	a_groups.append("path")
@@ -2362,34 +2439,25 @@ function draw_dotplot() {
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("left").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
-		.attr("transform","translate(" + _positions.canvas.x + "," + _positions.padding.top + ")")
-		.call(read_axis)
+		.attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")")
+		.call(read_axis);
 
+	if (_Additional_ref_intervals.length > 0) {
+		canvas.selectAll("rect.focal_regions").data(_Additional_ref_intervals).enter()
+			.append("rect").attr("class","focal_regions")
+				.attr("x",function(d) {  return _scales.ref_interval_scale(map_ref_interval(d.chrom,d.start)); })
+				.attr("y", _positions.read.top)
+				.attr("width", function(d) { return _scales.ref_interval_scale(map_ref_interval(d.chrom,d.end)) - _scales.ref_interval_scale(map_ref_interval(d.chrom,d.start));})
+				.attr("height", _positions.read.bottom - _positions.read.top)
+				.attr("fill","none")
+				.style("stroke-width",4)
+				.style("stroke", "#333333");
+	}
 }
 
-function draw_ribbons() {
-	reset_svg();
-
-	if (_Alignments == undefined) {
-		return;
-	}
-
-
-	// Calculate layouts within the svg
-	_positions.read = {"y":_layout.svg_height*0.75, "x":_layout.svg_width*0.05, "width":_layout.svg_width*0.90, "height":_layout.svg_height*0.03};
-	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
-	_positions.ref_intervals = {"y":_positions.ref_block.y + _layout.svg_height*0.20, "x":_positions.read.x, "width":_positions.read.width, "height":_positions.read.height};
-
-	// Draw read
-	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
-		.on('mouseover', function() {
-			var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
-			var x = _positions.read.x+_positions.read.width/2;
-			var y = _positions.read.y+_positions.read.height*3.5;
-			show_tooltip(text,x,y,_svg);
-		})
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
-	
+function draw_singleview_header() {
+	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.ref_intervals = {"y":_positions.ref_block.y + _layout.svg_height*0.20, "x":_positions.ref_block.x, "width":_positions.ref_block.width, "height":_positions.ref_block.height};
 	// Draw "Reference" label
 	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
@@ -2454,6 +2522,164 @@ function draw_ribbons() {
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 
 
+	/////////////////////////   Variants   /////////////////////////////
+	if (_Variants.length > 0) {
+		var variants_in_view = [];
+		for (var i in _Variants) {
+			if (_settings.show_only_selected_variants == false || _Variants[i].highlight == true) {
+				var variant = _Variants[i];
+				var start_results = closest_map_ref_interval(variant.chrom,variant.start);
+				var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
+				if (start_results.precision == "exact" && end_results.precision == "exact") {
+					variant.start_cum_pos = _scales.ref_interval_scale(start_results.pos);
+					variant.start_precision = start_results.precision;
+					variant.end_cum_pos = _scales.ref_interval_scale(end_results.pos);
+					if (variant.end_cum_pos < variant.start_cum_pos + 4) {
+						variant.start_cum_pos = variant.start_cum_pos -2;
+						variant.end_cum_pos = variant.start_cum_pos + 4;
+					} else if (variant.end_cum_pos < variant.start_cum_pos) {
+						var tmp = variant.start_cum_pos;
+						variant.start_cum_pos = variant.end_cum_pos;
+						variant.end_cum_pos  = tmp;
+					}
+					variant.end_precision = end_results.precision;
+					variants_in_view.push(variant);
+				}
+			}
+		}
+
+		_svg.selectAll("rect.variants").data(variants_in_view).enter()
+			.append("rect")
+			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+				.attr("x",function(d) { return d.start_cum_pos })
+				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+				.attr("y", _positions.ref_intervals.y + _positions.ref_intervals.height/3)
+				.attr("height", _positions.ref_intervals.height/3)
+				.style("stroke","none")
+				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+	}
+
+	if (_Bedpe.length > 0) {
+		var variants_in_view = []
+		for (var i in _Bedpe) {
+			if (_settings.show_only_selected_variants == false || _Bedpe[i].highlight == true) {
+				var variant = _Bedpe[i];
+				var results1 = closest_map_ref_interval(variant.chrom1,variant.pos1);
+				var results2 = closest_map_ref_interval(variant.chrom2,variant.pos2); 
+				
+				if (results1.precision == "exact" && results2.precision == "exact") {
+					variant.cum_pos1 = _scales.ref_interval_scale(results1.pos);
+					variant.cum_pos2 = _scales.ref_interval_scale(results2.pos);
+					variants_in_view.push(variant);
+				}
+			}
+		}
+
+		var loop_path_generator = function(d) {
+
+			var foot_length = _positions.chunk.variants.foot_length;
+
+			var bottom_y = _positions.ref_intervals.y - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
+			var highest_point = (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
+			var x1 = d.cum_pos1,
+				y_ankle = bottom_y - highest_point/2,
+
+				x2 = d.cum_pos2,
+				y_foot = bottom_y;
+
+			var arrow = -1*_positions.chunk.variants.arrow_size;
+
+			var xmid = (x1+x2)/2;
+			var ymid = bottom_y - highest_point*2;  // bezier curve pointing toward 2*highest_point ends up around highest_point at the top of the curve
+			
+			var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
+				direction2 = Number(d.strand2=="-")*2-1;
+
+			if (isNaN(xmid) == true) {
+				console.log("xmid is not a number");
+				console.log(d);
+			}
+			if (isNaN(direction1) == true) {
+				console.log("direction1 is not a number");
+				console.log(d);
+			}
+
+			return (
+				 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
+			 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
+			 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+			 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
+			 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+
+			 + ", L " + x1                          + "," + y_foot // breakpoint
+			 // + ", L " + x1                          + "," + y_top // up
+			 + ", L " + x1                          + "," + y_ankle // ankle
+			 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
+			 // + ", L " + x2                          + "," + y_top // up
+			 + ", L " + x2                          + "," + y_foot // breakpoint
+
+			 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+			 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
+			 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+			 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
+			 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+		}
+
+		_svg.selectAll("path.bedpe_variants").data(variants_in_view).enter()
+			.append("path")
+				.attr("class",function(d) {if (d.highlight == true) {return "bedpe_variants highlight"} else {return "bedpe_variants"}})
+				.attr("d",loop_path_generator)
+				.style("stroke", "black") // function(d){return _scales.variant_color_scale(d.type)}) // colors are hard to see
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.cum_pos1 + d.cum_pos2)/2;
+					var y =  _positions.ref_intervals.y - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+	}
+
+
+
+}
+
+function draw_ribbons() {
+	reset_svg();
+
+	if (_Alignments == undefined) {
+		return;
+	}
+	draw_singleview_header();
+
+	// Calculate layouts within the svg
+	_positions.read = {"y":_layout.svg_height*0.75, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
+	
+	// Draw read
+	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
+		.on('mouseover', function() {
+			var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
+			var x = _positions.read.x+_positions.read.width/2;
+			var y = _positions.read.y+_positions.read.height*3.5;
+			show_tooltip(text,x,y,_svg);
+		})
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
+	
+	
+
 	// Alignments
 	var flip = false;
 	
@@ -2498,131 +2724,6 @@ function draw_ribbons() {
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
 		.call(read_axis);
-
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (_Variants.length > 0) {
-		var variants_in_view = [];
-		for (var i in _Variants) {
-			var variant = _Variants[i];
-			var start_results = closest_map_ref_interval(variant.chrom,variant.start);
-			var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
-			if (start_results.precision == "exact" && end_results.precision == "exact") {
-				variant.start_cum_pos = _scales.ref_interval_scale(start_results.pos);
-				variant.start_precision = start_results.precision;
-				variant.end_cum_pos = _scales.ref_interval_scale(end_results.pos);
-				if (variant.end_cum_pos < variant.start_cum_pos + 4) {
-					variant.start_cum_pos = variant.start_cum_pos -2;
-					variant.end_cum_pos = variant.start_cum_pos + 4;
-				} else if (variant.end_cum_pos < variant.start_cum_pos) {
-					var tmp = variant.start_cum_pos;
-					variant.start_cum_pos = variant.end_cum_pos;
-					variant.end_cum_pos  = tmp;
-				}
-				variant.end_precision = end_results.precision;
-				variants_in_view.push(variant);
-			}
-		}
-
-		_svg.selectAll("rect.variants").data(variants_in_view).enter()
-			.append("rect")
-			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
-				.attr("x",function(d) { return d.start_cum_pos })
-				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-				.attr("y", _positions.ref_intervals.y + _positions.ref_intervals.height/3)
-				.attr("height", _positions.ref_intervals.height/3)
-				.style("stroke","none")
-				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
-				.on('mouseover', function(d) {
-					var text = d.name;
-					if (d.type != undefined) {
-						text = d.name + " (" + d.type + ")";
-					}
-					var x = (d.start_cum_pos + d.end_cum_pos)/2;
-					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
-					show_tooltip(text,x,y,_svg);
-				})
-				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-
-	}
-
-	if (_Bedpe.length > 0) {
-
-			var variants_in_view = []
-			for (var i in _Bedpe) {
-				var variant = _Bedpe[i];
-				var results1 = closest_map_ref_interval(variant.chrom1,variant.pos1);
-				var results2 = closest_map_ref_interval(variant.chrom2,variant.pos2); 
-				
-				if (results1.precision == "exact" && results2.precision == "exact") {
-					variant.cum_pos1 = _scales.ref_interval_scale(results1.pos);
-					variant.cum_pos2 = _scales.ref_interval_scale(results2.pos);
-					variants_in_view.push(variant);
-				}
-			}
-
-			var loop_path_generator = function(d) {
-				var foot_length = _positions.chunk.variants.height;
-
-				var bottom_y = _positions.ref_intervals.y - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
-				var highest_point = (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
-				var x1 = d.cum_pos1,
-					y_ankle = bottom_y - highest_point/2,
-
-					x2 = d.cum_pos2,
-					y_foot = bottom_y;
-
-				var arrow = -1*highest_point/7;
-
-				var xmid = (x1+x2)/2;
-				var ymid = bottom_y - highest_point*2;  // bezier curve pointing toward 2*highest_point ends up around highest_point at the top of the curve
-				
-				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
-					direction2 = Number(d.strand2=="-")*2-1;
-
-				if (isNaN(xmid) == true) {
-					console.log("xmid is not a number");
-					console.log(d);
-				}
-
-				return (
-					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
-				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
-				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
-				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-
-				 + ", L " + x1                          + "," + y_foot // breakpoint
-				 // + ", L " + x1                          + "," + y_top // up
-				 + ", L " + x1                          + "," + y_ankle // ankle
-				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
-				 // + ", L " + x2                          + "," + y_top // up
-				 + ", L " + x2                          + "," + y_foot // breakpoint
-
-				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
-				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
-				 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
-			}
-
-			_svg.selectAll("path.bedpe_variants").data(variants_in_view).enter()
-				.append("path")
-					.attr("class",function(d) {if (d.highlight == true) {return "bedpe_variants highlight"} else {return "bedpe_variants"}})
-					.attr("d",loop_path_generator)
-					.style("stroke", function(d){return _scales.variant_color_scale(d.type)})
-					.on('mouseover', function(d) {
-						var text = d.name;
-						if (d.type != undefined) {
-							text = d.name + " (" + d.type + ")";
-						}
-						var x = (d.cum_pos1 + d.cum_pos2)/2;
-						var y =  _positions.ref_intervals.y - _padding.text;
-						show_tooltip(text,x,y,_svg);
-					})
-					.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-		}
 
 }
 
@@ -2770,7 +2871,7 @@ function open_coords_file(event) {
 	var reader = new FileReader();
 
 	if (this.files[0].size > 1000000) {
-		user_message("Warning","Loading large file may take a while.");
+		user_message("Info","Loading large file may take a little while.");
 	}
 
 	reader.readAsText(this.files[0]);
@@ -2783,6 +2884,35 @@ function open_coords_file(event) {
 }
 
 d3.select("#coords_file").on("change",open_coords_file);
+
+
+
+function open_sam_file(event) {
+	console.log("in open_sam_file");
+		
+	var raw_data;
+	var reader = new FileReader();
+
+	if (this.files[0].size > 10000000) {
+		user_message("Error","File larger than 10MB. Please choose a smaller file or load it as a bam file instead");
+		return;
+	}
+	if (this.files[0].size > 1000000) {
+		user_message("Info","Loading large file may take a little while.");
+	}
+
+	reader.readAsText(this.files[0]);
+	reader.onload = function(event) {
+		raw_data = event.target.result;
+		clear_sam_input();
+		sam_input_changed(raw_data);
+		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
+	}
+}
+
+d3.select("#sam_file").on("change",open_sam_file);
+
+
 
 // ===========================================================================
 // == Load bam file
@@ -2861,6 +2991,7 @@ function bam_loaded() {
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
 
+
 	clear_sam_input();
 	clear_coords_input();
 
@@ -2878,12 +3009,27 @@ function bam_loaded() {
 
 	d3.select("#region_selector_panel").style("display","block");
 	d3.select("#variant_input_panel").style("display","block");
-	if (_Bedpe.length > 0 || _Variants.length > 0) {
-		d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
-		user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Click on rows in the table to fetch reads in those regions.");
-	} else {
-		user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");	
+
+
+	var PG_count = 0;
+	var header_list = _Bam.header.toStr.split('\n');
+	for (var i in header_list) {
+		if (header_list[i].substr(0,3) == "@PG") {
+			PG_count++;
+		}
 	}
+
+	if (PG_count == 1) {
+		if (_Bedpe.length > 0 || _Variants.length > 0) {
+			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+			user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Click on rows in the table to fetch reads in those regions.");
+		} else {
+			user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");	
+		}	
+	} else {
+		user_message("Warning", "Bam files with multiple @PG header lines have been found to have issues fetching records. This bam file has " + PG_count + " lines starting with @PG. If you experience issues when fetching reads from this bam file, remove all @PG lines except one. Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes).");
+	}
+	
 	refresh_visibility();
 }
 
@@ -3015,7 +3161,7 @@ function check_if_all_bam_records_loaded() {
 		}
 		_Bam_records_from_multiregions = []; // reset to empty
 
-		_settings.min_indel_size = 100000000000; 
+		_settings.min_indel_size = 10000;
 		_Chunk_alignments = [];
 		for (var i in consolidated_records) {
 			_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
@@ -3105,7 +3251,7 @@ function use_fetched_data(records) {
 		consolidated_records = records;
 	}
 
-	_settings.min_indel_size = 100000000000; 
+	_settings.min_indel_size = 1000; 
 	_Chunk_alignments = [];
 	for (var i in consolidated_records) {
 		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
@@ -3137,13 +3283,17 @@ function region_submitted(event) {
 		return;
 	}
 	var start = parseInt(d3.select("#region_start").property("value").replace(/,/g,""));
-	var end = start + 1; //parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
+
 
 	if (isNaN(start) == true) {
 		user_message("Error", "start value:" + d3.select("#region_start").property("value") + " could not be made into a number");
+		return;
 	} //else if (isNaN(end) == true) {
 	// 	user_message("Error", "end value:" + d3.select("#region_end").property("value") + " could not be made into a number");
 	// }
+
+	var end = start + 1; //parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
+
 
 	var chrom_index = get_chrom_index(chrom);
 	if (chrom_index != undefined) {
@@ -3214,6 +3364,14 @@ if (igv_data != "") {
 	// if input is text of sam file send to sam_input_changed(sam_text)
 	// otherwise make new parser on the fields, similar to what we did for the bam records, and need to treat the header separately too
 }
+
+window.addEventListener("beforeunload", function (e) {
+    var confirmationMessage = 'Leave Ribbon?';
+
+    (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+    return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+});
+
 
 
 // ===========================================================================

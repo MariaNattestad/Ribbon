@@ -168,6 +168,9 @@ div.input-group {
 	width: 100%;
 }
 
+.variants_only {
+
+}
 
 #text_read_output, #text_region_output {
 	font-size: 1vw;
@@ -185,7 +188,7 @@ rect.variants {
 }
 rect.variants.highlight {
 	stroke: #000000;
-	stroke-width: 2;
+	stroke-width: 1;
 	fill-opacity: 1;
 }
 
@@ -196,7 +199,7 @@ path.bedpe_variants {
 }
 path.bedpe_variants.highlight {
 	stroke-opacity: 1;
-	stroke-width: 4;
+	stroke-width: 2;
 }
 
 #no_alignments_message {

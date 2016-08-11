@@ -204,6 +204,11 @@
 								 	</select>
 								</td>
 							</tr>
+							<tr class="when_variants_only">
+								<td>Show only the selected variants</td>
+								<td><input id="show_only_selected_variants" type="checkbox"></td>
+							<tr>
+
 					</table>
 				</div>
 			</div>
@@ -299,25 +304,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	<div class="panel-group">
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -328,7 +314,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
 				<div class="panel-body">
 					<ul class="nav nav-tabs">
-						<li class="active"><a data-toggle="tab" href="#sam">paste sam</a></li>
+						<li class="active"><a data-toggle="tab" href="#sam">sam</a></li>
 						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
 						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
 						<!-- <li><a data-toggle="tab" href="#igv">from igv</a></li> -->
@@ -337,8 +323,14 @@
 					<div class="tab-content">
 					<!-- Sam input -->
 						<div id="sam" class="tab-pane fade in active">
+							<p>Paste a few lines from a sam file here:</p>
 							<textarea class="form-control" placeholder="Paste lines from a sam file"  id="sam_input"></textarea>
-							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Show example</span>
+
+							<hr>
+							<p>or upload a small sam file:</p>
+							<input type="file" id="sam_file" />
+							<p>For larger files (above 10MB) see the "load bam file" tab. </p>
+							<span id="sam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
 						</div>
 					<!-- Bam input -->
 						<div id="bam" class="tab-pane fade">
@@ -353,7 +345,7 @@
 							<hr>
 							<p>or upload a file:</p>
 							<input type="file" id="coords_file" />
-							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Show example</span>
+							<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
 						</div>
 					<!-- IGV input -->
 						<!-- <div id="igv" class="tab-pane fade">
