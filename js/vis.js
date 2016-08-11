@@ -305,10 +305,6 @@ function search_select_chrom(chrom) {
 
 	highlight_chromosome(chrom);
 
-	if (_settings.ref_match_chunk_ref_intervals == true) {
-		apply_ref_filters();
-		select_read();
-	}
 }
 
 function search_select_read(d) {
@@ -606,7 +602,7 @@ function draw_chunk_variants() {
 				.append("path")
 					.attr("class",function(d) {if (d.highlight == true) {return "bedpe_variants highlight"} else {return "bedpe_variants"}})
 					.attr("d",loop_path_generator)
-					.style("stroke", function(d){return _scales.variant_color_scale(d.type)})
+					.style("stroke", "black") // function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
 						if (d.type != undefined) {
@@ -774,6 +770,10 @@ function highlight_chromosome(chromosome) {
 
 	apply_ref_filters();
 	draw_region_view();
+
+	if (_settings.ref_match_chunk_ref_intervals == true) {
+		select_read();
+	}
 
 
 	d3.select("#chrom_highlighted").html(chromosome);
@@ -2360,13 +2360,13 @@ function draw_dotplot() {
 
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
-	canvas.append("text").text("Read / Query").style('text-anchor',"middle")
-		 .attr("transform", "translate("+ (-5*_padding.text) + "," + (_positions.canvas.height/2)+")rotate(-90)")
+	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
+		 .attr("transform", "translate("+ 0 + "," + (_positions.canvas.y + _positions.canvas.height/2)+")rotate(-90)")
 
 
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
-	canvas.append("text").text("Reference").attr("x",(_positions.ref.left+_positions.ref.right)/2).attr("y",_positions.ref.y+_padding.text*2).style('text-anchor',"middle").attr("dominant-baseline","top");
+	_svg.append("text").text("Reference").attr("x",_positions.canvas.x + _positions.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 
 
 	
@@ -2666,7 +2666,7 @@ function draw_ribbons() {
 	draw_singleview_header();
 
 	// Calculate layouts within the svg
-	_positions.read = {"y":_layout.svg_height*0.75, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
 	
 	// Draw read
 	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
@@ -2676,7 +2676,7 @@ function draw_ribbons() {
 			var y = _positions.read.y+_positions.read.height*3.5;
 			show_tooltip(text,x,y,_svg);
 		})
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_positions.read.y+_positions.read.height*3.5).style('text-anchor',"middle").attr("dominant-baseline","top");
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 	
 	
 
