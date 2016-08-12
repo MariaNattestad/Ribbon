@@ -2635,8 +2635,8 @@ function draw_singleview_header() {
 
 			var foot_length = _positions.chunk.variants.foot_length;
 
-			var bottom_y = _positions.ref_intervals.y - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
-			var highest_point = (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
+			var bottom_y = _positions.ref_intervals.y + _positions.ref_intervals.height*0.9; // - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
+			var highest_point = _positions.ref_intervals.height*0.7; // (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
 			var x1 = d.cum_pos1,
 				y_ankle = bottom_y - highest_point/2,
 
