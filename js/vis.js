@@ -569,8 +569,8 @@ function draw_chunk_variants() {
 					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-					.attr("y", function(d) {return _positions.chunk.variants.y + (_positions.chunk.variants.rect_height*1.1)*d.offset/max_overlaps})
-					.attr("height", (_positions.chunk.variants.rect_height/max_overlaps))
+					.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
+					.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -2600,8 +2600,8 @@ function draw_singleview_header() {
 			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 				.attr("x",function(d) { return d.start_cum_pos })
 				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-				.attr("y", function(d) {return _positions.variants.y + (_positions.variants.height*1.1)*d.offset})
-				.attr("height", _positions.variants.height)
+				.attr("y", function(d) {return _positions.variants.y + _positions.variants.height*d.offset})
+				.attr("height", _positions.variants.height*0.9)
 				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 				.on('mouseover', function(d) {
 					var text = d.name;
