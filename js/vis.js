@@ -164,7 +164,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.03, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -513,7 +513,7 @@ function draw_chunk_variants() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Variants.length > 0) {
 
-			var variants_in_view = []
+			var variants_in_view = [];
 			for (var i in _Variants) {
 				if (_settings.show_only_selected_variants == false || _Variants[i].highlight == true) {
 					if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != undefined || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != undefined) {
@@ -543,7 +543,7 @@ function draw_chunk_variants() {
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
 					.attr("y", _positions.chunk.variants.y)
-					.attr("height", _positions.chunk.variants.height)
+					.attr("height", _positions.chunk.variants.rect_height)
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -551,7 +551,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.start_cum_pos + d.end_cum_pos)/2;
-						var y =  _positions.chunk.variants.y +  _positions.chunk.variants.height + _padding.text;
+						var y =  _positions.chunk.variants.y +  _positions.chunk.variants.rect_height + _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
