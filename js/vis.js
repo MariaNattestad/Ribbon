@@ -164,7 +164,7 @@ function responsive_sizing() {
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.02,"rect_vertical_spacing":_layout.svg2_height*0.005, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
+	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.07, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
 
 	d3.select("#sam_input_panel")
 		.style("width",_layout.left_width + "px")
@@ -507,7 +507,7 @@ function draw_chunk_ref_intervals() {
 
 }
 
-function calcuate_offsets_for_variants_in_view(variants_in_view) {
+function calculate_offsets_for_variants_in_view(variants_in_view) {
 	var sweep_list = [];
 	for (var i in variants_in_view) {
 		sweep_list.push([variants_in_view[i].start_cum_pos,"s",i]);
@@ -516,16 +516,20 @@ function calcuate_offsets_for_variants_in_view(variants_in_view) {
 
 	sweep_list.sort(function(a, b){return a[0]-b[0]});
 
+	var max_coverage = 0;
 	var coverage = 0;
 	for (var i in sweep_list) {
 		if (sweep_list[i][1] == "s") {
 			variants_in_view[sweep_list[i][2]].offset = coverage;
+			if (coverage > max_coverage) {
+				max_coverage = coverage;
+			}
 			coverage++;
 		} else if (sweep_list[i][1] == "e") {
 			coverage--;
 		}
 	}
-	return variants_in_view;
+	return max_coverage + 1;
 }
 
 function draw_chunk_variants() {
@@ -559,15 +563,14 @@ function draw_chunk_variants() {
 				}
 			}
 
-			variants_in_view = calcuate_offsets_for_variants_in_view(variants_in_view);
-
+			var max_overlaps = calculate_offsets_for_variants_in_view(variants_in_view);
 			_svg2.selectAll("rect.variants").data(variants_in_view).enter()
 				.append("rect")
 					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-					.attr("y", function(d) {return _positions.chunk.variants.y + (_positions.chunk.variants.rect_height+_positions.chunk.variants.rect_vertical_spacing)*d.offset})
-					.attr("height", _positions.chunk.variants.rect_height)
+					.attr("y", function(d) {return _positions.chunk.variants.y + (_positions.chunk.variants.rect_height*1.1)*d.offset/max_overlaps})
+					.attr("height", (_positions.chunk.variants.rect_height/max_overlaps))
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -2587,10 +2590,9 @@ function draw_singleview_header() {
 			}
 		}
 
-		variants_in_view = calcuate_offsets_for_variants_in_view(variants_in_view);
-
+		var max_overlaps = calculate_offsets_for_variants_in_view(variants_in_view);
 		_positions.variants = {};
-		_positions.variants.height = _positions.ref_intervals.height*0.2;
+		_positions.variants.height = _positions.ref_intervals.height/max_overlaps;
 		_positions.variants.y = _positions.ref_intervals.y; // + (_positions.ref_intervals.height - _positions.variants.height)/2; //place variant in the middle of the ref_interval (y-direction)
 
 		_svg.selectAll("rect.variants").data(variants_in_view).enter()
