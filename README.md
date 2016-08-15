@@ -1,6 +1,3 @@
-Ribbon is a long read visualizer for genomic data including sam and bam files.
+Ribbon is an interactive, online long read visualizer for genomic data.
 
-For each line in a sam file it draws the primary alignment and those specified in the Secondary Alignment (SA) tag of the sam record.
-
-
-
+![Ribbon gallery](/images/gallery.png)
