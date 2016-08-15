@@ -48,7 +48,8 @@ _static.color_schemes = [
 	{"name":"Color scheme 3", "colors": 2},
 ];
 _static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"],["#ffff00","#ad0000","#bdadc6", "#00ffff", "#e75200","#de1052","#ffa5a5","#7b7b00","#7bffff","#008c00","#00adff","#ff00ff","#ff0000","#ff527b","#84d6a5","#e76b52","#8400ff","#6b4242","#52ff52","#0029ff","#ffffad","#ff94ff","#004200","gray","black"],['#E41A1C', '#A73C52', '#6B5F88', '#3780B3', '#3F918C', '#47A266','#53A651', '#6D8470', '#87638F', '#A5548D', '#C96555', '#ED761C','#FF9508', '#FFC11A', '#FFEE2C', '#EBDA30', '#CC9F2C', '#AD6428','#BB614F', '#D77083', '#F37FB8', '#DA88B3', '#B990A6', '#999999']]
-
+_static.min_indel_size_for_region_view = 50;
+_static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Thin line"}]; // , {"id":"number","description":"number indicating size"}];
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -60,7 +61,7 @@ _settings.min_read_length = 0;
 
 _settings.ribbon_vs_dotplot = "ribbon";
 _settings.min_mapping_quality = 0;
-_settings.min_indel_size = -1; // set to -1 to stop showing indels
+_settings.min_indel_size = _static.min_indel_size_for_region_view; // set to -1 to stop showing indels
 _settings.min_align_length = 0; 
 
 _settings.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
@@ -69,13 +70,13 @@ _settings.ribbon_outline = false;
 _settings.show_only_known_references = true;
 _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "original";
-_settings.orient_reads_by = "original";
+_settings.orient_reads_by = "primary";
 
 _settings.current_input_type = "";
 _settings.ref_match_chunk_ref_intervals = true;
 _settings.show_only_selected_variants = false;
 _settings.margin_to_merge_ref_intervals = 10000;
-
+_settings.show_indels_as = "thin";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -501,8 +502,6 @@ function draw_chunk_ref_intervals() {
 		.filter(function(d) {return d.cum_pos != -1})
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined;})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,true)})
-				// .style("stroke-width",2)
-				// .style("stroke","black")
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 
 }
@@ -578,7 +577,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.start_cum_pos + d.end_cum_pos)/2;
-						var y =  _positions.chunk.variants.y +  _positions.chunk.variants.rect_height + _padding.text;
+						var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -710,7 +709,7 @@ function draw_chunk_alignments() {
 		}
 	}
 
-
+	//////////////  SORT READS  //////////////
 	if (_settings.feature_to_sort_reads == "num_alignments") {
 		// sorting by alignment_length
 		chunks.sort(function(a, b){return a.alignments.length-b.alignments.length});
@@ -738,8 +737,9 @@ function draw_chunk_alignments() {
 		// sorting by readname
 	}
 
-	var num_reads_to_show  = chunks.length;
 
+	//////////////  FLIP READS  //////////////
+	var num_reads_to_show  = chunks.length;
 	for (var i = 0; i < chunks.length; i++) {
 		// Whether to flip orientation across all alignments of the read
 		if (_settings.orient_reads_by == "primary") {
@@ -756,35 +756,119 @@ function draw_chunk_alignments() {
 		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
+	//////////////  Draw rows  //////////////
 	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(chunks).enter()
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
-		.on("click",function(d) { _current_read_index = d.index; select_read();})
+		.on("click",function(d) { _current_read_index = d.index; select_read();});
 
-	alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
-		.append("line")
-			.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
-				.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
-				.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
-				.attr("y1",0)
-				.attr("y2",0)
-				.style("stroke-width",3)
-				.style("stroke",function(d) {
-					if (d3.select(this.parentNode).datum().flip == false) {
-						if (d.qs < d.qe) {return "blue"} else {return "red"}	
+	////////////  Draw alignments  //////////////
+	if (_settings.show_indels_as == "none") {
+		console.log("none");
+		// Draw simple lines
+		alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
+			.append("line")
+				.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
+					.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
+					.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
+					.attr("y1",0)
+					.attr("y2",0)
+					.style("stroke",function(d) {
+						if (d3.select(this.parentNode).datum().flip == false) {
+							if (d.qs < d.qe) {return "blue"} else {return "red"}	
+						} else {
+							if (d.qs < d.qe) {return "red"} else {return "blue"}
+						}
+					})
+					.style("stroke-width",3)
+					.style("stroke-opacity",0.5)
+					.on('mouseover', function(d) {
+						var text = "select read";
+						var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+						var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+						show_tooltip(text,x,y,_svg2);
+					})
+					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+	} else {
+		function chunk_alignment_path_generator(d) {
+			var previous_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[0].R));
+			var previous_read_position = d.path[0].Q;
+			
+			var output = "M " + previous_x + " " + 0;
+
+			for (var i = 1; i < d.path.length; i++) {
+				var current_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[i].R));
+				var current_read_position = d.path[i].Q;
+				if (current_x == previous_x || current_read_position == previous_read_position) {
+					output += " M " + current_x + " " + 0;	
+				} else {
+					output += " L " + current_x + " " + 0;
+				}
+				previous_x = current_x;
+				previous_read_position = current_read_position;
+			}
+			return output;
+		}
+
+		// Draw paths to allow indels
+		alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
+			.append("path")
+				.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
+					.attr("d",chunk_alignment_path_generator)
+					.style("stroke",function(d) {
+						if (d3.select(this.parentNode).datum().flip == false) {
+							if (d.qs < d.qe) {return "blue"} else {return "red"}	
+						} else {
+							if (d.qs < d.qe) {return "red"} else {return "blue"}
+						}
+					})
+					.style("stroke-width",3)
+					.style("stroke-opacity",0.5)
+					.on('mouseover', function(d) {
+						var text = "select read";
+						var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+						var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+						show_tooltip(text,x,y,_svg2);
+					})
+					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+		if (_settings.show_indels_as == "thin") {
+			function indel_path_generator(d) {
+				var previous_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[0].R));
+				var previous_read_position = d.path[0].Q;
+				
+				var output = "M " + previous_x + " " + 0;
+
+				for (var i = 1; i < d.path.length; i++) {
+					var current_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[i].R));
+					var current_read_position = d.path[i].Q;
+					if (current_x == previous_x || current_read_position == previous_read_position) {
+						output += " L " + current_x + " " + 0;	
 					} else {
-						if (d.qs < d.qe) {return "red"} else {return "blue"}
+						output += " M " + current_x + " " + 0;
 					}
-				})
-				.style("stroke-opacity",0.5)
-				.on('mouseover', function(d) {
-					var text = "select read";
-					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
-					var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-					show_tooltip(text,x,y,_svg2);
-				})
-				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
-}
+					previous_x = current_x;
+					previous_read_position = current_read_position;
+				}
+				return output;
+			}
+			alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
+				.append("path")
+					.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
+						.attr("d",indel_path_generator)
+						.style("stroke",function(d) {
+							if (d3.select(this.parentNode).datum().flip == false) {
+								if (d.qs < d.qe) {return "blue"} else {return "red"}	
+							} else {
+								if (d.qs < d.qe) {return "red"} else {return "blue"}
+							}
+						})
+						.style("stroke-width",1)
+						.style("stroke-opacity",0.5);
 
+
+		}
+	}
+}
 
 function draw_region_view() {
 	reset_svg2();
@@ -793,7 +877,6 @@ function draw_region_view() {
 	draw_chunk_alignments();
 	draw_chunk_variants();
 }
-
 
 function clear_data() {
 	_Alignments = [];
@@ -905,9 +988,8 @@ function sam_input_changed(sam_input_value) {
 		// Check match refs from region view checkbox by default
 		_settings.ref_match_chunk_ref_intervals = true;
 		d3.select("#ref_match_region_view").property("checked",true);
+		refresh_ui_for_new_dataset();
 		
-
-
 		clear_data();
 		clear_coords_input();
 		remove_coords_file();
@@ -917,7 +999,7 @@ function sam_input_changed(sam_input_value) {
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
 		var unique_readnames = {};
-		_settings.min_indel_size = 1000; 
+		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 
 		for (var i = 0; i < input_text.length; i++) {
 			var columns = input_text[i].split(/\s+/);
@@ -1009,7 +1091,7 @@ function coords_input_changed(coords_input_value) {
 	// Uncheck match refs from region view checkbox by default
 	_settings.ref_match_chunk_ref_intervals = false;
 	d3.select("#ref_match_region_view").property("checked",false);
-
+	refresh_ui_for_new_dataset();
 
 	clear_data();
 	clear_sam_input();
@@ -1017,7 +1099,7 @@ function coords_input_changed(coords_input_value) {
 
 	var input_text = coords_input_value.split("\n");
 	_Ref_sizes_from_header = {};
-	_settings.min_indel_size = 1000;
+	// _settings.min_indel_size = -1;
 
 	var alignments_by_query = {};
 
@@ -1066,39 +1148,6 @@ function coords_input_changed(coords_input_value) {
 $('#coords_input').bind('input propertychange', function() {remove_coords_file(); coords_input_changed(this.value)});
 
 
-d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
-	.append("option")
-		.text(function(d){return d.description})
-		.property("value",function(d){return d.id});
-
-d3.select("select#read_orientation_dropdown").on("change",function(d) {
-	_settings.orient_reads_by = this.options[this.selectedIndex].value;
-	draw_region_view();
-	draw();
-});
-
-d3.select("select#read_sorting_dropdown").selectAll("option").data(_static.read_sort_options).enter()
-	.append("option")
-		.text(function(d){return d.description})
-		.property("value",function(d){return d.id});
-
-d3.select("select#read_sorting_dropdown").on("change",function(d) {
-	_settings.feature_to_sort_reads = this.options[this.selectedIndex].value;
-	draw_region_view();
-});
-
-
-d3.select("select#color_scheme_dropdown").selectAll("option").data(_static.color_schemes).enter()
-	.append("option")
-		.text(function(d){return d.name})
-		.property("value",function(d){return d.colors});
-
-d3.select("select#color_scheme_dropdown").on("change",function(d) {
-	_settings.colors = _static.color_collections[this.options[this.selectedIndex].value];	
-	_scales.ref_color_scale.range(_settings.colors);
-	draw_region_view();
-	draw();
-});
 
 function calculate_type_colors(variant_list) {
 	var variant_types = {};
@@ -1423,14 +1472,63 @@ function all_read_analysis() {
 	_settings.min_num_alignments = 1;
 	_settings.region_min_mapping_quality = overall_min_mq;
 	_settings.min_mapping_quality = overall_min_mq;
-	_settings.min_indel_size = 1000;
+	// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 	_settings.min_align_length = 0;
 	// _settings.min_aligns_for_ref_interval = 0;
 	_settings.min_read_length = 0;
 }
 
-function refresh_ui_elements() {
+function create_dropdowns() {
+	d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
+		.append("option")
+			.text(function(d){return d.description})
+			.property("value",function(d){return d.id})
+			.property("selected", function(d) {return d.id === _settings.orient_reads_by});
 
+	d3.select("select#read_orientation_dropdown").on("change",function(d) {
+		_settings.orient_reads_by = this.options[this.selectedIndex].value;
+		draw_region_view();
+		draw();
+	});
+
+	d3.select("select#read_sorting_dropdown").selectAll("option").data(_static.read_sort_options).enter()
+		.append("option")
+			.text(function(d){return d.description})
+			.property("value",function(d){return d.id})
+			.property("selected", function(d) {return d.id === _settings.feature_to_sort_reads});
+
+	d3.select("select#read_sorting_dropdown").on("change",function(d) {
+		_settings.feature_to_sort_reads = this.options[this.selectedIndex].value;
+		draw_region_view();
+	});
+
+
+	d3.select("select#color_scheme_dropdown").selectAll("option").data(_static.color_schemes).enter()
+		.append("option")
+			.text(function(d){return d.name})
+			.property("value",function(d){return d.colors});
+
+	d3.select("select#color_scheme_dropdown").on("change",function(d) {
+		_settings.colors = _static.color_collections[this.options[this.selectedIndex].value];	
+		_scales.ref_color_scale.range(_settings.colors)
+		draw_region_view();
+		draw();
+	});
+
+	d3.select("select#show_indels_as_dropdown").selectAll("option").data(_static.show_indels_as_options).enter()
+		.append("option")
+			.text(function(d){return d.description})
+			.property("value",function(d){return d.id})
+			.property("selected", function(d) {return d.id === _settings.show_indels_as});
+
+	d3.select("select#show_indels_as_dropdown").on("change",function(d) {
+		_settings.show_indels_as = this.options[this.selectedIndex].value;
+		draw_region_view();
+	});
+}
+
+function refresh_ui_for_new_dataset() {
+	
 	if (_settings.current_input_type == "coords") {
 		$("#min_mq_title").html("Minimum % identity: ");
 		$('#mq_slider').slider("option","step", 0.01);
@@ -1443,6 +1541,11 @@ function refresh_ui_elements() {
 
 		// Disable header refs only checkbox
 		$("#only_header_refs_checkbox").attr("disabled",true);
+
+		$("#show_indels_as_dropdown").attr("disabled",true);
+
+		_settings.orient_reads_by = "longest";
+		_settings.show_indels_as = "none";
 		
 	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
 		$("#min_mq_title").html("Minimum mapping quality: ");
@@ -1456,7 +1559,16 @@ function refresh_ui_elements() {
 
 		// Enable header refs only checkbox
 		$("#only_header_refs_checkbox").attr("disabled",false);
+		$("#show_indels_as_dropdown").attr("disabled",false);
+
+		_settings.orient_reads_by = "primary";
+		_settings.show_indels_as = "thin";
 	}
+	
+	create_dropdowns();
+}
+
+function refresh_ui_elements() {
 
 	if (_Variants.length > 0 || _Bedpe.length > 0) {
 		d3.selectAll(".when_variants_only").style("color","black");
@@ -1848,7 +1960,9 @@ function select_read() {
 	}
 
 	_settings.min_align_length = 0;
-	// _settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
+	if (_settings.min_indel_size == _static.min_indel_size_for_region_view) {
+		_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;	
+	}
 
 	if (_settings.ref_match_chunk_ref_intervals) {
 		organize_refs_for_read_same_as_chunk();
@@ -2357,10 +2471,20 @@ function reset_svg() {
 
 function dotplot_alignment_path_generator(d) {
 
+	var previous_x = _scales.ref_interval_scale(map_ref_interval(d.r,d.path[0].R));
+	var previous_y = _scales.read_scale(d.path[0].Q);
+	var output = "M " + previous_x + " " + previous_y;
 
-	var output = "M " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[0].R)) + "," + _scales.read_scale(d.path[0].Q);
 	for (var i = 1; i < d.path.length; i++) {
-		output += ", L " + _scales.ref_interval_scale(map_ref_interval(d.r,d.path[i].R)) + "," + _scales.read_scale(d.path[i].Q);		
+		var current_x = _scales.ref_interval_scale(map_ref_interval(d.r,d.path[i].R));
+		var current_y = _scales.read_scale(d.path[i].Q);
+		if (current_x == previous_x || current_y == previous_y) {
+			output += " M " + current_x + " " + current_y;	
+		} else {
+			output += " L " + current_x + " " + current_y;	
+		}
+		previous_x = current_x;
+		previous_y = current_y;
 	}
 	
 	return output;
@@ -3035,7 +3159,7 @@ function bam_loaded() {
 	// Check match refs from region view checkbox by default
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
-
+	refresh_ui_for_new_dataset();
 
 	clear_sam_input();
 	clear_coords_input();
@@ -3206,7 +3330,7 @@ function check_if_all_bam_records_loaded() {
 		}
 		_Bam_records_from_multiregions = []; // reset to empty
 
-		_settings.min_indel_size = 10000;
+		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 		_Chunk_alignments = [];
 		for (var i in consolidated_records) {
 			_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
@@ -3296,7 +3420,7 @@ function use_fetched_data(records) {
 		consolidated_records = records;
 	}
 
-	_settings.min_indel_size = 1000; 
+	// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 	_Chunk_alignments = [];
 	for (var i in consolidated_records) {
 		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
