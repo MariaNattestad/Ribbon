@@ -49,7 +49,7 @@ _static.color_schemes = [
 ];
 _static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"],["#ffff00","#ad0000","#bdadc6", "#00ffff", "#e75200","#de1052","#ffa5a5","#7b7b00","#7bffff","#008c00","#00adff","#ff00ff","#ff0000","#ff527b","#84d6a5","#e76b52","#8400ff","#6b4242","#52ff52","#0029ff","#ffffad","#ff94ff","#004200","gray","black"],['#E41A1C', '#A73C52', '#6B5F88', '#3780B3', '#3F918C', '#47A266','#53A651', '#6D8470', '#87638F', '#A5548D', '#C96555', '#ED761C','#FF9508', '#FFC11A', '#FFEE2C', '#EBDA30', '#CC9F2C', '#AD6428','#BB614F', '#D77083', '#F37FB8', '#DA88B3', '#B990A6', '#999999']]
 _static.min_indel_size_for_region_view = 50;
-_static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Thin line"}]; // , {"id":"number","description":"number indicating size"}];
+_static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -135,18 +135,19 @@ function responsive_sizing() {
 	window_width = (w.innerWidth || e.clientWidth || g.clientWidth)*0.98;
 	window_height = (w.innerHeight || e.clientHeight || g.clientHeight)*0.96;
 
-	top_banner_size = 60;
+	var top_banner_size = 60;
 	_padding.top = top_banner_size;
 	_padding.bottom = 0;
 	_padding.left = 0;
 	_padding.right = 0;
 	_padding.between = 0.01*window_height;
 	_padding.text = _padding.between;
+	_padding.between_top_and_bottom_svg = _padding.between*2;
 
 	_layout.right_panel_fraction = 0.35;
 	_layout.svg_width_fraction = 1-_layout.right_panel_fraction;
 
-	_layout.svg1_height_fraction = 0.50;
+	_layout.svg1_height_fraction = 0.40;
 
 	_layout.left_width = (window_width - _padding.left - _padding.right) * (1-_layout.right_panel_fraction);
 	_layout.panel_width = (window_width - _padding.left - _padding.right) * _layout.right_panel_fraction;
@@ -156,24 +157,16 @@ function responsive_sizing() {
 	_layout.total_height = (window_height - _padding.top - _padding.bottom);
 
 	_layout.svg_width = _layout.left_width - _padding.between*4;
-	_layout.svg_height = _layout.svg1_box_height - _padding.between*4;
+	_layout.svg_height = _layout.svg1_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.svg2_width = _layout.left_width - _padding.between*4;
-	_layout.svg2_height = _layout.svg2_box_height - _padding.between*4;
+	_layout.svg2_height = _layout.svg2_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.input_margin = _padding.between;
 
 	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
 	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
 	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.07, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
-
-	d3.select("#sam_input_panel")
-		.style("width",_layout.left_width + "px")
-		.style("height",_layout.input_height + "px")
-		.style("padding",_layout.input_margin + "px")
-
-		// d3.select("#sam_input")
-			// .style("height",(_layout.input_height-_layout.input_margin*2) + "px");
 
 	d3.select("#svg1_panel")
 		.style("width",_layout.left_width + "px")
@@ -702,7 +695,23 @@ function draw_chunk_alignments() {
 				}
 			}
 			if (has_visible_alignments) {
-				chunks.push(_Chunk_alignments[i]);
+				// Copy over all the read's features
+				var this_chunk = {};
+				for (var key in _Chunk_alignments[i]) {
+					this_chunk[key] = _Chunk_alignments[i][key];
+				}
+
+				// Filter alignments for each chunk:
+				var filtered_alignments = [];
+				for (var a in _Chunk_alignments[i].alignments) {
+					var d = _Chunk_alignments[i].alignments[a];
+					if (_Refs_show_or_hide[d.r] && map_chunk_ref_interval(d.r, d.rs) != undefined) {
+						filtered_alignments.push(d);
+					}
+				}
+				this_chunk.unfiltered_alignments = this_chunk.alignments;
+				this_chunk.alignments = filtered_alignments;
+				chunks.push(this_chunk);
 				chunks[counter].index = i; // to remember the data order even after sorting
 				counter++;	
 			}
@@ -743,9 +752,9 @@ function draw_chunk_alignments() {
 	for (var i = 0; i < chunks.length; i++) {
 		// Whether to flip orientation across all alignments of the read
 		if (_settings.orient_reads_by == "primary") {
-			chunks[i].flip = (chunks[i].alignments[chunks[i].index_primary].qe - chunks[i].alignments[chunks[i].index_primary].qs < 0);
+			chunks[i].flip = (chunks[i].unfiltered_alignments[chunks[i].index_primary].qe - chunks[i].unfiltered_alignments[chunks[i].index_primary].qs < 0);
 		} else if (_settings.orient_reads_by == "longest") {
-			chunks[i].flip = (chunks[i].alignments[chunks[i].index_longest].qe - chunks[i].alignments[chunks[i].index_longest].qs < 0);
+			chunks[i].flip = (chunks[i].unfiltered_alignments[chunks[i].index_longest].qe - chunks[i].unfiltered_alignments[chunks[i].index_longest].qs < 0);
 		} else if (_settings.orient_reads_by == "reverse") {
 			chunks[i].flip = true;
 		} else {
@@ -763,31 +772,29 @@ function draw_chunk_alignments() {
 
 	////////////  Draw alignments  //////////////
 	if (_settings.show_indels_as == "none") {
-		console.log("none");
 		// Draw simple lines
 		alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
 			.append("line")
-				.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
-					.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
-					.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
-					.attr("y1",0)
-					.attr("y2",0)
-					.style("stroke",function(d) {
-						if (d3.select(this.parentNode).datum().flip == false) {
-							if (d.qs < d.qe) {return "blue"} else {return "red"}	
-						} else {
-							if (d.qs < d.qe) {return "red"} else {return "blue"}
-						}
-					})
-					.style("stroke-width",3)
-					.style("stroke-opacity",0.5)
-					.on('mouseover', function(d) {
-						var text = "select read";
-						var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
-						var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-						show_tooltip(text,x,y,_svg2);
-					})
-					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+				.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
+				.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
+				.attr("y1",0)
+				.attr("y2",0)
+				.style("stroke",function(d) {
+					if (d3.select(this.parentNode).datum().flip == false) {
+						if (d.qs < d.qe) {return "blue"} else {return "red"}	
+					} else {
+						if (d.qs < d.qe) {return "red"} else {return "blue"}
+					}
+				})
+				.style("stroke-width",3)
+				.style("stroke-opacity",0.5)
+				.on('mouseover', function(d) {
+					var text = "select read";
+					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+					var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+					show_tooltip(text,x,y,_svg2);
+				})
+				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 	} else {
 		function chunk_alignment_path_generator(d) {
 			var previous_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[0].R));
@@ -798,7 +805,7 @@ function draw_chunk_alignments() {
 			for (var i = 1; i < d.path.length; i++) {
 				var current_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[i].R));
 				var current_read_position = d.path[i].Q;
-				if (current_x == previous_x || current_read_position == previous_read_position) {
+				if (current_read_position == previous_read_position) { // current_x == previous_x ||
 					output += " M " + current_x + " " + 0;	
 				} else {
 					output += " L " + current_x + " " + 0;
@@ -812,8 +819,68 @@ function draw_chunk_alignments() {
 		// Draw paths to allow indels
 		alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
 			.append("path")
-				.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
-					.attr("d",chunk_alignment_path_generator)
+				.attr("d",chunk_alignment_path_generator)
+				.style("stroke",function(d) {
+					if (d3.select(this.parentNode).datum().flip == false) {
+						if (d.qs < d.qe) {return "blue"} else {return "red"}	
+					} else {
+						if (d.qs < d.qe) {return "red"} else {return "blue"}
+					}
+				})
+				.style("stroke-width",3)
+				.style("stroke-opacity",0.5)
+				.on('mouseover', function(d) {
+					var text = "select read";
+					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
+					var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
+					show_tooltip(text,x,y,_svg2);
+				})
+				.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+		// Record all of the insertions and deletions from these alignments
+		if (_settings.show_indels_as != "none" && _settings.show_indels_as != "gaps") {
+			for (var i in chunks) {
+				for (var j in chunks[i].alignments) {
+					chunks[i].alignments[j].deletions = [];
+					chunks[i].alignments[j].insertions = [];
+
+					var path = chunks[i].alignments[j].path;
+					var previous_ref_pos = path[0].R;
+					var previous_read_pos = path[0].Q;
+					for (var p = 1; p < path.length; p++) {
+						var current_ref_pos = path[p].R;
+						var current_read_pos = path[p].Q;
+						if (current_read_pos == previous_read_pos && current_ref_pos != previous_ref_pos) {
+							chunks[i].alignments[j].deletions.push({"R1":previous_ref_pos, "R2":current_ref_pos, "size":current_ref_pos - previous_ref_pos, "chrom":chunks[i].alignments[j].r});
+						}
+						if (current_ref_pos == previous_ref_pos && current_read_pos != previous_read_pos) {
+							chunks[i].alignments[j].insertions.push({"R":current_ref_pos, "size":current_read_pos - previous_read_pos, "chrom":chunks[i].alignments[j].r});
+						}
+						previous_ref_pos = current_ref_pos;
+						previous_read_pos = current_read_pos;
+					}
+				}
+			}
+
+			if (_settings.show_indels_as == "thin" || _settings.show_indels_as == "numbers") {
+				var deletion_groups = alignment_groups.selectAll("g.alignment_deletions").data(function(read_record){return read_record.alignments}).enter()
+					.append("g").attr("class","alignment_deletions")
+						.selectAll("g.deletions").data(function(alignment) {return alignment.deletions}).enter()
+							.append("g")
+							.attr("class","deletions")
+							.on('mouseover', function(d) {
+								var text = d.size + "bp deletion";
+								var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, (d.R1+d.R2)/2));
+								var y = d3.select(this.parentNode.parentNode).datum().read_y - _tooltip.height;
+								show_tooltip(text,x,y,_svg2);
+							})
+							.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+				deletion_groups.append("line")
+					.attr("x1",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R1))})
+					.attr("x2",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R2))})
+					.attr("y1",0)
+					.attr("y2",0)
 					.style("stroke",function(d) {
 						if (d3.select(this.parentNode).datum().flip == false) {
 							if (d.qs < d.qe) {return "blue"} else {return "red"}	
@@ -821,51 +888,75 @@ function draw_chunk_alignments() {
 							if (d.qs < d.qe) {return "red"} else {return "blue"}
 						}
 					})
-					.style("stroke-width",3)
-					.style("stroke-opacity",0.5)
-					.on('mouseover', function(d) {
-						var text = "select read";
-						var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
-						var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-						show_tooltip(text,x,y,_svg2);
+					.style("stroke-width",1)
+					.style("stroke-opacity",0.5);
+
+
+
+
+				var insertion_groups = alignment_groups.selectAll("g.alignment_insertions").data(function(read_record){return read_record.alignments}).enter()
+					.append("g").attr("class","alignment_insertions")
+						.selectAll("g.insertions").data(function(alignment) {return alignment.insertions}).enter()
+							.append("g")
+							.attr("class","insertions")
+							.on('mouseover', function(d) {
+								var text = d.size + "bp insertion";
+								var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R));
+								var y = d3.select(this.parentNode.parentNode).datum().read_y - _tooltip.height;
+								show_tooltip(text,x,y,_svg2);
+							})
+							.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+				insertion_groups.append("circle")
+					.attr("cx",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R))})
+					.attr("cy",0)
+					.attr("r",function(d) {return Math.min(_layout.svg_height/40, _positions.chunk.reads.height/num_reads_to_show)*0.5})
+					.style("fill",function(d) {
+						if (d3.select(this.parentNode).datum().flip == false) {
+							if (d.qs < d.qe) {return "blue"} else {return "red"}	
+						} else {
+							if (d.qs < d.qe) {return "red"} else {return "blue"}
+						}
 					})
-					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+					.style("stroke","black")
+					.style("stroke-width",1);
+					
+				if (_settings.show_indels_as == "numbers") {
+					deletion_groups.append("rect")
 
-		if (_settings.show_indels_as == "thin") {
-			function indel_path_generator(d) {
-				var previous_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[0].R));
-				var previous_read_position = d.path[0].Q;
-				
-				var output = "M " + previous_x + " " + 0;
+					
+					var height = (_positions.chunk.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
+					var width = height*4;
 
-				for (var i = 1; i < d.path.length; i++) {
-					var current_x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r,d.path[i].R));
-					var current_read_position = d.path[i].Q;
-					if (current_x == previous_x || current_read_position == previous_read_position) {
-						output += " L " + current_x + " " + 0;	
-					} else {
-						output += " M " + current_x + " " + 0;
-					}
-					previous_x = current_x;
-					previous_read_position = current_read_position;
+					deletion_groups.append("rect")
+							.attr("width",width)
+							.attr("x",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, (d.R1+d.R2)/2)) - width/2})
+							.attr("height",height)
+							.attr("y",(-height/2))
+							.attr("fill","white");
+					deletion_groups.append("text")
+						.text(function(d) {return d.size})
+						.attr("x", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, (d.R1+d.R2)/2))})
+						.attr("y", 0)
+						.style("font-size",height)
+						.style('text-anchor',"middle").attr("dominant-baseline","middle");
+
+
+					insertion_groups.append("rect")
+							.attr("width",width)
+							.attr("x",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R)) - width/2})
+							.attr("height",height)
+							.attr("y",(-height/2))
+							.attr("fill","black");
+					insertion_groups.append("text")
+						.text(function(d) {return d.size})
+						.attr("x", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R))})
+						.attr("y", 0)
+						.style("fill","white")
+						.style("font-size",height)
+						.style('text-anchor',"middle").attr("dominant-baseline","middle");
 				}
-				return output;
 			}
-			alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
-				.append("path")
-					.filter(function(d) {return (_Refs_show_or_hide[d.r]) && (map_chunk_ref_interval(d.r, d.rs) != undefined)})
-						.attr("d",indel_path_generator)
-						.style("stroke",function(d) {
-							if (d3.select(this.parentNode).datum().flip == false) {
-								if (d.qs < d.qe) {return "blue"} else {return "red"}	
-							} else {
-								if (d.qs < d.qe) {return "red"} else {return "blue"}
-							}
-						})
-						.style("stroke-width",1)
-						.style("stroke-opacity",0.5);
-
-
 		}
 	}
 }
@@ -1216,7 +1307,6 @@ function show_variant_table() {
 			.check_ready_function(check_bam_done_fetching)
 	);
 	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
-		console.log("hello");
 		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. You can also apply multiple filters in the same column, just separate them with spaces.");
 	});
 
@@ -2507,7 +2597,7 @@ function draw_dotplot() {
 		_positions.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
 		_positions.padding = {"top": square * _positions.fractions.top_right, "right": square * _positions.fractions.top_right, "bottom": square * _positions.fractions.bottom_left, "left": square * _positions.fractions.bottom_left};
 		_positions.main = square*_positions.fractions.main;
-		// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions._padding.top,'width':_positions.main,'height':_positions.main};
+		// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
 		_positions.canvas = {'x':_layout.svg_width/2-_positions.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
 		
 	} else {
