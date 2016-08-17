@@ -187,6 +187,24 @@ function responsive_sizing() {
 
 }
 
+function getUrlVars() {
+	var vars = {};
+	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+			vars[key] = value;
+	});
+	return vars;
+}
+
+
+function open_any_url_files() {
+	var url_vars = getUrlVars();
+	if (url_vars["bam"] != undefined) {
+		// "http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam"
+		// http://localhost/ribbon/?bam=http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam
+		read_bam_url(url_vars["bam"]);
+	}
+}
+
 //////////////////// Region settings /////////////////////////
 
 $('#region_mq_slider').slider( {
@@ -2986,7 +3004,6 @@ function draw_ribbons() {
 
 }
 
-
 // ===========================================================================
 // == Examples
 // ===========================================================================
@@ -3006,34 +3023,55 @@ function add_examples_to_navbar() {
 	navbar_examples = d3.select("ul#examples_list");
 
 	jQuery.ajax({
-			url: "examples",
-			error: function() {
-				navbar_examples.append("li").html("Can't find examples. Create a directory called examples within the main ribbon directory and put .sam and .coords files inside it, then they will show up here");
-			},
-			success: function (data) {
-				$(data).find("a:contains(.sam)").each(function() {
-					// will loop through
-					var example_file = $(this).attr("href");
+		url: "examples",
+		cache: false,
+		error: function() {
+			navbar_examples.append("li").html("Can't find examples. Create a directory called examples within the main ribbon directory and put .sam and .coords files inside it, then they will show up here");
+		},
+		success: function (data) {
+			$(data).find("a:contains(.sam)").each(function() {
+				// will loop through
+				var example_file = $(this).attr("href");
 
-					navbar_examples.append("li").append("a")
-						.attr("href",void(0))
-						.on("click",function() {read_example_sam(example_file);})
-						.text(example_file);
-				})
-				$(data).find("a:contains(.coords)").each(function() {
-					// will loop through
-					var example_file = $(this).attr("href");
+				navbar_examples.append("li").append("a")
+					.attr("href",void(0))
+					.on("click",function() {read_example_sam(example_file);})
+					.text(example_file);
+			})
+			$(data).find("a:contains(.bam)").each(function() {
+				// will loop through
+				var example_file = $(this).attr("href");
 
-					navbar_examples.append("li").append("a")
-						.attr("href",void(0))
-						.on("click",function() {read_example_coords(example_file);})
-						.text(example_file);
-				})
-			}
+				navbar_examples.append("li").append("a")
+					.attr("href",void(0))
+					.on("click",function() {read_example_bam(example_file);})
+					.text(example_file);
+			})
+			$(data).find("a:contains(.coords)").each(function() {
+				// will loop through
+				var example_file = $(this).attr("href");
+
+				navbar_examples.append("li").append("a")
+					.attr("href",void(0))
+					.on("click",function() {read_example_coords(example_file);})
+					.text(example_file);
+			})
+		}
 	});
 }
 
+function read_bam_url(url) {
+	_Bam = new Bam(url);
+	_Bam.getHeader(function() {console.log("got header")});
+	wait_then_run_when_bam_file_loaded();
+}
 
+function read_example_bam(filename) {
+	var url = window.location.href + "/examples/" + filename;
+
+	console.log(url);
+	read_bam_url(url);
+}
 
 function read_example_sam(filename) {
 	user_message("Info","Loading sam file. This may take a few minutes.");
@@ -3045,7 +3083,6 @@ function read_example_sam(filename) {
 	 	// $('.nav-tabs a[href="#sam"]').tab('show');
 	}})
 }
-
 
 function read_example_coords(filename) {
 	user_message("Info","Loading coordinates file. This may take a few minutes.");
@@ -3205,11 +3242,11 @@ function create_bam(files) {
 	 }
 	_Bam = new Bam( bamFile, { bai: baiFile });
 
-	wait_then_run_when_all_data_loaded();
+	wait_then_run_when_bam_file_loaded();
 }
 
 
-function wait_then_run_when_all_data_loaded(counter) {
+function wait_then_run_when_bam_file_loaded(counter) {
 	if (counter == undefined) {
 		counter = 0;
 	} else if (counter > 30) {
@@ -3217,14 +3254,13 @@ function wait_then_run_when_all_data_loaded(counter) {
 		return;
 	}
 	if (_Bam.header != undefined) {
-		console.log("ready")
+		console.log("ready");
+		console.log(_Bam);
 		bam_loaded();
 	} else {
 		console.log("waiting for data to load")
-		window.setTimeout(function () {wait_then_run_when_all_data_loaded(counter+1)},300)
+		window.setTimeout(function () {wait_then_run_when_bam_file_loaded(counter+1)},300)
 	}
-
-
 }
 
 function clear_sam_input() {
@@ -3278,7 +3314,10 @@ function bam_loaded() {
 		}
 	}
 
-	if (PG_count == 1) {
+	if (PG_count == 0) {
+		user_message("Warning", "No header found. Are you sure this is a bam file?");
+	}
+	else if (PG_count == 1) {
 		if (_Bedpe.length > 0 || _Variants.length > 0) {
 			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
 			user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Click on rows in the table to fetch reads in those regions.");
@@ -3383,6 +3422,29 @@ var _Bam_records_from_multiregions = [];
 var _num_loaded_regions = 0;
 var _num_bam_records_to_load = 0;
 
+function my_fetch(chrom, start, end, callback) {
+	
+	if (_Bam.sourceType == "url") {
+		// var records = [];
+		var rawRecords = "";
+		var region = chrom + ":" + start + "-" + end;
+		var cmd = new iobio.cmd(_Bam.iobio.samtools,['view', _Bam.bamUri, region], {ssl:_Bam.ssl,})
+		cmd.on('error', function(error) {
+			// console.log(error);
+		})
+		cmd.on('data', function(data, options) {
+			rawRecords += data;
+		});
+		cmd.on('end', function() {
+			callback(parse_bam_text(rawRecords));
+		});
+
+		cmd.run();
+	} else {
+		_Bam.fetch(chrom, start, end, callback);
+	}
+}
+
 function fetch_regions(regions) {
 	if (_Bam != undefined) {
 		console.log("Fetching bam records at position");
@@ -3393,7 +3455,7 @@ function fetch_regions(regions) {
 		_Bam_records_from_multiregions = [];
 
 		for (var i in regions) {
-			_Bam.fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
+			my_fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
 		}
 	} else {
 		console.log("No bam file");
@@ -3445,7 +3507,7 @@ function go_to_region(chrom,start,end) {
 		console.log("Fetching bam records at position");
 		show_waiting_for_bam();
 
-		_Bam.fetch(chrom,start,end,use_fetched_data);
+		my_fetch(chrom,start,end,use_fetched_data);
 	} else {
 		console.log("No bam file");
 		user_message("Error","No bam file");
@@ -3455,7 +3517,6 @@ function go_to_region(chrom,start,end) {
 //////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
 function parse_bam_record(record) {
-	
 	var chrom = record.segment;
 	var rstart = record.pos;
 	var flag = record.flag;
@@ -3474,10 +3535,11 @@ function parse_bam_record(record) {
 	
 	var alignments = [];
 	
+	// console.log("parsing SA field");
 	if (record.SA != undefined) {
 		alignments = parse_SA_field(record.SA);	
 	}
-	
+	// console.log("done with SA field, reading primary cigar string");
 	alignments.push(read_cigar(raw_cigar,chrom,rstart,strand,mq));
 
 	var read_length = alignments[alignments.length-1].read_length;
@@ -3493,6 +3555,40 @@ function parse_bam_record(record) {
 
 }
 
+function parse_bam_text(bam_text) {
+	var bam_records = [];
+	var lines = bam_text.split("\n");
+
+	for (var i = 0; i < lines.length; i++) {
+		var columns = lines[i].split(/\s+/);
+		if (columns[0][0] != "@" && columns.length >= 3) {
+			if (columns.length >= 6) {
+				var SA = "";
+				// We only need the SA tag
+				for (var j = 0; j < columns.length; j++) {
+					if (columns[j].substr(0,2) == "SA") {
+						SA = columns[j].split(":")[2];
+					}
+				}
+				if (columns[0][0] != "m") {
+					console.log("ERROR -- ERROR -- ERROR -- ERROR");
+					console.log(bam_text);
+					console.log(lines[i]);
+					throw "ERROR";
+				}
+
+				bam_records.push({"readName":columns[0],"segment":columns[2], "pos":parseInt(columns[3]), "flag":parseInt(columns[1]), "mq": parseInt(columns[4]), "cigar": columns[5], "SA":SA});
+
+			}
+		}
+	}
+	// console.log("done parsing bam text");
+
+	// create list of BamRecords:
+	// {"segment": "chr1","pos":48492988, "flag": 2048, "mq": 60, "cigar":"83984M382H", "tags": "NMskdjfkdjf SAsdkjfskdf etc"}
+	return bam_records;
+
+}
 
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
@@ -3646,5 +3742,6 @@ function resizeWindow() {
 	responsive_sizing();
 }
 
+open_any_url_files();
 run();
 
