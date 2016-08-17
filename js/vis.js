@@ -3038,15 +3038,15 @@ function add_examples_to_navbar() {
 					.on("click",function() {read_example_sam(example_file);})
 					.text(example_file);
 			})
-			$(data).find("a:contains(.bam)").each(function() {
-				// will loop through
-				var example_file = $(this).attr("href");
+			// $(data).find("a:contains(.bam)").each(function() {
+			// 	// will loop through
+			// 	var example_file = $(this).attr("href");
 
-				navbar_examples.append("li").append("a")
-					.attr("href",void(0))
-					.on("click",function() {read_example_bam(example_file);})
-					.text(example_file);
-			})
+			// 	navbar_examples.append("li").append("a")
+			// 		.attr("href",void(0))
+			// 		.on("click",function() {read_example_bam(example_file);})
+			// 		.text(example_file);
+			// })
 			$(data).find("a:contains(.coords)").each(function() {
 				// will loop through
 				var example_file = $(this).attr("href");
