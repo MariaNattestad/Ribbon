@@ -3139,8 +3139,15 @@ function read_permalink(id) {
 	jQuery.ajax({
 		url: "permalinks/" + id + ".json", 
 		success: function(file_content) {
-			var file_content = file_content.replace(/\n/g,"\\n").replace(/\t/g,"\\t");
-			json_data = JSON.parse(file_content);
+			console.log(file_content);
+
+			var json_data = null; 
+			if (typeof(file_content) === "object") {
+				json_data = file_content;
+			} else {
+				var file_content = file_content.replace(/\n/g,"\\n").replace(/\t/g,"\\t");
+				json_data = JSON.parse(file_content);
+			}
 
 			if (json_data["bam"] != undefined) {
 				

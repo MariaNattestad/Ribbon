@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-
 <?php 
 	// http://stackoverflow.com/questions/4356289/php-random-string-generator
 	function generateRandomString($length = 10) {
@@ -19,9 +17,8 @@
 		fwrite($file, json_encode($data));
 		fclose($file);
 
-		echo "http://genomeribbon.com/?perma=" . $filename;
+		echo "http://" . $_SERVER['HTTP_HOST'] .  "/?perma=" . $filename;
 	} else {
 		echo "No data given";
 	}
 ?>
-
