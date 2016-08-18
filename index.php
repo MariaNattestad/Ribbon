@@ -280,6 +280,10 @@
 								<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
 							</tr>
 							<tr>
+								<td>Highlight selected read</td>
+								<td><input id="highlight_selected_read" type="checkbox" checked></td>
+							</tr>
+							<tr>
 								<th colspan="3">Settings</th>
 							</tr>
 

@@ -77,6 +77,7 @@ _settings.ref_match_chunk_ref_intervals = true;
 _settings.show_only_selected_variants = false;
 _settings.margin_to_merge_ref_intervals = 10000;
 _settings.show_indels_as = "thin";
+_settings.highlight_selected_read = true;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -322,8 +323,7 @@ function search_select_chrom(chrom) {
 }
 
 function search_select_read(d) {
-	_current_read_index = d.index;
-	select_read();
+	new_read_selected(d.index);
 }
 
 d3.select("#min_read_length_input").on("keyup",function() {
@@ -387,6 +387,12 @@ $('#show_only_selected_variants').change(function() {
 	draw();
 });
 
+$('#highlight_selected_read').change(function() {
+	_settings.highlight_selected_read = this.checked
+	new_read_selected(_current_read_index);
+});
+
+
 
 $('#outline_checkbox').change(function() {
 	_settings.ribbon_outline = this.checked
@@ -416,6 +422,7 @@ $(".ribbon_vs_dotplot").click(function(){
 	draw();
 
 });
+
 
 function draw_chunk_ref() {
 	if (_Whole_refs.length == 0) {
@@ -786,13 +793,14 @@ function draw_chunk_alignments() {
 	//////////////  Draw rows  //////////////
 	var alignment_groups = _svg2.selectAll("g.alignment_groups").data(chunks).enter()
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
-		.on("click",function(d) { _current_read_index = d.index; select_read();});
+		.on("click",function(d) { new_read_selected(d.index);});
 
 	////////////  Draw alignments  //////////////
 	if (_settings.show_indels_as == "none") {
 		// Draw simple lines
 		alignment_groups.selectAll("line.alignment").data(function(read_record){return read_record.alignments}).enter()
 			.append("line")
+				.attr("class","alignment")
 				.attr("x1",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.rs)); })
 				.attr("x2",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, d.re)); })
 				.attr("y1",0)
@@ -804,8 +812,6 @@ function draw_chunk_alignments() {
 						if (d.qs < d.qe) {return "red"} else {return "blue"}
 					}
 				})
-				.style("stroke-width",3)
-				.style("stroke-opacity",0.5)
 				.on('mouseover', function(d) {
 					var text = "select read";
 					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
@@ -837,6 +843,7 @@ function draw_chunk_alignments() {
 		// Draw paths to allow indels
 		alignment_groups.selectAll("path.alignment").data(function(read_record){return read_record.alignments}).enter()
 			.append("path")
+				.attr("class","alignment")
 				.attr("d",chunk_alignment_path_generator)
 				.style("stroke",function(d) {
 					if (d3.select(this.parentNode).datum().flip == false) {
@@ -845,8 +852,6 @@ function draw_chunk_alignments() {
 						if (d.qs < d.qe) {return "red"} else {return "blue"}
 					}
 				})
-				.style("stroke-width",3)
-				.style("stroke-opacity",0.5)
 				.on('mouseover', function(d) {
 					var text = "select read";
 					var x = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.r, (d.rs+d.re)/2));
@@ -1075,8 +1080,7 @@ function chunk_changed() {
 
 		draw_region_view();
 		
-		_current_read_index = 0;
-		select_read();
+		new_read_selected(0);
 
 		var readname_livesearch = d3.livesearch().max_suggestions_to_show(5).search_list(_Chunk_alignments).search_key("readname").selection_function(search_select_read).placeholder(_Chunk_alignments[0].readname);
 		d3.select("#readname_livesearch").call(readname_livesearch); 
@@ -2032,6 +2036,23 @@ function reparse_read(record_from_chunk) {
 	} else {
 		console.log("Don't recognize record_from_chunk.raw_type, must be sam or bam");
 	}
+}
+
+function new_read_selected(index) {
+	_current_read_index = index;
+	select_read();
+
+
+	// _svg2.selectAll("g.alignment_groups").each(function(d) {
+	// 	if (d.index == _current_read_index) {
+	// 		console.log(d.read_y);
+	// 		_svg2.select("#read_select_marker").datum(d.read_y).
+	// 	}
+	// });
+
+	_svg2.selectAll("g.alignment_groups").attr("id",function(d) {if (d.index == _current_read_index && _settings.highlight_selected_read) {return "selected_read_in_region_view"} else { return ""}});
+
+	// ????????????????
 }
 
 

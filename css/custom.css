@@ -210,3 +210,22 @@ path, line {
 	/* Makes tiny alignments appear bigger by rounding ends*/
 	stroke-linecap: round;
 }
+
+#selected_read_in_region_view .alignment{
+	stroke-width: 6px;
+}
+
+.alignment {
+	stroke-width: 3;
+	stroke-opacity: 0.5;
+}
+
+
+
+
+
+
+
+
+
+
