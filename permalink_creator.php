@@ -12,16 +12,14 @@
 	    return $randomString;
 	}
 
-	if (isset($_POST['splitthreader'])) {
-		// echo $_POST['splitthreader'];
-		$data = json_decode($_POST['splitthreader']);
+	if (isset($_POST['igv'])) {
+		$data = json_decode($_POST['igv']);
 		$filename = generateRandomString(10);
-		$file = fopen(dirname(__FILE__) . '/../permalinks/' . $filename . ".json", 'w');
+		$file = fopen("/tmp/" . $filename . ".json", 'w'); // dirname(__FILE__) . '/../permalinks/'
 		fwrite($file, json_encode($data));
 		fclose($file);
 
-		// echo "http://genomeribbon.com/?perma=" . $filename;
-		echo "localhost/ribbon/?perma=" . $filename;
+		echo "http://genomeribbon.com/?perma=" . $filename;
 	} else {
 		echo "No data given";
 	}
