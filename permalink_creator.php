@@ -12,8 +12,8 @@
 	    return $randomString;
 	}
 
-	if (isset($_POST['igv'])) {
-		$data = json_decode($_POST['igv']);
+	if (isset($_POST['splitthreader'])) {
+		$data = json_decode($_POST['splitthreader']);
 		$filename = generateRandomString(10);
 		$file = fopen("/tmp/" . $filename . ".json", 'w'); // dirname(__FILE__) . '/../permalinks/'
 		fwrite($file, json_encode($data));
