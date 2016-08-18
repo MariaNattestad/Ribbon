@@ -41,7 +41,7 @@ _static.dotplot_ref_opacity = 0.5;
 
 _static.fraction_ref_to_show_whole = 0.30; //  for very large contigs that span most of a reference, we show the whole reference
 _static.read_sort_options = [{"id":"original","description":"Original order"},{"id":"longest","description":"Position of longest alignment"},{"id":"priamry","description":"Position of primary alignment in SAM/BAM entry"},{"id":"readname", "description":"Read/query name (natural sort)"},{"id":"num_alignments","description":"Number of alignments"}];
-_static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"reverse",description:"Reverse orientation"}, {id:"longest",description:"Orientation of longest alignment"},{id:"primary",description:"Orientation of primary alignment in SAM/BAM entry"}];
+_static.read_orientation_options = [{id:"original", description:"Original orientation"}, {id:"reverse",description:"Reverse orientation"}, {id:"longest",description:"Orientation of longest alignment"},{id:"primary",description:"Orientation of alignment in selected locus (SAM/BAM)"}];
 _static.color_schemes = [
 	{"name":"Color scheme 1", "colors": 0},
 	{"name":"Color scheme 2", "colors": 1},
@@ -199,10 +199,15 @@ function getUrlVars() {
 
 function open_any_url_files() {
 	var url_vars = getUrlVars();
+	if (url_vars["perma"] != undefined) {
+		read_permalink(url_vars["perma"]);
+	}
+
 	if (url_vars["bam"] != undefined) {
 		// "http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam"
 		// http://localhost/ribbon/?bam=http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam
 		read_bam_url(url_vars["bam"]);
+
 	}
 }
 
@@ -2041,18 +2046,7 @@ function reparse_read(record_from_chunk) {
 function new_read_selected(index) {
 	_current_read_index = index;
 	select_read();
-
-
-	// _svg2.selectAll("g.alignment_groups").each(function(d) {
-	// 	if (d.index == _current_read_index) {
-	// 		console.log(d.read_y);
-	// 		_svg2.select("#read_select_marker").datum(d.read_y).
-	// 	}
-	// });
-
 	_svg2.selectAll("g.alignment_groups").attr("id",function(d) {if (d.index == _current_read_index && _settings.highlight_selected_read) {return "selected_read_in_region_view"} else { return ""}});
-
-	// ????????????????
 }
 
 
@@ -3113,6 +3107,74 @@ function read_bam_url(url) {
 	set_alignment_info_text("Bam from url: " + url);
 }
 
+function load_json_bam(header) {
+	_settings.current_input_type = "bam";
+	// Check match refs from region view checkbox by default
+	_settings.ref_match_chunk_ref_intervals = true;
+	d3.select("#ref_match_region_view").property("checked",true);
+	refresh_ui_for_new_dataset();
+
+	clear_sam_input();
+	clear_coords_input();
+
+	clear_data();
+
+	record_bam_header(header);
+
+	organize_references_for_chunk();
+	show_all_chromosomes();
+	apply_ref_filters();
+
+	reset_svg2();
+	draw_chunk_ref();
+	d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
+
+	d3.select("#region_selector_panel").style("display","block");
+	d3.select("#variant_input_panel").style("display","block");
+
+}
+
+function read_permalink(id) {
+	user_message("Info","Loading data from permalink");
+	jQuery.ajax({
+		url: "permalinks/" + id + ".json", 
+		success: function(file_content) {
+			var file_content = file_content.replace(/\n/g,"\\n").replace(/\t/g,"\\t");
+			json_data = JSON.parse(file_content);
+
+			if (json_data["bam"] != undefined) {
+				
+				if (json_data["bam"]["header"]["sq"] != undefined) {
+					// header must be [{name: , end: }, {name: , end: }]
+					load_json_bam(json_data["bam"]["header"]["sq"]);
+				} else {
+					user_message("JSON object has bam, but bam does not contain key: records");
+				}
+				// json_data["bam"]["records"] is a list of records fitting parse_bam_record()
+				if (json_data["bam"]["records"] != undefined) {
+					use_fetched_data(json_data["bam"]["records"]);	
+				} else {
+					user_message("JSON object has bam, but bam does not contain key: records");
+				}
+			}
+			else if (json_data["bam_url"] != undefined) {
+				read_bam_url(json_data["bam_url"]);
+			} else if (json_data["sam"] != undefined) {
+				sam_input_changed(json_data["sam"]);
+			}
+			if (json_data["bedpe"] != undefined) {
+				bedpe_input_changed(json_data["bedpe"]);
+			}
+			if (json_data["bed"] != undefined) {
+				bed_input_changed(json_data["bed"]);
+			} else if (json_data["vcf"] != undefined) {
+				vcf_input_changed(json_data["vcf"]);
+			}
+		}
+	});
+}
+
+
 function read_example_bam(filename) {
 	var url = window.location.href + "/examples/" + filename;
 
@@ -3316,7 +3378,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
 	}
 	if (_Bam.header != undefined) {
 		console.log("ready");
-		console.log(_Bam);
 		bam_loaded();
 	} else {
 		console.log("waiting for data to load")
@@ -3353,7 +3414,7 @@ function bam_loaded() {
 
 	clear_data();
 
-	record_bam_header();
+	record_bam_header(_Bam.header.sq);
 
 	organize_references_for_chunk();
 	show_all_chromosomes();
@@ -3392,15 +3453,12 @@ function bam_loaded() {
 	refresh_visibility();
 }
 
-function record_bam_header() {
-	
-	// console.log(bam); 
-	// console.log( bam.bam.indices[bam.bam.chrToIndex["chr2"]] );
+function record_bam_header(sq_list) {
+	// sq_list = [{name:  , end:}];
 
-	// console.log(bam.header.sq);
 	_Ref_sizes_from_header = {};
-	for (var i in _Bam.header.sq) {
-		_Ref_sizes_from_header[_Bam.header.sq[i].name] = _Bam.header.sq[i].end;
+	for (var i in sq_list) {
+		_Ref_sizes_from_header[sq_list[i].name] = sq_list[i].end;
 	}
 	
 	var chromosomes = [];
@@ -3597,7 +3655,7 @@ function parse_bam_record(record) {
 	var alignments = [];
 	
 	// console.log("parsing SA field");
-	if (record.SA != undefined) {
+	if (record.SA != undefined && record.SA != "") {
 		alignments = parse_SA_field(record.SA);	
 	}
 	// console.log("done with SA field, reading primary cigar string");
