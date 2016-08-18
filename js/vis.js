@@ -1140,7 +1140,9 @@ function sam_input_changed(sam_input_value) {
 	
 }
 
-$('#sam_input').bind('input propertychange', function() {sam_input_changed(this.value)});
+$('#sam_input').bind('input propertychange', function() {
+	set_alignment_info_text("Sam from text field"); sam_input_changed(this.value)
+});
 
 d3.select("#sam_info_icon").on("click", function() {
 	user_message("Instructions","Create a sam file using an aligner such as BWA, BLASR, or NGM-LR. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
@@ -2517,12 +2519,15 @@ function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
+		d3.select("#data_description_panel").style("display","block");
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
+		d3.select("#data_description_panel").style("display","none");
 	}
 
 	if (_Chunk_alignments.length > 0) {
 		d3.select("#region_settings_panel").style("display","block");
+		
 	} else {
 		d3.select("#region_settings_panel").style("display","none");
 	}
@@ -2533,6 +2538,11 @@ function refresh_visibility() {
 	} else {
 		d3.select("#settings").style('display','none');
 		d3.select("#svg1_panel").style('visibility','hidden');
+	}
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		d3.selectAll(".hide_when_no_variants").style("display","block");
+	} else {
+		d3.selectAll(".hide_when_no_variants").style("display","none");
 	}
 }
 
@@ -3060,10 +3070,26 @@ function add_examples_to_navbar() {
 	});
 }
 
+function variants_just_loaded() {
+	refresh_visibility();
+	d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+}
+
+function set_alignment_info_text(text) {
+	d3.select("#text_alignment_file_output").html(text);
+}
+
+function set_variant_info_text(text) {
+	d3.select("#text_variant_file_output").html(text);	
+}
+
+
 function read_bam_url(url) {
 	_Bam = new Bam(url);
 	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
+
+	set_alignment_info_text("Bam from url: " + url);
 }
 
 function read_example_bam(filename) {
@@ -3071,6 +3097,8 @@ function read_example_bam(filename) {
 
 	console.log(url);
 	read_bam_url(url);
+
+	set_alignment_info_text("Example: " + filename);
 }
 
 function read_example_sam(filename) {
@@ -3082,6 +3110,8 @@ function read_example_sam(filename) {
 	 	// // Open the sam tab
 	 	// $('.nav-tabs a[href="#sam"]').tab('show');
 	}})
+
+	set_alignment_info_text("Example: " + filename);
 }
 
 function read_example_coords(filename) {
@@ -3093,6 +3123,7 @@ function read_example_coords(filename) {
 	 	// // Open the coords tab
 	 	// $('.nav-tabs a[href="#coords"]').tab('show');
 	}})
+	set_alignment_info_text("Example: " + filename);
 }
 
 add_examples_to_navbar();
@@ -3114,8 +3145,9 @@ function open_bedpe_file(event) {
 		reader.onload = function(event) {
 			raw_data = event.target.result;
 			bedpe_input_changed(raw_data);
-			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+			variants_just_loaded();
 		}
+		set_variant_info_text("Bedpe from file: " + this.files[0].name);
 	}
 }
 function open_variant_file(event) {
@@ -3132,8 +3164,9 @@ function open_variant_file(event) {
 			raw_data = event.target.result;
 			clear_vcf_input();
 			vcf_input_changed(raw_data);
-			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+			variants_just_loaded();
 		}
+		set_variant_info_text("Variants from file: " + this.files[0].name); 
 		
 	}
 	else if (file_extension == "bed") {
@@ -3144,8 +3177,9 @@ function open_variant_file(event) {
 			raw_data = event.target.result;
 			clear_bed_input();
 			bed_input_changed(raw_data);
-			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
+			variants_just_loaded();
 		}
+		set_variant_info_text("Variants from file: " + this.files[0].name);
 	} else {
 		user_message("Error", "File extension must be .bed or .vcf");
 	}
@@ -3177,6 +3211,7 @@ function open_coords_file(event) {
 		coords_input_changed(raw_data);
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
 	}
+	set_alignment_info_text("Coords from file: " + this.files[0].name);
 }
 
 d3.select("#coords_file").on("change",open_coords_file);
@@ -3204,6 +3239,8 @@ function open_sam_file(event) {
 		sam_input_changed(raw_data);
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
 	}
+
+	set_alignment_info_text("Sam from file: " + this.files[0].name);
 }
 
 d3.select("#sam_file").on("change",open_sam_file);
@@ -3222,6 +3259,7 @@ function open_bam_file(event) {
 document.getElementById('bam_file').addEventListener('change',open_bam_file,false);
 
 function create_bam(files) {
+
 	// From bam.iobio, thanks Marth lab!
 	if (files.length != 2) {
 		 alert('must select both a .bam and .bai file');
@@ -3241,6 +3279,8 @@ function create_bam(files) {
 			alert('must select both a .bam and .bai file');
 	 }
 	_Bam = new Bam( bamFile, { bai: baiFile });
+
+	set_alignment_info_text("Bam from file: " + bamFile.name);
 
 	wait_then_run_when_bam_file_loaded();
 }

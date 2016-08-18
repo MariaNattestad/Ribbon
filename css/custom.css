@@ -172,7 +172,7 @@ div.input-group {
 
 }
 
-#text_read_output, #text_region_output {
+#text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output, textarea #notes  {
 	font-size: 1vw;
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 	white-space: nowrap;

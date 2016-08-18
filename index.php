@@ -117,6 +117,46 @@
 
 
 
+	<div class="panel-group" id="data_description_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_info_box">Information</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_info_box">
+				<div class="panel-body">
+					<div id="user_notes">
+						<label>Notes</label>
+						<textarea class="form-control" id="notes" placeholder="Add notes here (not saved)"></textarea>
+					</div>
+					<div>
+						<label>Alignment file</label>
+						<div id="text_alignment_file_output"></div>
+					</div>
+					<div class="hide_when_no_variants">
+						<label>Variant file</label>
+						<div id="text_variant_file_output"></div>
+					</div>
+					<div>
+						<label>Selected region</label>
+						<div id="text_region_output">(No region selected)</div>
+					</div>
+					<!-- <table>
+						<col width="100%">
+							<tr>
+								<th>Selected region</th>
+							</tr>
+							<tr>
+								<td style="width:100%"><div id="text_region_output"></div></td>
+							</tr>
+					</table> -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+
 
 	<div class="panel-group" id="region_settings_panel">
 		<div class="panel panel-default">
@@ -131,14 +171,6 @@
 						<col width="45%">
 						<col width="20%">
 						<col width="30%">
-							<tr>
-								<th colspan="3">Selected region</th>
-							</tr>
-							<tr>
-								<td style="width:100%" colspan="3"><div id="text_region_output"></div></td>
-							</tr>
-
-
 							<tr><th colspan="3">Filter reads</th></tr>
 							<tr><td>Number of alignments:</td>
 								<td> <span id="num_aligns_range_label"></span> </td>
