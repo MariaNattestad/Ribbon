@@ -874,10 +874,10 @@ function draw_chunk_alignments() {
 						var current_ref_pos = path[p].R;
 						var current_read_pos = path[p].Q;
 						if (current_read_pos == previous_read_pos && current_ref_pos != previous_ref_pos) {
-							chunks[i].alignments[j].deletions.push({"R1":previous_ref_pos, "R2":current_ref_pos, "size":current_ref_pos - previous_ref_pos, "chrom":chunks[i].alignments[j].r});
+							chunks[i].alignments[j].deletions.push({"R1":previous_ref_pos, "R2":current_ref_pos, "size":Math.abs(current_ref_pos - previous_ref_pos), "chrom":chunks[i].alignments[j].r});
 						}
 						if (current_ref_pos == previous_ref_pos && current_read_pos != previous_read_pos) {
-							chunks[i].alignments[j].insertions.push({"R":current_ref_pos, "size":current_read_pos - previous_read_pos, "chrom":chunks[i].alignments[j].r});
+							chunks[i].alignments[j].insertions.push({"R":current_ref_pos, "size":Math.abs(current_read_pos - previous_read_pos), "chrom":chunks[i].alignments[j].r});
 						}
 						previous_ref_pos = current_ref_pos;
 						previous_read_pos = current_read_pos;

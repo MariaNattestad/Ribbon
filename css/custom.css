@@ -83,7 +83,7 @@ svg {
 }
 
 
-textarea {
+#sam_input, #coords_input, #bed_input, #vcf_input {
 	padding: 1vmin 1vmin 1vmin 1vmin; 
 	overflow-y: scroll; 
 	resize: none; 
@@ -172,13 +172,19 @@ div.input-group {
 
 }
 
-#text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output, textarea #notes  {
+#text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output {
 	font-size: 1vw;
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 	white-space: nowrap;
 	overflow-x: scroll;
 	overflow-y: scroll;
 	border: 1px solid #cccccc;
+}
+
+textarea #notes {
+	padding: 1vmin 1vmin 1vmin 1vmin; 
+	overflow: scroll;
+	/*word-wrap: break-word;*/
 }
 
 
