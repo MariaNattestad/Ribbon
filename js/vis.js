@@ -761,7 +761,7 @@ function draw_chunk_alignments() {
 	} else if (_settings.feature_to_sort_reads == "longest") {
 		for (var i in chunks) {
 			if (chunks[i].longest_ref_pos == undefined) {
-				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[chunks[i].index_longest].r, chunks[i].alignments[chunks[i].index_longest].rs));
+				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_longest].r, chunks[i].alignments[chunks[i].index_longest].rs));
 			}
 		}
 		chunks.sort(function(a, b){return a.longest_ref_pos-b.longest_ref_pos});
@@ -769,7 +769,7 @@ function draw_chunk_alignments() {
 	} else if (_settings.feature_to_sort_reads == "primary") {
 		for (var i in chunks) {
 			if (chunks[i].primary_ref_pos == undefined) {
-				chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(chunks[i].alignments[chunks[i].index_primary].r, chunks[i].alignments[chunks[i].index_primary].rs));
+				chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_primary].r, chunks[i].alignments[chunks[i].index_primary].rs));
 			}
 		}
 		chunks.sort(function(a, b){return a.primary_ref_pos-b.primary_ref_pos});
@@ -1429,7 +1429,13 @@ function bedpe_input_changed(bedpe_input) {
 				user_message("Error","Bedpe file must contain numbers in columns 2,3,5, and 6. Found: <pre>" + columns[1] + ", " + columns[2] + ", " +  columns[4] + ", and " + columns[5] + "</pre>.");
 				return;
 			}
-			_Bedpe.push({"chrom1": chrom1, "pos1":parseInt((start1+end1)/2),"strand1": strand1,"chrom2": chrom2, "pos2":parseInt((start2+end2)/2), "strand2": strand2,"name": name, "score": score, "type": type});
+			var pos1 = parseInt((start1+end1)/2);
+			var pos2 = parseInt((start2+end2)/2);
+			var size = Infinity;
+			if (chrom1 == chrom2) {
+				size = Math.abs(pos1-pos2);
+			}
+			_Bedpe.push({"name": name, "score": score, "type": type, "size": size, "chrom1": chrom1, "pos1":pos1,"strand1": strand1,"chrom2": chrom2, "pos2":pos2, "strand2": strand2});
 		}
 	}
 
@@ -2977,6 +2983,7 @@ function draw_ribbons() {
 			var y = _positions.read.y+_positions.read.height*3.5;
 			show_tooltip(text,x,y,_svg);
 		})
+		.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 	
 	
