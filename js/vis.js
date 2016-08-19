@@ -761,7 +761,7 @@ function draw_chunk_alignments() {
 	} else if (_settings.feature_to_sort_reads == "longest") {
 		for (var i in chunks) {
 			if (chunks[i].longest_ref_pos == undefined) {
-				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_longest].r, chunks[i].alignments[chunks[i].index_longest].rs));
+				chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_longest].r, _Chunk_alignments[i].alignments[chunks[i].index_longest].rs));
 			}
 		}
 		chunks.sort(function(a, b){return a.longest_ref_pos-b.longest_ref_pos});
@@ -769,7 +769,7 @@ function draw_chunk_alignments() {
 	} else if (_settings.feature_to_sort_reads == "primary") {
 		for (var i in chunks) {
 			if (chunks[i].primary_ref_pos == undefined) {
-				chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_primary].r, chunks[i].alignments[chunks[i].index_primary].rs));
+				chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_Chunk_alignments[i].alignments[chunks[i].index_primary].r, _Chunk_alignments[i].alignments[chunks[i].index_primary].rs));
 			}
 		}
 		chunks.sort(function(a, b){return a.primary_ref_pos-b.primary_ref_pos});
