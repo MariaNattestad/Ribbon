@@ -644,23 +644,23 @@ function draw_chunk_variants() {
 
 				return (
 					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
-				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
-				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-				 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
-				 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
 
-				 + ", L " + x1                          + "," + y_foot // breakpoint
-				 // + ", L " + x1                          + "," + y_top // up
-				 + ", L " + x1                          + "," + y_ankle // ankle
+				 + " L " + x1                          + "," + y_foot // breakpoint
+				 // + " L " + x1                          + "," + y_top // up
+				 + " L " + x1                          + "," + y_ankle // ankle
 				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
-				 // + ", L " + x2                          + "," + y_top // up
-				 + ", L " + x2                          + "," + y_foot // breakpoint
+				 // + " L " + x2                          + "," + y_top // up
+				 + " L " + x2                          + "," + y_foot // breakpoint
 
-				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
-				 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
-				 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + "," + y_foot); // toe
 			}
 
 			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
@@ -2145,16 +2145,16 @@ function ribbon_alignment_path_generator(d) {
 			return _scales.ref_interval_scale(map_ref_interval(datum.r,datum.path[index].R))  + "," + top_y;
 		}
 		else {
-			return _scales.read_scale(datum.path[index].Q)  + "," + (top_y+(bottom_y-top_y)*2./3.);
+			return _scales.read_scale(datum.path[index].Q)  + " " + (top_y+(bottom_y-top_y)*2./3.);
 		}
 	}
 
 	var output = "M " + get_top_coords(d,0) ; // ref start
-	output += ", L " + _scales.read_scale(d.path[0].Q)      + "," + bottom_y; // read start
+	output += " L " + _scales.read_scale(d.path[0].Q)      + " " + bottom_y; // read start
 
 	for (var i = 1; i < d.path.length; i++) {
-		var ref_coord = ", L " + get_top_coords(d,i); // ref 
-		var read_coord = ", L " + _scales.read_scale(d.path[i].Q)     	+ "," + bottom_y; // read 
+		var ref_coord = " L " + get_top_coords(d,i); // ref 
+		var read_coord = " L " + _scales.read_scale(d.path[i].Q)     	+ " " + bottom_y; // read 
 		if (i % 2 == 0) { // alternate reference and read side so top goes to top
 			output += ref_coord + read_coord;
 		} else {
@@ -2162,8 +2162,8 @@ function ribbon_alignment_path_generator(d) {
 		}
 	}
 	
-	output += ", L " + get_top_coords(d,0); // ref start
-	output += ", L " + _scales.read_scale(d.path[0].Q)      + "," + bottom_y; // read start
+	output += " L " + get_top_coords(d,0); // ref start
+	output += " L " + _scales.read_scale(d.path[0].Q)      + " " + bottom_y; // read start
 
 	return output;
 }
@@ -2191,14 +2191,13 @@ function ref_mapping_path_generator(d,chunk) {
 			top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.end));
 		}
 		
-		
 
 		return (
-				 "M " + bottom.left                          + "," + bottom.y
-		 + ", L " + bottom.right                          + "," + bottom.y
-		 + ", L " + top.right                           + "," + top.y
-		 + ", L " + top.left                           + "," + top.y
-		 + ", L " + bottom.left                          + "," + bottom.y
+				 "M " + bottom.left                          + " " + bottom.y
+		 + " L " + bottom.right                          + " " + bottom.y
+		 + " L " + top.right                           + " " + top.y
+		 + " L " + top.left                           + " " + top.y
+		 + " L " + bottom.left                          + " " + bottom.y
 		 )
 }
 
@@ -2918,24 +2917,24 @@ function draw_singleview_header() {
 			}
 
 			return (
-				 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
-			 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
-			 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-			 + ", L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
-			 + ", L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+				 "M " + (x1+foot_length*direction1) + " " + y_foot // toe
+			 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot + arrow) // arrow
+			 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
+			 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot - arrow) // arrow
+			 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
 
-			 + ", L " + x1                          + "," + y_foot // breakpoint
-			 // + ", L " + x1                          + "," + y_top // up
-			 + ", L " + x1                          + "," + y_ankle // ankle
-			 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
-			 // + ", L " + x2                          + "," + y_top // up
-			 + ", L " + x2                          + "," + y_foot // breakpoint
+			 + " L " + x1                          + " " + y_foot // breakpoint
+			 // + " L " + x1                          + " " + y_top // up
+			 + " L " + x1                          + " " + y_ankle // ankle
+			 + " S " + xmid                        + " " + ymid + " " +          x2  + " " + y_ankle // curve to breakpoint
+			 // + " L " + x2                          + " " + y_top // up
+			 + " L " + x2                          + " " + y_foot // breakpoint
 
-			 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-			 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
-			 + ", L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-			 + ", L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
-			 + ", L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+			 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+			 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot + arrow) // arrow
+			 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+			 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot - arrow) // arrow
+			 + " L " + (x2+foot_length*direction2) + " " + y_foot); // toe
 		}
 
 		_svg.selectAll("path.bedpe_variants").data(variants_in_view).enter()
