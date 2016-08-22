@@ -78,6 +78,8 @@ _settings.show_only_selected_variants = false;
 _settings.margin_to_merge_ref_intervals = 10000;
 _settings.show_indels_as = "thin";
 _settings.highlight_selected_read = true;
+_settings.alignment_info_text = "";
+_settings.variant_info_text = "";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -993,6 +995,7 @@ function draw_chunk_alignments() {
 }
 
 function draw_region_view() {
+	console.log("REDRAWING REGION VIEW");
 	reset_svg2();
 	draw_chunk_ref();
 	draw_chunk_ref_intervals();
@@ -1153,7 +1156,9 @@ function sam_input_changed(sam_input_value) {
 }
 
 $('#sam_input').bind('input propertychange', function() {
-	set_alignment_info_text("Sam from text field"); sam_input_changed(this.value)
+	_settings.alignment_info_text = "Sam from text field";
+	set_alignment_info_text(); 
+	sam_input_changed(this.value)
 });
 
 d3.select("#sam_info_icon").on("click", function() {
@@ -3137,12 +3142,12 @@ function variants_just_loaded() {
 	d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
 }
 
-function set_alignment_info_text(text) {
-	d3.select("#text_alignment_file_output").html(text);
+function set_alignment_info_text() {
+	d3.select("#text_alignment_file_output").html(_settings.alignment_info_text);
 }
 
-function set_variant_info_text(text) {
-	d3.select("#text_variant_file_output").html(text);	
+function set_variant_info_text() {
+	d3.select("#text_variant_file_output").html(_settings.variant_info_text);	
 }
 
 
@@ -3150,8 +3155,8 @@ function read_bam_url(url) {
 	_Bam = new Bam(url);
 	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
-
-	set_alignment_info_text("Bam from url: " + url);
+	_settings.alignment_info_text = "Bam from url: " + url;
+	set_alignment_info_text();
 }
 
 
@@ -3239,7 +3244,6 @@ function read_permalink(id) {
 					_Additional_ref_intervals = json_data["ribbon_perma"]["config"]["focus_regions"];
 				}
 				if (json_data["ribbon_perma"]["header"] != undefined) {
-					_settings.current_input_type = "permalink";
 					load_json_bam(json_data["ribbon_perma"]["header"]);	
 				}
 				if (json_data["ribbon_perma"]["alignments"] != undefined) {
@@ -3264,9 +3268,13 @@ function read_permalink(id) {
 					draw_region_view();
 					refresh_visibility();
 					refresh_ui_elements();
+					set_alignment_info_text();
+					set_variant_info_text();
 					select_read();
-					// ????????????????
+					d3.select("#text_region_output").html("Showing permalink: " + id);
 				}
+				
+
 			} else {
 				if (json_data["bam"] != undefined) {
 					if (json_data["bam"]["header"]["sq"] != undefined) {
@@ -3308,8 +3316,8 @@ function read_example_bam(filename) {
 
 	console.log(url);
 	read_bam_url(url);
-
-	set_alignment_info_text("Example: " + filename);
+	_settings.alignment_info_text = "Example: " + filename;
+	set_alignment_info_text();
 }
 
 function read_example_sam(filename) {
@@ -3321,8 +3329,8 @@ function read_example_sam(filename) {
 	 	// // Open the sam tab
 	 	// $('.nav-tabs a[href="#sam"]').tab('show');
 	}})
-
-	set_alignment_info_text("Example: " + filename);
+	_settings.alignment_info_text = "Example: " + filename;
+	set_alignment_info_text();
 }
 
 function read_example_coords(filename) {
@@ -3334,7 +3342,8 @@ function read_example_coords(filename) {
 	 	// // Open the coords tab
 	 	// $('.nav-tabs a[href="#coords"]').tab('show');
 	}})
-	set_alignment_info_text("Example: " + filename);
+	_settings.alignment_info_text = "Example: " + filename;
+	set_alignment_info_text();
 }
 
 add_examples_to_navbar();
@@ -3358,7 +3367,8 @@ function open_bedpe_file(event) {
 			bedpe_input_changed(raw_data);
 			variants_just_loaded();
 		}
-		set_variant_info_text("Bedpe from file: " + this.files[0].name);
+		_settings.variant_info_text="Bedpe from file: " + this.files[0].name;
+		set_variant_info_text();
 	}
 }
 function open_variant_file(event) {
@@ -3377,7 +3387,8 @@ function open_variant_file(event) {
 			vcf_input_changed(raw_data);
 			variants_just_loaded();
 		}
-		set_variant_info_text("Variants from file: " + this.files[0].name); 
+		_settings.variant_info_text="Variants from file: " + this.files[0].name;
+		set_variant_info_text(); 
 		
 	}
 	else if (file_extension == "bed") {
@@ -3390,7 +3401,8 @@ function open_variant_file(event) {
 			bed_input_changed(raw_data);
 			variants_just_loaded();
 		}
-		set_variant_info_text("Variants from file: " + this.files[0].name);
+		_settings.variant_info_text="Variants from file: " + this.files[0].name;
+		set_variant_info_text();
 	} else {
 		user_message("Error", "File extension must be .bed or .vcf");
 	}
@@ -3422,7 +3434,8 @@ function open_coords_file(event) {
 		coords_input_changed(raw_data);
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
 	}
-	set_alignment_info_text("Coords from file: " + this.files[0].name);
+	_settings.alignment_info_text = "Coords from file: " + this.files[0].name;
+	set_alignment_info_text();
 }
 
 d3.select("#coords_file").on("change",open_coords_file);
@@ -3451,7 +3464,8 @@ function open_sam_file(event) {
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
 	}
 
-	set_alignment_info_text("Sam from file: " + this.files[0].name);
+	_settings.alignment_info_text = "Sam from file: " + this.files[0].name;
+	set_alignment_info_text();
 }
 
 d3.select("#sam_file").on("change",open_sam_file);
@@ -3491,7 +3505,8 @@ function create_bam(files) {
 	 }
 	_Bam = new Bam( bamFile, { bai: baiFile });
 
-	set_alignment_info_text("Bam from file: " + bamFile.name);
+	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
+	set_alignment_info_text();
 
 	wait_then_run_when_bam_file_loaded();
 }
