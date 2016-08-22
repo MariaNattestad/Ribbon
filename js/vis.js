@@ -1838,7 +1838,7 @@ function user_message(message_type,message) {
 		d3.select("#user_message").style("display","block");
 
 		if (message_type == "Permalink") {
-			d3.select("#user_message").html('<strong>'+ message_type + ': </strong><a href="' + message + '" target="_blank">' + message + '</a>').attr("class","alert alert-success");
+			d3.select("#user_message").html('<strong>'+ message_type + ': </strong><a href="' + message + '" target="_blank">' + message + '</a> <p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>').attr("class","alert alert-success");
 		} else {
 			var message_style = "default";
 			switch (message_type) {
@@ -3187,7 +3187,7 @@ function load_json_bam(header) {
 }
 
 function write_permalink() {
-
+	var permalink_name = d3.select("#permalink_name").property("value");
 	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
 
@@ -3200,13 +3200,15 @@ function write_permalink() {
 		"alignments": _Chunk_alignments, 
 		"variants":_Variants, 
 		"bedpe":_Bedpe, 
-		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings}
+		"_Refs_show_or_hide":_Refs_show_or_hide,
+		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
+		"permalink_name": permalink_name
 	}};
 
 	jQuery.ajax({
 		type: "POST",
 		url: "permalink_creator.php",
-		data: {ribbon: JSON.stringify(post_data)},
+		data: {ribbon: JSON.stringify(post_data), name: permalink_name},
 		success: function(data) {
 			user_message("Permalink", data);
 			d3.select("#generate_permalink_button").property("disabled",false);
@@ -3251,6 +3253,9 @@ function read_permalink(id) {
 					chunk_changed();
 					tell_user_how_many_records_loaded();
 				}
+				if (json_data["ribbon_perma"]["_Refs_show_or_hide"] != undefined) {
+					_Refs_show_or_hide = json_data["ribbon_perma"]["_Refs_show_or_hide"];
+				}
 				if (json_data["ribbon_perma"]["variants"] != undefined) {
 					_Variants = json_data["ribbon_perma"]["variants"];
 					update_variants();
@@ -3262,6 +3267,7 @@ function read_permalink(id) {
 				if (json_data["ribbon_perma"]["config"]["selected_read"] != undefined) {
 					new_read_selected(json_data["ribbon_perma"]["config"]["selected_read"]);
 				}
+
 				if (json_data["ribbon_perma"]["config"]["settings"] != undefined) {
 					_settings = json_data["ribbon_perma"]["config"]["settings"];
 					apply_ref_filters();
@@ -3273,8 +3279,9 @@ function read_permalink(id) {
 					select_read();
 					d3.select("#text_region_output").html("Showing permalink: " + id);
 				}
-				
-
+				if (json_data["ribbon_perma"]["permalink_name"] != undefined) {
+					d3.select("#notes").property("value", json_data["ribbon_perma"]["permalink_name"]);
+				}
 			} else {
 				if (json_data["bam"] != undefined) {
 					if (json_data["bam"]["header"]["sq"] != undefined) {

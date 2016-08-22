@@ -47,6 +47,48 @@
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav" id="navbar">
                   <li><a id="click_info_link">Info</a></li>
+
+
+                  <?php
+                      $my_datasets = array();
+
+                      if(isset($_COOKIE["ribbon"])) {
+                        echo '<li class="dropdown">
+                        <a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
+                        <ul class="dropdown-menu" role="menu">';
+
+                        $my_datasets = json_decode($_COOKIE["ribbon"], true);
+
+                        $arrlength = count($my_datasets);
+                        for($x = 0; $x < $arrlength; $x++) {
+                          $seconds_ago = time() - $my_datasets[$x]["date"];
+                          
+                          $time_ago = $seconds_ago;
+                          if ($seconds_ago > 60) {
+                            $minutes_ago = $seconds_ago/60;
+                            if ($minutes_ago > 60) {
+                              $hours_ago = $minutes_ago/60;
+                              if ($hours_ago > 24) {
+                                $days_ago = $hours_ago/24;
+                                $time_ago = "" . floor($days_ago) . " days";
+                              } else {
+                                $time_ago = "" . floor($hours_ago) . " hours";
+                              }
+                            } else {
+                              $time_ago = "" . floor($minutes_ago) . " minutes";
+                            }
+                          } else {
+                            $time_ago = "" . floor($seconds_ago) . " seconds";
+                          }
+                          
+                          echo "<li><a target='_blank' href='?perma=" . $my_datasets[$x]["codename"] . "'>" . $my_datasets[$x]["description"] . " (" . $time_ago . " ago) </a></li>";
+                        }
+
+                        echo '</ul>';
+                      } 
+                  ?>
+
+
                   
                   <li class="dropdown" id="examples_navbar_item">
 
@@ -142,10 +184,14 @@
 						<label>Selected region</label>
 						<div id="text_region_output">(No region selected)</div>
 					</div>
+					<hr>
+					<div class="input-group">
+				      <input type="text" class="form-control" id="permalink_name" placeholder="Type permalink name...">
+				      <span class="input-group-btn">
+				        <button class="btn btn-secondary" id="generate_permalink_button" type="button">Share permalink</button>
+				      </span>
+				    </div>
 
-					<div> 
-						<button type="button" id="generate_permalink_button" class="btn btn-default">Share permalink</button>
-					</div>
 					<!-- <table>
 						<col width="100%">
 							<tr>
