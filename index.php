@@ -144,7 +144,7 @@
 					</div>
 
 					<div> 
-						<button type="button" id="generate_permalink_button" class="btn btn-default">Generate permalink</button>
+						<button type="button" id="generate_permalink_button" class="btn btn-default">Share permalink</button>
 					</div>
 					<!-- <table>
 						<col width="100%">

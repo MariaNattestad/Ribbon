@@ -408,28 +408,19 @@ $('#outline_checkbox').change(function() {
 	draw();
 });
 
-// Initialization for beginning of app only
-if (_settings.ribbon_vs_dotplot == "ribbon") {
-	$(".dotplot_settings").toggle();
-	d3.select("#select_ribbon").property("checked",true);
-	d3.select("#select_dotplot").property("checked",false);
-} else {
-	$(".ribbon_settings").toggle();
-	d3.select("#select_ribbon").property("checked",true);
-	d3.select("#select_dotplot").property("checked",false);
-}
 
 $(".ribbon_vs_dotplot").click(function(){
 	var value = d3.select("input[name=ribbon_vs_dotplot]:checked").node().value;
-	_settings.ribbon_vs_dotplot = value;
+	if (_settings.ribbon_vs_dotplot != value) {
+		_settings.ribbon_vs_dotplot = value;
 
-	// Show settings specific to each plot
-	$(".ribbon_settings").toggle();
-	$(".dotplot_settings").toggle();
-	
-	// Redraw
-	draw();
-
+		// Show settings specific to each plot
+		$(".ribbon_settings").toggle();
+		$(".dotplot_settings").toggle();
+		
+		// Redraw
+		draw();	
+	}
 });
 
 
@@ -1731,9 +1722,6 @@ function refresh_ui_elements() {
 	$('#min_read_length_slider').slider("option","value", _settings.min_read_length);
 	d3.select("#min_read_length_input").property("value", _settings.min_read_length);
 
-	// Number of alignments for reference intervals:
-	// d3.select("#min_aligns_for_ref_interval_slider").property("value", _settings.min_aligns_for_ref_interval);
-
 	// Number of alignments in region view
 	$( "#num_aligns_range_slider" ).slider("option","max",_ui_properties.num_alignments_slider_max);
 	$( "#num_aligns_range_slider" ).slider("values",0,_settings.min_num_alignments);
@@ -1757,6 +1745,38 @@ function refresh_ui_elements() {
 	$('#align_length_slider').slider("option","max", _ui_properties.align_length_slider_max);
 	$('#align_length_slider').slider("option","value", _settings.min_align_length);
 	$("#align_length_label").html(_settings.min_align_length);
+
+	// Minimum alignments for each reference interval
+	$('#min_aligns_for_ref_interval_slider').slider("option","value", _settings.min_aligns_for_ref_interval);
+	$('#min_aligns_for_ref_interval_label').html(_settings.min_aligns_for_ref_interval);
+
+	// Dot plot vs. Ribbon plot
+	console.log("_settings.ribbon_vs_dotplot:", _settings.ribbon_vs_dotplot);
+	if (_settings.ribbon_vs_dotplot == "ribbon") {
+		d3.selectAll(".ribbon_settings").style("display","block");
+		d3.selectAll(".dotplot_settings").style("display","none");
+		d3.select("#select_ribbon").property("checked",true);
+		d3.select("#select_dotplot").property("checked",false);
+	} else {
+		d3.selectAll(".dotplot_settings").style("display","block");
+		d3.selectAll(".ribbon_settings").style("display","none");
+		d3.select("#select_dotplot").property("checked",true);
+		d3.select("#select_ribbon").property("checked",false);
+	}
+
+	// All checkboxes
+	d3.select("#ref_match_region_view").property("checked", _settings.ref_match_chunk_ref_intervals);
+	d3.select('#colors_checkbox').property("checked", _settings.colorful);
+	d3.select('#show_only_selected_variants').property("checked", _settings.show_only_selected_variants);
+	d3.select('#highlight_selected_read').property("checked", _settings.highlight_selected_read);
+	d3.select('#outline_checkbox').property("checked", _settings.ribbon_outline);
+
+	// All dropdowns
+	d3.select("select#read_orientation_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.orient_reads_by});
+	d3.select("select#read_sorting_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.feature_to_sort_reads});
+	d3.select("select#color_scheme_dropdown").selectAll("option").property("value",function(d){return d.colors});
+	d3.select("select#show_indels_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_indels_as});
+
 }
 
 function parse_cigar(cigar_string) {
@@ -3136,7 +3156,6 @@ function read_bam_url(url) {
 
 
 function load_json_bam(header) {
-	_settings.current_input_type = "bam";
 	// Check match refs from region view checkbox by default
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
@@ -3164,11 +3183,20 @@ function load_json_bam(header) {
 
 function write_permalink() {
 
+	d3.select("#generate_permalink_button").property("disabled",true);
+	d3.select("#generate_permalink_button").html("Creating permalink...");
+
 	var header = [];
 	for (var i in _Whole_refs) {
 		header.push({"name":_Whole_refs[i].chrom, "end":_Whole_refs[i].size});
 	}
-	var post_data = {"ribbon_perma": {"header":header, "alignments": _Chunk_alignments}};
+	var post_data = {"ribbon_perma": {
+		"header":header, 
+		"alignments": _Chunk_alignments, 
+		"variants":_Variants, 
+		"bedpe":_Bedpe, 
+		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings}
+	}};
 
 	jQuery.ajax({
 		type: "POST",
@@ -3176,9 +3204,13 @@ function write_permalink() {
 		data: {ribbon: JSON.stringify(post_data)},
 		success: function(data) {
 			user_message("Permalink", data);
+			d3.select("#generate_permalink_button").property("disabled",false);
+			d3.select("#generate_permalink_button").html("Share permalink");
 		},
 		error: function(e) {
 			alert("Error:" + e.message);
+			d3.select("#generate_permalink_button").property("disabled",false);
+			d3.select("#generate_permalink_button").html("Share permalink");
 		}
 	});
 }
@@ -3203,7 +3235,11 @@ function read_permalink(id) {
 
 			// Alignments
 			if (json_data["ribbon_perma"] != undefined) {
+				if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
+					_Additional_ref_intervals = json_data["ribbon_perma"]["config"]["focus_regions"];
+				}
 				if (json_data["ribbon_perma"]["header"] != undefined) {
+					_settings.current_input_type = "permalink";
 					load_json_bam(json_data["ribbon_perma"]["header"]);	
 				}
 				if (json_data["ribbon_perma"]["alignments"] != undefined) {
@@ -3211,34 +3247,56 @@ function read_permalink(id) {
 					chunk_changed();
 					tell_user_how_many_records_loaded();
 				}
-			} else if (json_data["bam"] != undefined) {
-				
-				if (json_data["bam"]["header"]["sq"] != undefined) {
-					// header must be [{name: , end: }, {name: , end: }]
-					load_json_bam(json_data["bam"]["header"]["sq"]);
-				} else {
-					user_message("JSON object has bam, but bam does not contain key: header.sq");
+				if (json_data["ribbon_perma"]["variants"] != undefined) {
+					_Variants = json_data["ribbon_perma"]["variants"];
+					update_variants();
 				}
-				// json_data["bam"]["records"] is a list of records fitting parse_bam_record()
-				if (json_data["bam"]["records"] != undefined) {
-					use_fetched_data(json_data["bam"]["records"]);	
-				} else {
-					user_message("JSON object has bam, but bam does not contain key: records");
+				if (json_data["ribbon_perma"]["bedpe"] != undefined) {
+					_Bedpe = json_data["ribbon_perma"]["bedpe"];
+					update_bedpe();
 				}
-			} else if (json_data["bam_url"] != undefined) {
-				read_bam_url(json_data["bam_url"]);
-			} else if (json_data["sam"] != undefined) {
-				sam_input_changed(json_data["sam"]);
-			}
+				if (json_data["ribbon_perma"]["config"]["selected_read"] != undefined) {
+					new_read_selected(json_data["ribbon_perma"]["config"]["selected_read"]);
+				}
+				if (json_data["ribbon_perma"]["config"]["settings"] != undefined) {
+					_settings = json_data["ribbon_perma"]["config"]["settings"];
+					apply_ref_filters();
+					draw_region_view();
+					refresh_visibility();
+					refresh_ui_elements();
+					select_read();
+					// ????????????????
+				}
+			} else {
+				if (json_data["bam"] != undefined) {
+					if (json_data["bam"]["header"]["sq"] != undefined) {
+						// header must be [{name: , end: }, {name: , end: }]
+						_settings.current_input_type = "bam";
+						load_json_bam(json_data["bam"]["header"]["sq"]);
+					} else {
+						user_message("JSON object has bam, but bam does not contain key: header.sq");
+					}
+					// json_data["bam"]["records"] is a list of records fitting parse_bam_record()
+					if (json_data["bam"]["records"] != undefined) {
+						use_fetched_data(json_data["bam"]["records"]);	
+					} else {
+						user_message("JSON object has bam, but bam does not contain key: records");
+					}
+				} else if (json_data["bam_url"] != undefined) {
+					read_bam_url(json_data["bam_url"]);
+				} else if (json_data["sam"] != undefined) {
+					sam_input_changed(json_data["sam"]);
+				}
 
-			if (json_data["bedpe"] != undefined) {
-				bedpe_input_changed(json_data["bedpe"]);
-			}
+				if (json_data["bedpe"] != undefined) {
+					bedpe_input_changed(json_data["bedpe"]);
+				}
 
-			if (json_data["bed"] != undefined) {
-				bed_input_changed(json_data["bed"]);
-			} else if (json_data["vcf"] != undefined) {
-				vcf_input_changed(json_data["vcf"]);
+				if (json_data["bed"] != undefined) {
+					bed_input_changed(json_data["bed"]);
+				} else if (json_data["vcf"] != undefined) {
+					vcf_input_changed(json_data["vcf"]);
+				}
 			}
 		}
 	});
