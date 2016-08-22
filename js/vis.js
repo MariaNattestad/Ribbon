@@ -363,6 +363,10 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 	select_read();
 })
 
+d3.select("#generate_permalink_button").on("click", function() {
+	write_permalink();
+});
+
 
 
 $("#show_all_refs").click(function() {
@@ -1537,6 +1541,7 @@ function remove_variant_file() {
 function run() {
 	responsive_sizing();
 	refresh_visibility();
+	user_message("Instructions","Start by loading alignments below");
 }
 
 function dict_length(dictionary) {
@@ -1806,21 +1811,29 @@ function user_message(message_type,message) {
 		d3.select("#user_message").html("").style("display","none");
 	} else {
 		d3.select("#user_message").style("display","block");
-		var message_style = "default";
-		switch (message_type) {
-			case "error":
-				message_style="danger";
-				break;
-			case "Error":
-				message_style="danger";
-				break;
-			case "warning","Warning":
-				message_style="warning";
-				break;
-			default:
-				message_style="info";
+
+		if (message_type == "Permalink") {
+			d3.select("#user_message").html('<strong>'+ message_type + ': </strong><a href="' + message + '" target="_blank">' + message + '</a>').attr("class","alert alert-success");
+		} else {
+			var message_style = "default";
+			switch (message_type) {
+				case "error":
+					message_style="danger";
+					break;
+				case "Error":
+					message_style="danger";
+					break;
+				case "warning","Warning":
+					message_style="warning";
+					break;
+				case "Instructions":
+					message_style="success";
+					break;
+				default:
+					message_style="info";
+			}
+			d3.select("#user_message").html("<strong>"+ message_type + ": </strong>" + message).attr("class","alert alert-" + message_style);
 		}
-		d3.select("#user_message").html("<strong>"+ message_type + ": </strong>" + message).attr("class","alert alert-" + message_style);
 	}
 }
 
@@ -2547,17 +2560,17 @@ function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
-		d3.select("#data_description_panel").style("display","block");
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
-		d3.select("#data_description_panel").style("display","none");
 	}
 
 	if (_Chunk_alignments.length > 0) {
 		d3.select("#region_settings_panel").style("display","block");
+		d3.select("#data_description_panel").style("display","block");
 		
 	} else {
 		d3.select("#region_settings_panel").style("display","none");
+		d3.select("#data_description_panel").style("display","none");
 	}
 
 	if (_Alignments.length > 0) {
@@ -3121,6 +3134,7 @@ function read_bam_url(url) {
 	set_alignment_info_text("Bam from url: " + url);
 }
 
+
 function load_json_bam(header) {
 	_settings.current_input_type = "bam";
 	// Check match refs from region view checkbox by default
@@ -3148,28 +3162,62 @@ function load_json_bam(header) {
 
 }
 
+function write_permalink() {
+
+	var header = [];
+	for (var i in _Whole_refs) {
+		header.push({"name":_Whole_refs[i].chrom, "end":_Whole_refs[i].size});
+	}
+	var post_data = {"ribbon_perma": {"header":header, "alignments": _Chunk_alignments}};
+
+	jQuery.ajax({
+		type: "POST",
+		url: "permalink_creator.php",
+		data: {ribbon: JSON.stringify(post_data)},
+		success: function(data) {
+			user_message("Permalink", data);
+		},
+		error: function(e) {
+			alert("Error:" + e.message);
+		}
+	});
+}
+
+
 function read_permalink(id) {
 	user_message("Info","Loading data from permalink");
 	jQuery.ajax({
 		url: "permalinks/" + id + ".json", 
 		success: function(file_content) {
-			console.log(file_content);
 
+			// Data type
 			var json_data = null; 
 			if (typeof(file_content) === "object") {
 				json_data = file_content;
-			} else {
+			} else if (typeof(file_content) === "string"){
 				var file_content = file_content.replace(/\n/g,"\\n").replace(/\t/g,"\\t");
 				json_data = JSON.parse(file_content);
+			} else {
+				console.log("Cannot read permalink, returned type is not object or string");
 			}
 
-			if (json_data["bam"] != undefined) {
+			// Alignments
+			if (json_data["ribbon_perma"] != undefined) {
+				if (json_data["ribbon_perma"]["header"] != undefined) {
+					load_json_bam(json_data["ribbon_perma"]["header"]);	
+				}
+				if (json_data["ribbon_perma"]["alignments"] != undefined) {
+					_Chunk_alignments = json_data["ribbon_perma"]["alignments"];
+					chunk_changed();
+					tell_user_how_many_records_loaded();
+				}
+			} else if (json_data["bam"] != undefined) {
 				
 				if (json_data["bam"]["header"]["sq"] != undefined) {
 					// header must be [{name: , end: }, {name: , end: }]
 					load_json_bam(json_data["bam"]["header"]["sq"]);
 				} else {
-					user_message("JSON object has bam, but bam does not contain key: records");
+					user_message("JSON object has bam, but bam does not contain key: header.sq");
 				}
 				// json_data["bam"]["records"] is a list of records fitting parse_bam_record()
 				if (json_data["bam"]["records"] != undefined) {
@@ -3177,15 +3225,16 @@ function read_permalink(id) {
 				} else {
 					user_message("JSON object has bam, but bam does not contain key: records");
 				}
-			}
-			else if (json_data["bam_url"] != undefined) {
+			} else if (json_data["bam_url"] != undefined) {
 				read_bam_url(json_data["bam_url"]);
 			} else if (json_data["sam"] != undefined) {
 				sam_input_changed(json_data["sam"]);
 			}
+
 			if (json_data["bedpe"] != undefined) {
 				bedpe_input_changed(json_data["bedpe"]);
 			}
+
 			if (json_data["bed"] != undefined) {
 				bed_input_changed(json_data["bed"]);
 			} else if (json_data["vcf"] != undefined) {

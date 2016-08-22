@@ -142,6 +142,10 @@
 						<label>Selected region</label>
 						<div id="text_region_output">(No region selected)</div>
 					</div>
+
+					<div> 
+						<button type="button" id="generate_permalink_button" class="btn btn-default">Generate permalink</button>
+					</div>
 					<!-- <table>
 						<col width="100%">
 							<tr>
@@ -156,7 +160,7 @@
 		</div>
 	</div>
 
-
+	<div id="user_message" class="alert alert-default" role="alert"></div>
 
 	<div class="panel-group" id="region_settings_panel">
 		<div class="panel panel-default">
@@ -456,9 +460,6 @@
 			</div>
 		</div>
 	</div>
-
-	<div id="user_message" class="alert alert-default" role="alert"></div>
-
 
 	<div class="panel-group" id="variant_table_panel">
 		<div class="panel panel-default">
