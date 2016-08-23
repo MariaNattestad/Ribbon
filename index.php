@@ -17,7 +17,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="">
         <meta name="author" content="">
-        <meta property="og:image" content="<?= $file_prefix ?>_1.png">
+        <meta property="og:image" content="<?php echo $file_prefix ?>_1.png">
         <!-- <meta property="og:image" content="<?= $file_prefix ?>_2.png"> -->
     
     <!-- CSS: -->
