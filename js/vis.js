@@ -1044,7 +1044,6 @@ function draw_region_view() {
 	draw_chunk_ref();
 
 	if (_Chunk_alignments.length > 0) {
-		console.log("REDRAWING REGION VIEW");
 		draw_chunk_ref_intervals();
 		draw_chunk_alignments();
 		draw_chunk_variants();
