@@ -374,7 +374,6 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 var image_URIs = [];
 
 function wait_for_images(callback, counter) {
-	console.log(image_URIs);
 	if (image_URIs.length == 2 || counter > 10) {
 		callback();
 	} else {
@@ -390,11 +389,11 @@ d3.select("#generate_permalink_button").on("click", function() {
 
 function create_image_URIs() {
 	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
-		console.log("in svgAsPngUri single read");
+		// console.log("in svgAsPngUri single read");
 		image_URIs.push(uri);
 	});
 	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
-		console.log("in svgAsPngUri multi read");
+		// console.log("in svgAsPngUri multi read");
 		image_URIs.push(uri);
 	});
 
@@ -1816,7 +1815,6 @@ function refresh_ui_elements() {
 	$('#min_aligns_for_ref_interval_label').html(_settings.min_aligns_for_ref_interval);
 
 	// Dot plot vs. Ribbon plot
-	console.log("_settings.ribbon_vs_dotplot:", _settings.ribbon_vs_dotplot);
 	if (_settings.ribbon_vs_dotplot == "ribbon") {
 		d3.selectAll(".ribbon_settings").style("display","block");
 		d3.selectAll(".dotplot_settings").style("display","none");
@@ -3254,7 +3252,7 @@ function write_permalink() {
 
 	var permalink_name = get_name();
 	ga('send', 'event', "Permalink","read",permalink_name);
-	
+
 	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
 
