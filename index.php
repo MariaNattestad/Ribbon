@@ -593,7 +593,6 @@
 </div>
 
 <!-- <div id="image_capture_test_landing"></div> -->
-
 <script>
 	var splitthreader_data = undefined;
 	splitthreader_data = <?php 

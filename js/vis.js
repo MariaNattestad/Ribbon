@@ -1,6 +1,12 @@
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-82379658-1', 'auto');
+ga('send', 'pageview');
+
 
 // Calculations for drawing and spacing out elements on the screen
-
 var _padding = {};
 var _layout = {};
 var _positions = {};
@@ -1195,7 +1201,8 @@ function sam_input_changed(sam_input_value) {
 
 $('#sam_input').bind('input propertychange', function() {
 	_settings.alignment_info_text = "Sam from text field";
-	set_alignment_info_text(); 
+	set_alignment_info_text();
+	ga('send', 'event', "SAM_text","change");
 	sam_input_changed(this.value)
 });
 
@@ -1311,7 +1318,11 @@ function coords_input_changed(coords_input_value) {
 }
 
 
-$('#coords_input').bind('input propertychange', function() {remove_coords_file(); coords_input_changed(this.value)});
+$('#coords_input').bind('input propertychange', function() {
+	remove_coords_file(); 
+	coords_input_changed(this.value);
+	ga('send', 'event', "coords_text","change");
+});
 
 
 
@@ -1506,7 +1517,11 @@ function update_bedpe() {
 	refresh_ui_elements();
 }
 
-$('#bed_input').bind('input propertychange', function() {remove_variant_file(); bed_input_changed(this.value)});
+$('#bed_input').bind('input propertychange', function() {
+	ga('send', 'event', "bed_text","change");
+	remove_variant_file(); 
+	bed_input_changed(this.value);
+});
 
 
 function vcf_input_changed(vcf_input) {
@@ -1564,7 +1579,11 @@ function vcf_input_changed(vcf_input) {
 }
 
 
-$('#vcf_input').bind('input propertychange', function() {remove_variant_file(); vcf_input_changed(this.value)});
+$('#vcf_input').bind('input propertychange', function() {
+	ga('send', 'event', "vcf_text","change");
+	remove_variant_file(); 
+	vcf_input_changed(this.value)
+});
 
 function remove_variant_file() {
 	// For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
@@ -3193,6 +3212,7 @@ function set_variant_info_text() {
 
 function read_bam_url(url) {
 	_Bam = new Bam(url);
+	ga('send', 'event', "BAM_URL","load",url);
 	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
@@ -3227,6 +3247,8 @@ function load_json_bam(header) {
 }
 
 function write_permalink() {
+	ga('send', 'event', "Permalink","read",id);
+
 	var permalink_name = get_name();
 	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
@@ -3265,6 +3287,8 @@ function write_permalink() {
 
 
 function read_permalink(id) {
+	ga('send', 'event', "Permalink","read",id);
+
 	user_message("Info","Loading data from permalink");
 	jQuery.ajax({
 		url: "permalinks/" + id + ".json", 
@@ -3413,6 +3437,8 @@ add_examples_to_navbar();
 // ===========================================================================
 
 function open_bedpe_file(event) {
+	ga('send', 'event', "bedpe_file","load",this.files[0].name);
+
 	if (this.files[0].size > 1000000) {
 		user_message("Warning","Loading large file may take a while.");
 	}
@@ -3432,12 +3458,14 @@ function open_bedpe_file(event) {
 	}
 }
 function open_variant_file(event) {
+
 	if (this.files[0].size > 1000000) {
 		user_message("Warning","Loading large file may take a while.");
 	}
 	
 	var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
 	if (file_extension == "vcf") {
+		ga('send', 'event', "vcf_file","load",this.files[0].name);
 		var raw_data;
 		var reader = new FileReader();
 		reader.readAsText(this.files[0]);
@@ -3452,6 +3480,7 @@ function open_variant_file(event) {
 		
 	}
 	else if (file_extension == "bed") {
+		ga('send', 'event', "bed_file","load",this.files[0].name);
 		var raw_data;
 		var reader = new FileReader();
 		reader.readAsText(this.files[0]);
@@ -3479,6 +3508,7 @@ d3.select("#bedpe_file").on("change",open_bedpe_file);
 
 function open_coords_file(event) {
 	console.log("in open_coords_file");
+	ga('send', 'event', "coords_file","load",this.files[0].name);
 		
 	var raw_data;
 	var reader = new FileReader();
@@ -3504,6 +3534,7 @@ d3.select("#coords_file").on("change",open_coords_file);
 
 function open_sam_file(event) {
 	console.log("in open_sam_file");
+	ga('send', 'event', "SAM_file","load",this.files[0].name);
 		
 	var raw_data;
 	var reader = new FileReader();
@@ -3567,6 +3598,7 @@ function create_bam(files) {
 
 	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
 	set_alignment_info_text();
+	ga('send', 'event', "BAM_file","load",bamFile.name);
 
 	wait_then_run_when_bam_file_loaded();
 }
@@ -3607,6 +3639,7 @@ function clear_vcf_input() {
 
 function bam_loaded() {
 	_settings.current_input_type = "bam";
+
 	// Check match refs from region view checkbox by default
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
@@ -4016,7 +4049,6 @@ d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 // d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 
-
 if (splitthreader_data != "") {
 	console.log("Found SplitThreader data");
 	_Bedpe = [];
@@ -4028,7 +4060,6 @@ if (splitthreader_data != "") {
 
 	update_bedpe();	
 }
-
 
 
 if (igv_data != "") {
