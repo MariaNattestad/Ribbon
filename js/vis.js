@@ -366,10 +366,24 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 })
 
 d3.select("#generate_permalink_button").on("click", function() {
+
 	write_permalink();
 });
 
+function get_name() {
+	var permalink_name = d3.select("#permalink_name").property("value");
+	if (permalink_name == "") {
+		permalink_name = "Ribbon";
+	}
+	return permalink_name;
+}
+d3.select("#screenshot_top").on("click", function() {
+	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png");
+});
 
+d3.select("#screenshot_bottom").on("click", function() {
+	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png");
+});
 
 $("#show_all_refs").click(function() {
 	show_all_chromosomes();
@@ -2630,7 +2644,8 @@ function reset_svg2() {
 
 	_svg2 = d3.select("#svg2_panel").append("svg")
 		.attr("width",_layout.svg2_width)
-		.attr("height",_layout.svg2_height);
+		.attr("height",_layout.svg2_height)
+		.attr("id","svg_multi_read");
 
 	_svg2.append("text")
 			.attr("id","no_alignments_message")
@@ -2650,7 +2665,8 @@ function reset_svg() {
 
 	_svg = d3.select("#svg1_panel").append("svg")
 		.attr("width",_layout.svg_width)
-		.attr("height",_layout.svg_height);
+		.attr("height",_layout.svg_height)
+		.attr("id","svg_single_read");
 }
 
 function dotplot_alignment_path_generator(d) {
@@ -3187,7 +3203,7 @@ function load_json_bam(header) {
 }
 
 function write_permalink() {
-	var permalink_name = d3.select("#permalink_name").property("value");
+	var permalink_name = get_name();
 	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
 
