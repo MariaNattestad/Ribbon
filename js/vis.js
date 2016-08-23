@@ -3250,9 +3250,11 @@ function load_json_bam(header) {
 }
 
 function write_permalink() {
-	ga('send', 'event', "Permalink","read",id);
+	
 
 	var permalink_name = get_name();
+	ga('send', 'event', "Permalink","read",permalink_name);
+	
 	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
 
