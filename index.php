@@ -192,8 +192,8 @@
 				      </span>
 				    </div>
 				    <hr>
-					  <button id="screenshot_top">Image capture top plot</button>
-					  <button id="screenshot_bottom">Image capture bottom plot</button>
+					  <button id="screenshot_top">Download top view as png</button>
+					  <button id="screenshot_bottom">Download bottom view as png</button>
 
 					<!-- <table>
 						<col width="100%">
