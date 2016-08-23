@@ -269,10 +269,10 @@ $( "#num_aligns_range_slider" ).slider({
   max: 500,
   values: [ 100, 300 ],
   slide: function( event, ui ) {
-    $( "#num_aligns_range_label" ).html( "" + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
-    _settings.min_num_alignments = ui.values[0];
-    _settings.max_num_alignments = ui.values[1];
-    draw_region_view();
+	$( "#num_aligns_range_label" ).html( "" + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+	_settings.min_num_alignments = ui.values[0];
+	_settings.max_num_alignments = ui.values[1];
+	draw_region_view();
   }
 });
 
@@ -365,10 +365,33 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 	select_read();
 })
 
+var image_URIs = [];
+
+function wait_for_images(callback, counter) {
+	if (image_URIs.length == 2 || counter > 10) {
+		callback()
+	} else {
+		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
+	}
+}
 d3.select("#generate_permalink_button").on("click", function() {
 
-	write_permalink();
+	create_image_URIs();
+	wait_for_images(write_permalink,0);
+
 });
+
+function create_image_URIs() {
+	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
+		console.log("in svgAsPngUri single read");
+		image_URIs.push(uri);
+	});
+	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
+		console.log("in svgAsPngUri multi read");
+		image_URIs.push(uri);
+	});
+
+}
 
 function get_name() {
 	var permalink_name = d3.select("#permalink_name").property("value");
@@ -2599,8 +2622,10 @@ function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
+		d3.select("#image_capture_test_landing").style("display","none");
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
+		d3.select("#image_capture_test_landing").style("display","block");
 	}
 
 	if (_Chunk_alignments.length > 0) {
@@ -3218,7 +3243,8 @@ function write_permalink() {
 		"bedpe":_Bedpe, 
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
-		"permalink_name": permalink_name
+		"permalink_name": permalink_name,
+		"images": image_URIs
 	}};
 
 	jQuery.ajax({
@@ -3245,6 +3271,7 @@ function read_permalink(id) {
 		url: "permalinks/" + id + ".json", 
 		success: function(file_content) {
 
+		
 			// Data type
 			var json_data = null; 
 			if (typeof(file_content) === "object") {
@@ -3254,6 +3281,17 @@ function read_permalink(id) {
 				json_data = JSON.parse(file_content);
 			} else {
 				console.log("Cannot read permalink, returned type is not object or string");
+			}
+
+			// If images
+			if (json_data["ribbon_perma"]["images"] != undefined) {
+				console.log(json_data["ribbon_perma"]["images"].length);
+				console.log(json_data["ribbon_perma"]["images"][0].length);
+				console.log(json_data["ribbon_perma"]["images"][1].length);
+				d3.select("#image_capture_test_landing")
+					.append("img").property("src", json_data["ribbon_perma"]["images"][0]);
+				d3.select("#image_capture_test_landing")
+					.append("img").property("src", json_data["ribbon_perma"]["images"][1]);
 			}
 
 			// Alignments
@@ -3349,8 +3387,8 @@ function read_example_sam(filename) {
 		sam_input_changed(file_content);
 		clear_sam_input();
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
-	 	// // Open the sam tab
-	 	// $('.nav-tabs a[href="#sam"]').tab('show');
+		// // Open the sam tab
+		// $('.nav-tabs a[href="#sam"]').tab('show');
 	}})
 	_settings.alignment_info_text = "Example: " + filename;
 	set_alignment_info_text();
@@ -3362,8 +3400,8 @@ function read_example_coords(filename) {
 		coords_input_changed(file_content);
 		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
 		clear_coords_input();
-	 	// // Open the coords tab
-	 	// $('.nav-tabs a[href="#coords"]').tab('show');
+		// // Open the coords tab
+		// $('.nav-tabs a[href="#coords"]').tab('show');
 	}})
 	_settings.alignment_info_text = "Example: " + filename;
 	set_alignment_info_text();
@@ -3998,18 +4036,18 @@ if (igv_data != "") {
 	d3.select("#igv_stats").html("found something in POST. Check console.");
 	console.log("igv_data:", igv_data);
  
- 	// Open the "from igv" tab
- 	$('.nav-tabs a[href="#igv"]').tab('show');
+	// Open the "from igv" tab
+	$('.nav-tabs a[href="#igv"]').tab('show');
 
 	// if input is text of sam file send to sam_input_changed(sam_text)
 	// otherwise make new parser on the fields, similar to what we did for the bam records, and need to treat the header separately too
 }
 
 window.addEventListener("beforeunload", function (e) {
-    var confirmationMessage = 'Leave Ribbon?';
+	var confirmationMessage = 'Leave Ribbon?';
 
-    (e || window.event).returnValue = confirmationMessage; //Gecko + IE
-    return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+	(e || window.event).returnValue = confirmationMessage; //Gecko + IE
+	return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
 });
 
 
