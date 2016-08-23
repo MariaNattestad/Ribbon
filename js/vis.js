@@ -368,8 +368,9 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 var image_URIs = [];
 
 function wait_for_images(callback, counter) {
+	console.log(image_URIs);
 	if (image_URIs.length == 2 || counter > 10) {
-		callback()
+		callback();
 	} else {
 		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
 	}

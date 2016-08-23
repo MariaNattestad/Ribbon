@@ -2,15 +2,6 @@
 
 <html>
 
-<?php 
-	$image_url = "";
-	if (isset($_GET["perma"])) {
-		$code = $_GET["perma"];
-		// $file_prefix = 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"] . '/permalinks/' . $code; // . "_1.png";
-		$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/permalinks/" . $code;
-	}
-?>
-
 <head>
     <title>Ribbon</title>
     <meta charset="utf-8">
@@ -18,8 +9,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="">
         <meta name="author" content="">
-        <meta property="og:image" content="<?php echo $file_prefix ?>_1.png">
-        <meta property="og:image" content="<?php echo $file_prefix ?>_2.png">
+
+		<?php 
+			if (isset($_GET["perma"])) {
+				$code = $_GET["perma"];
+				// $file_prefix = 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"] . '/permalinks/' . $code; // . "_1.png";
+				$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/permalinks/" . $code;
+				echo '<meta property="og:image" content="' . $file_prefix . '_1.png">';
+        		echo '<meta property="og:image" content="' . $file_prefix . '_1.png">';
+			} else {
+				$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/images/";
+				echo '<meta property="og:image" content="' . $file_prefix . 'example_single_read.png">';
+        		echo '<meta property="og:image" content="' . $file_prefix . 'example_multi_read.png">';
+			}
+		?>
     
     <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
