@@ -603,15 +603,6 @@
 		}
 		?>;
 
-	var igv_data = undefined;
-	igv_data = <?php 
-		if (isset($_POST['igv'])) {
-			echo $_POST['igv'];
-		} else {
-			echo "''";
-		}
-		?>;
-
 </script>
 
 <!-- Libraries -->
