@@ -2622,10 +2622,10 @@ function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
-		d3.select("#image_capture_test_landing").style("display","none");
+		// d3.select("#image_capture_test_landing").style("display","none");
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
-		d3.select("#image_capture_test_landing").style("display","block");
+		// d3.select("#image_capture_test_landing").style("display","block");
 	}
 
 	if (_Chunk_alignments.length > 0) {

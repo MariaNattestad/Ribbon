@@ -151,10 +151,11 @@
 			</div>		
 	</div>
 	
-	<div id="image_capture_test_landing"></div>
+	
 
 	<div id="svg2_panel"></div>
 	<div id="svg1_panel"></div>
+
 </div>
 
 
@@ -576,6 +577,10 @@
 	</div>
 
 </div>
+
+<div id="image_capture_test_landing"></div>
+
+
 
 <script>
 	var splitthreader_data = undefined;
