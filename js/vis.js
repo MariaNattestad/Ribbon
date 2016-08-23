@@ -1371,6 +1371,7 @@ function variant_row_click(d) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
 	}
 	go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);
+	ga('send', 'event', "variant_table", "select");
 }
 
 function check_bam_done_fetching() {
@@ -1398,6 +1399,7 @@ function show_variant_table() {
 
 }
 function bedpe_row_click(d) {
+
 	console.log("go to regions:", d.chrom1 , ":",  d.pos1, " and ",  d.chrom2, ":", d.pos2);
 	var regions = [];
 	regions.push({"chrom":d.chrom1,"pos":d.pos1});
@@ -1415,6 +1417,7 @@ function bedpe_row_click(d) {
 		_Bedpe[i].highlight = (_Bedpe[i].name == d.name);
 	}
 
+	ga('send', 'event', "bedpe_table","select");
 }
 
 function show_bedpe_table() {
@@ -3986,6 +3989,8 @@ function tell_user_how_many_records_loaded() {
 }
 
 function region_submitted(event) {
+
+	ga('send', 'event', "manual_BAM_region","submit");
 
 	var chrom = d3.select("#region_chrom").property("value");
 	if (chrom == "") {
