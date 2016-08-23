@@ -2616,8 +2616,6 @@ function organize_references_for_read() {
 	_scales.ref_interval_scale.domain([0,cumulative_position]);
 }
 
-
-
 function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
@@ -3283,16 +3281,16 @@ function read_permalink(id) {
 				console.log("Cannot read permalink, returned type is not object or string");
 			}
 
-			// If images
-			if (json_data["ribbon_perma"]["images"] != undefined) {
-				console.log(json_data["ribbon_perma"]["images"].length);
-				console.log(json_data["ribbon_perma"]["images"][0].length);
-				console.log(json_data["ribbon_perma"]["images"][1].length);
-				d3.select("#image_capture_test_landing")
-					.append("img").property("src", json_data["ribbon_perma"]["images"][0]);
-				d3.select("#image_capture_test_landing")
-					.append("img").property("src", json_data["ribbon_perma"]["images"][1]);
-			}
+			// // If images
+			// if (json_data["ribbon_perma"]["images"] != undefined) {
+			// 	console.log(json_data["ribbon_perma"]["images"].length);
+			// 	console.log(json_data["ribbon_perma"]["images"][0].length);
+			// 	console.log(json_data["ribbon_perma"]["images"][1].length);
+			// 	d3.select("#image_capture_test_landing")
+			// 		.append("img").property("src", json_data["ribbon_perma"]["images"][0]);
+			// 	d3.select("#image_capture_test_landing")
+			// 		.append("img").property("src", json_data["ribbon_perma"]["images"][1]);
+			// }
 
 			// Alignments
 			if (json_data["ribbon_perma"] != undefined) {

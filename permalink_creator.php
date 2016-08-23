@@ -14,6 +14,16 @@
 		$pageURL .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
 		return str_replace("/permalink_creator.php", "", $pageURL);
 	}
+
+	function save_image($uri, $filename) {
+		$imgData = str_replace(' ','+', $uri);
+		$imgData =  substr($imgData,strpos($imgData,",")+1);
+		$imgData = base64_decode($imgData);
+		// Write $imgData into the image file
+		$file = fopen($filename, 'w');
+		fwrite($file, $imgData);
+		fclose($file);
+	}
 	
 	if (isset($_POST['ribbon'])) {
 		$data = json_decode($_POST['ribbon']);
@@ -27,6 +37,11 @@
 			if ($permalink_name == "") {
 				$permalink_name = "Ribbon permalink";
 			}
+		}
+
+		if (isset($data->ribbon_perma->images)) {
+			save_image($data->ribbon_perma->images[0], dirname(__FILE__) . '/permalinks/' . $filename . "_1.png");
+			save_image($data->ribbon_perma->images[1], dirname(__FILE__) . '/permalinks/' . $filename . "_2.png");
 		}
 
 		// Add cookie:

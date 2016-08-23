@@ -2,6 +2,14 @@
 
 <html>
 
+<?php 
+	$image_url = "";
+	if (isset($_GET["perma"])) {
+		$code = $_GET["perma"];
+		$file_prefix = dirname(__FILE__) . '/permalinks/' . $code; // . "_1.png";
+	}
+?>
+
 <head>
     <title>Ribbon</title>
     <meta charset="utf-8">
@@ -9,6 +17,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="">
         <meta name="author" content="">
+        <meta property="og:image" content="<?= $file_prefix ?>_1.png">
+        <meta property="og:image" content="<?= $file_prefix ?>_2.png">
     
     <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
@@ -578,9 +588,7 @@
 
 </div>
 
-<div id="image_capture_test_landing"></div>
-
-
+<!-- <div id="image_capture_test_landing"></div> -->
 
 <script>
 	var splitthreader_data = undefined;
