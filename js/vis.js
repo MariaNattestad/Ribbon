@@ -184,8 +184,10 @@ function responsive_sizing() {
 		.style("height",_layout.total_height + "px")
 		.style("visibility","visible");
 
-	draw_region_view();
-	draw();
+	if (_Chunk_alignments.length > 0 || _Whole_refs.length > 0) {
+		draw_region_view();
+		draw();	
+	}
 	refresh_visibility();
 
 }
@@ -1032,12 +1034,15 @@ function draw_chunk_alignments() {
 }
 
 function draw_region_view() {
-	console.log("REDRAWING REGION VIEW");
 	reset_svg2();
 	draw_chunk_ref();
-	draw_chunk_ref_intervals();
-	draw_chunk_alignments();
-	draw_chunk_variants();
+
+	if (_Chunk_alignments.length > 0) {
+		console.log("REDRAWING REGION VIEW");
+		draw_chunk_ref_intervals();
+		draw_chunk_alignments();
+		draw_chunk_variants();
+	}
 }
 
 function clear_data() {
@@ -1446,6 +1451,8 @@ function bed_input_changed(bed_input) {
 	
 	clear_vcf_input();
 	update_variants();
+	draw_region_view();
+	refresh_ui_elements();
 }
 
 function bedpe_input_changed(bedpe_input) {
@@ -1487,22 +1494,20 @@ function bedpe_input_changed(bedpe_input) {
 	user_message("Info","Loaded " + _Bedpe.length + " bedpe entries");
 	
 	update_bedpe();
+	draw_region_view();
+	refresh_ui_elements();
 }
 
 function update_variants() {
 	var color_calculations = calculate_type_colors(_Variants);
 	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
 	show_variant_table();
-	draw_region_view();
-	refresh_ui_elements();
 }
 
 function update_bedpe() {
 	var color_calculations = calculate_type_colors(_Bedpe);
 	_scales.variant_color_scale.domain(color_calculations.names).range(color_calculations.colors);
 	show_bedpe_table();
-	draw_region_view();
-	refresh_ui_elements();
 }
 
 $('#bed_input').bind('input propertychange', function() {remove_variant_file(); bed_input_changed(this.value)});
@@ -1560,6 +1565,8 @@ function vcf_input_changed(vcf_input) {
 	user_message("Info","Loaded " + _Variants.length + " vcf entries");
 	clear_bed_input();
 	update_variants();
+	draw_region_view();
+	refresh_ui_elements();
 }
 
 
@@ -1793,7 +1800,6 @@ function refresh_ui_elements() {
 	$('#min_aligns_for_ref_interval_label').html(_settings.min_aligns_for_ref_interval);
 
 	// Dot plot vs. Ribbon plot
-	console.log("_settings.ribbon_vs_dotplot:", _settings.ribbon_vs_dotplot);
 	if (_settings.ribbon_vs_dotplot == "ribbon") {
 		d3.selectAll(".ribbon_settings").style("display","block");
 		d3.selectAll(".dotplot_settings").style("display","none");
@@ -3265,11 +3271,10 @@ function write_permalink() {
 
 function read_permalink(id) {
 	user_message("Info","Loading data from permalink");
+
 	jQuery.ajax({
 		url: "permalinks/" + id + ".json", 
 		success: function(file_content) {
-
-		
 			// Data type
 			var json_data = null; 
 			if (typeof(file_content) === "object") {
@@ -3308,11 +3313,11 @@ function read_permalink(id) {
 				if (json_data["ribbon_perma"]["_Refs_show_or_hide"] != undefined) {
 					_Refs_show_or_hide = json_data["ribbon_perma"]["_Refs_show_or_hide"];
 				}
-				if (json_data["ribbon_perma"]["variants"] != undefined) {
+				if (json_data["ribbon_perma"]["variants"] != undefined && json_data["ribbon_perma"]["variants"].length > 0) {
 					_Variants = json_data["ribbon_perma"]["variants"];
 					update_variants();
 				}
-				if (json_data["ribbon_perma"]["bedpe"] != undefined) {
+				if (json_data["ribbon_perma"]["bedpe"] != undefined && json_data["ribbon_perma"]["bedpe"].length > 0) {
 					_Bedpe = json_data["ribbon_perma"]["bedpe"];
 					update_bedpe();
 				}
@@ -4025,20 +4030,9 @@ if (splitthreader_data != "") {
 	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
 	$('.nav-tabs a[href="#bam"]').tab('show');
 
-	update_bedpe();	
-}
-
-
-
-if (igv_data != "") {
-	d3.select("#igv_stats").html("found something in POST. Check console.");
-	console.log("igv_data:", igv_data);
- 
-	// Open the "from igv" tab
-	$('.nav-tabs a[href="#igv"]').tab('show');
-
-	// if input is text of sam file send to sam_input_changed(sam_text)
-	// otherwise make new parser on the fields, similar to what we did for the bam records, and need to treat the header separately too
+	update_bedpe();
+	draw_region_view();
+	refresh_ui_elements();
 }
 
 window.addEventListener("beforeunload", function (e) {
@@ -4063,6 +4057,6 @@ function resizeWindow() {
 	responsive_sizing();
 }
 
-open_any_url_files();
-run();
 
+run();
+open_any_url_files();
