@@ -18,7 +18,7 @@
         <meta name="description" content="">
         <meta name="author" content="">
         <meta property="og:image" content="<?= $file_prefix ?>_1.png">
-        <meta property="og:image" content="<?= $file_prefix ?>_2.png">
+        <!-- <meta property="og:image" content="<?= $file_prefix ?>_2.png"> -->
     
     <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
