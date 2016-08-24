@@ -3166,38 +3166,23 @@ function add_examples_to_navbar() {
 	navbar_examples = d3.select("ul#examples_list");
 
 	jQuery.ajax({
-		url: "examples",
+		url: "permalinks",
 		cache: false,
 		error: function() {
-			navbar_examples.append("li").html("Can't find examples. Create a directory called examples within the main ribbon directory and put .sam and .coords files inside it, then they will show up here");
+			navbar_examples.append("li").html("Create examples using permalinks and then rename the .json file in the permalinks folder to E_*.json where * is a quick dataset description with underscores instead of spaces, and they will automatically appear here.");
 		},
 		success: function (data) {
-			$(data).find("a:contains(.sam)").each(function() {
+			$(data).find("a").each(function() {
 				// will loop through
 				var example_file = $(this).attr("href");
-
-				navbar_examples.append("li").append("a")
-					.attr("href",void(0))
-					.on("click",function() {read_example_sam(example_file);})
-					.text(example_file);
-			})
-			// $(data).find("a:contains(.bam)").each(function() {
-			// 	// will loop through
-			// 	var example_file = $(this).attr("href");
-
-			// 	navbar_examples.append("li").append("a")
-			// 		.attr("href",void(0))
-			// 		.on("click",function() {read_example_bam(example_file);})
-			// 		.text(example_file);
-			// })
-			$(data).find("a:contains(.coords)").each(function() {
-				// will loop through
-				var example_file = $(this).attr("href");
-
-				navbar_examples.append("li").append("a")
-					.attr("href",void(0))
-					.on("click",function() {read_example_coords(example_file);})
-					.text(example_file);
+				if (example_file.substr(0,2) == "E_" && example_file.substr(example_file.length-5,example_file.length) == ".json") {
+					
+					var name = example_file.substr(2,example_file.length-7).replace("_"," ");
+					navbar_examples.append("li").append("a")
+						.attr("href",void(0))
+						.on("click",function() {read_permalink(example_file.substr(0, example_file.length-5));})
+						.text(name);
+				}
 			})
 		}
 	});
@@ -3398,44 +3383,11 @@ function read_permalink(id) {
 					vcf_input_changed(json_data["vcf"]);
 				}
 			}
+		},
+		error: function(e) {
+			user_message("Error", "Permalink not found on server")
 		}
 	});
-}
-
-
-function read_example_bam(filename) {
-	var url = window.location.href + "/examples/" + filename;
-
-	console.log(url);
-	read_bam_url(url);
-	_settings.alignment_info_text = "Example: " + filename;
-	set_alignment_info_text();
-}
-
-function read_example_sam(filename) {
-	user_message("Info","Loading sam file. This may take a few minutes.");
-	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
-		sam_input_changed(file_content);
-		clear_sam_input();
-		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
-		// // Open the sam tab
-		// $('.nav-tabs a[href="#sam"]').tab('show');
-	}})
-	_settings.alignment_info_text = "Example: " + filename;
-	set_alignment_info_text();
-}
-
-function read_example_coords(filename) {
-	user_message("Info","Loading coordinates file. This may take a few minutes.");
-	jQuery.ajax({url: "examples/" + filename, success: function(file_content) {
-		coords_input_changed(file_content);
-		d3.select("#collapsible_alignment_input_box").attr("class","panel-collapse collapse");
-		clear_coords_input();
-		// // Open the coords tab
-		// $('.nav-tabs a[href="#coords"]').tab('show');
-	}})
-	_settings.alignment_info_text = "Example: " + filename;
-	set_alignment_info_text();
 }
 
 add_examples_to_navbar();

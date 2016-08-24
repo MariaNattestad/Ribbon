@@ -225,7 +225,9 @@ path, line {
 }
 
 
-
+ul#examples_list {
+	cursor: pointer;
+}
 
 
 
