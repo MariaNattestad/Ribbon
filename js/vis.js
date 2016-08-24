@@ -86,6 +86,7 @@ _settings.show_indels_as = "thin";
 _settings.highlight_selected_read = true;
 _settings.alignment_info_text = "";
 _settings.variant_info_text = "";
+_settings.bam_url = undefined;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1164,6 +1165,7 @@ function sam_input_changed(sam_input_value) {
 		_settings.ref_match_chunk_ref_intervals = true;
 		d3.select("#ref_match_region_view").property("checked",true);
 		refresh_ui_for_new_dataset();
+		reset_settings_for_new_dataset();
 		
 		clear_data();
 		clear_coords_input();
@@ -1214,12 +1216,12 @@ $('#sam_input').bind('input propertychange', function() {
 });
 
 d3.select("#sam_info_icon").on("click", function() {
-	user_message("Instructions","Create a sam file using an aligner such as BWA, BLASR, or NGM-LR. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
+	user_message("Instructions","Create a sam file using an aligner such as BWA. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
 });
 
 
 d3.select("#bam_info_icon").on("click", function() {
-	user_message("Instructions","Create a bam file using an aligner such as BWA, BLASR, or NGM-LR. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, upload the my_file.sorted.bam and the my_file.sorted.bam.bai files");
+	user_message("Instructions","Create a bam file using an aligner such as BWA. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, select the my_file.sorted.bam and the my_file.sorted.bam.bai files. The bam file is not uploaded, but is read locally on your computer using the .bai file as the index. (This is secure because a site can only access the files you chose.)");
 });
 
 
@@ -1272,6 +1274,7 @@ function coords_input_changed(coords_input_value) {
 	_settings.ref_match_chunk_ref_intervals = false;
 	d3.select("#ref_match_region_view").property("checked",false);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_data();
 	clear_sam_input();
@@ -1730,6 +1733,16 @@ function create_dropdowns() {
 	});
 }
 
+function reset_settings_for_new_dataset() {
+	if (_settings.current_input_type == "coords") {
+		_settings.orient_reads_by = "longest";
+		_settings.show_indels_as = "none";
+	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
+		_settings.orient_reads_by = "primary";
+		_settings.show_indels_as = "thin";
+	}
+}
+
 function refresh_ui_for_new_dataset() {
 	
 	if (_settings.current_input_type == "coords") {
@@ -1746,9 +1759,6 @@ function refresh_ui_for_new_dataset() {
 		$("#only_header_refs_checkbox").attr("disabled",true);
 
 		$("#show_indels_as_dropdown").attr("disabled",true);
-
-		_settings.orient_reads_by = "longest";
-		_settings.show_indels_as = "none";
 		
 	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
 		$("#min_mq_title").html("Minimum mapping quality: ");
@@ -1762,10 +1772,7 @@ function refresh_ui_for_new_dataset() {
 
 		// Enable header refs only checkbox
 		$("#only_header_refs_checkbox").attr("disabled",false);
-		$("#show_indels_as_dropdown").attr("disabled",false);
-
-		_settings.orient_reads_by = "primary";
-		_settings.show_indels_as = "thin";
+		$("#show_indels_as_dropdown").attr("disabled",false);	
 	}
 	
 	create_dropdowns();
@@ -3181,7 +3188,7 @@ function add_examples_to_navbar() {
 				var example_file = $(this).attr("href");
 				if (example_file.substr(0,2) == "E_" && example_file.substr(example_file.length-5,example_file.length) == ".json") {
 					
-					var name = example_file.substr(2,example_file.length-7).replace("_"," ");
+					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
 					navbar_examples.append("li").append("a")
 						.attr("href",void(0))
 						.on("click",function() {read_permalink(example_file.substr(0, example_file.length-5));})
@@ -3205,6 +3212,12 @@ function set_variant_info_text() {
 	d3.select("#text_variant_file_output").html(_settings.variant_info_text);	
 }
 
+function load_bam_url_in_background(url) {
+	_Bam = new Bam(url);
+	_Bam.getHeader(function() {console.log("got header")});
+	_settings.alignment_info_text = "Bam from url: " + url;
+	_settings.bam_url = url;
+}
 
 function read_bam_url(url) {
 	_Bam = new Bam(url);
@@ -3212,6 +3225,7 @@ function read_bam_url(url) {
 	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
+	_settings.bam_url = url;
 	set_alignment_info_text();
 }
 
@@ -3221,6 +3235,7 @@ function load_json_bam(header) {
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_sam_input();
 	clear_coords_input();
@@ -3320,6 +3335,10 @@ function read_permalink(id) {
 
 			// Alignments
 			if (json_data["ribbon_perma"] != undefined) {
+
+				if (json_data["ribbon_perma"]["config"]["settings"]["bam_url"] != undefined) {
+					load_bam_url_in_background(json_data["ribbon_perma"]["config"]["settings"]["bam_url"]);
+				}
 				if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
 					_Additional_ref_intervals = json_data["ribbon_perma"]["config"]["focus_regions"];
 				}
@@ -3352,6 +3371,7 @@ function read_permalink(id) {
 					if (_settings.color_index == undefined) {
 						_settings.color_index = 0;
 					}
+					refresh_ui_for_new_dataset();
 					_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 					apply_ref_filters();
 					draw_region_view();
@@ -3617,6 +3637,7 @@ function bam_loaded() {
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_sam_input();
 	clear_coords_input();
