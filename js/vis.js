@@ -80,6 +80,7 @@ _settings.show_indels_as = "thin";
 _settings.highlight_selected_read = true;
 _settings.alignment_info_text = "";
 _settings.variant_info_text = "";
+_settings.bam_url = undefined;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -3181,12 +3182,19 @@ function set_variant_info_text() {
 	d3.select("#text_variant_file_output").html(_settings.variant_info_text);	
 }
 
+function load_bam_url_in_background(url) {
+	_Bam = new Bam(url);
+	_Bam.getHeader(function() {console.log("got header")});
+	_settings.alignment_info_text = "Bam from url: " + url;
+	_settings.bam_url = url;
+}
 
 function read_bam_url(url) {
 	_Bam = new Bam(url);
 	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
+	_settings.bam_url = url;
 	set_alignment_info_text();
 }
 
@@ -3285,6 +3293,10 @@ function read_permalink(id) {
 
 			// Alignments
 			if (json_data["ribbon_perma"] != undefined) {
+
+				if (json_data["ribbon_perma"]["config"]["settings"]["bam_url"] != undefined) {
+					load_bam_url_in_background(json_data["ribbon_perma"]["config"]["settings"]["bam_url"]);
+				}
 				if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
 					_Additional_ref_intervals = json_data["ribbon_perma"]["config"]["focus_regions"];
 				}
