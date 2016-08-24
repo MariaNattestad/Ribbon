@@ -64,7 +64,7 @@ _settings.min_mapping_quality = 0;
 _settings.min_indel_size = _static.min_indel_size_for_region_view; // set to -1 to stop showing indels
 _settings.min_align_length = 0; 
 
-_settings.colors = ["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"];
+_settings.color_index = 0;
 _settings.colorful = true;
 _settings.ribbon_outline = false;
 _settings.show_only_known_references = true;
@@ -100,7 +100,7 @@ _scales.whole_ref_scale = d3.scale.linear();
 _scales.chunk_whole_ref_scale = d3.scale.linear();
 _scales.ref_interval_scale = d3.scale.linear();
 _scales.chunk_ref_interval_scale = d3.scale.linear();
-_scales.ref_color_scale = d3.scale.ordinal().range(_settings.colors);
+_scales.ref_color_scale = d3.scale.ordinal().range(_static.color_collections[_settings.color_index]);
 _scales.variant_color_scale = d3.scale.ordinal();
 
 var _tooltip = {};
@@ -1690,8 +1690,8 @@ function create_dropdowns() {
 			.property("value",function(d){return d.colors});
 
 	d3.select("select#color_scheme_dropdown").on("change",function(d) {
-		_settings.colors = _static.color_collections[this.options[this.selectedIndex].value];	
-		_scales.ref_color_scale.range(_settings.colors)
+		_settings.color_index = this.options[this.selectedIndex].value;
+		_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 		draw_region_view();
 		draw();
 	});
@@ -1825,7 +1825,7 @@ function refresh_ui_elements() {
 	// All dropdowns
 	d3.select("select#read_orientation_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.orient_reads_by});
 	d3.select("select#read_sorting_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.feature_to_sort_reads});
-	d3.select("select#color_scheme_dropdown").selectAll("option").property("value",function(d){return d.colors});
+	d3.select("select#color_scheme_dropdown").selectAll("option").property("selected",function(d){return d.id === _settings.color_index});
 	d3.select("select#show_indels_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_indels_as});
 
 }
@@ -3320,6 +3320,11 @@ function read_permalink(id) {
 
 				if (json_data["ribbon_perma"]["config"]["settings"] != undefined) {
 					_settings = json_data["ribbon_perma"]["config"]["settings"];
+					// For backwards compatibility:
+					if (_settings.color_index == undefined) {
+						_settings.color_index = 0;
+					}
+					_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 					apply_ref_filters();
 					draw_region_view();
 					refresh_visibility();

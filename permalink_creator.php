@@ -26,10 +26,9 @@
 	// }
 	
 	if (isset($_POST['ribbon'])) {
-		$data = $_POST['ribbon'];
 		$filename = generateRandomString(10);
 		$file = fopen(dirname(__FILE__) . '/permalinks/' . $filename . ".json", 'w');
-		fwrite($file, json_encode($data));
+		fwrite($file, $_POST['ribbon']);
 		fclose($file);
 		$permalink_name = "Ribbon permalink";
 		if (isset($_POST["name"])) {
