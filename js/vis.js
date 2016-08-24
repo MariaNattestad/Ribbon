@@ -1205,12 +1205,12 @@ $('#sam_input').bind('input propertychange', function() {
 });
 
 d3.select("#sam_info_icon").on("click", function() {
-	user_message("Instructions","Create a sam file using an aligner such as BWA, BLASR, or NGM-LR. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
+	user_message("Instructions","Create a sam file using an aligner such as BWA. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead.");
 });
 
 
 d3.select("#bam_info_icon").on("click", function() {
-	user_message("Instructions","Create a bam file using an aligner such as BWA, BLASR, or NGM-LR. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, upload the my_file.sorted.bam and the my_file.sorted.bam.bai files");
+	user_message("Instructions","Create a bam file using an aligner such as BWA. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, select the my_file.sorted.bam and the my_file.sorted.bam.bai files. The bam file is not uploaded, but is read locally on your computer using the .bai file as the index. (This is secure because a site can only access the files you chose.)");
 });
 
 
