@@ -373,33 +373,35 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup",function() {
 	select_read();
 })
 
-var image_URIs = [];
+// var image_URIs = [];
 
-function wait_for_images(callback, counter) {
-	if (image_URIs.length == 2 || counter > 10) {
-		callback();
-	} else {
-		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
-	}
-}
+// function wait_for_images(callback, counter) {
+// 	if (image_URIs.length == 2 || counter > 10) {
+// 		callback()
+// 	} else {
+// 		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
+// 	}
+// }
+
 d3.select("#generate_permalink_button").on("click", function() {
 
-	create_image_URIs();
-	wait_for_images(write_permalink,0);
+	write_permalink();
+	// create_image_URIs();
+	// wait_for_images(write_permalink,0);
 
 });
 
-function create_image_URIs() {
-	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
-		// console.log("in svgAsPngUri single read");
-		image_URIs.push(uri);
-	});
-	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
-		// console.log("in svgAsPngUri multi read");
-		image_URIs.push(uri);
-	});
 
-}
+// function create_image_URIs() {
+// 	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
+// 		console.log("in svgAsPngUri single read");
+// 		image_URIs.push(uri);
+// 	});
+// 	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
+// 		console.log("in svgAsPngUri multi read");
+// 		image_URIs.push(uri);
+// 	});
+// }
 
 function get_name() {
 	var permalink_name = d3.select("#permalink_name").property("value");
@@ -3241,13 +3243,13 @@ function load_json_bam(header) {
 }
 
 function write_permalink() {
-	
+	d3.select("#generate_permalink_button").property("disabled",true);
+	d3.select("#generate_permalink_button").html("Creating permalink...");
+
 
 	var permalink_name = get_name();
 	ga('send', 'event', "Permalink","read",permalink_name);
 
-	d3.select("#generate_permalink_button").property("disabled",true);
-	d3.select("#generate_permalink_button").html("Creating permalink...");
 
 	var header = [];
 	for (var i in _Whole_refs) {
@@ -3260,8 +3262,8 @@ function write_permalink() {
 		"bedpe":_Bedpe, 
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
-		"permalink_name": permalink_name,
-		"images": image_URIs
+		"permalink_name": permalink_name//,
+		// "images": image_URIs
 	}};
 
 	jQuery.ajax({
