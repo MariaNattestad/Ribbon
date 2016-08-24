@@ -1159,6 +1159,7 @@ function sam_input_changed(sam_input_value) {
 		_settings.ref_match_chunk_ref_intervals = true;
 		d3.select("#ref_match_region_view").property("checked",true);
 		refresh_ui_for_new_dataset();
+		reset_settings_for_new_dataset();
 		
 		clear_data();
 		clear_coords_input();
@@ -1266,6 +1267,7 @@ function coords_input_changed(coords_input_value) {
 	_settings.ref_match_chunk_ref_intervals = false;
 	d3.select("#ref_match_region_view").property("checked",false);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_data();
 	clear_sam_input();
@@ -1709,6 +1711,16 @@ function create_dropdowns() {
 	});
 }
 
+function reset_settings_for_new_dataset() {
+	if (_settings.current_input_type == "coords") {
+		_settings.orient_reads_by = "longest";
+		_settings.show_indels_as = "none";
+	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
+		_settings.orient_reads_by = "primary";
+		_settings.show_indels_as = "thin";
+	}
+}
+
 function refresh_ui_for_new_dataset() {
 	
 	if (_settings.current_input_type == "coords") {
@@ -1725,9 +1737,6 @@ function refresh_ui_for_new_dataset() {
 		$("#only_header_refs_checkbox").attr("disabled",true);
 
 		$("#show_indels_as_dropdown").attr("disabled",true);
-
-		_settings.orient_reads_by = "longest";
-		_settings.show_indels_as = "none";
 		
 	} else if (_settings.current_input_type == "sam" || _settings.current_input_type == "bam") {
 		$("#min_mq_title").html("Minimum mapping quality: ");
@@ -1741,10 +1750,7 @@ function refresh_ui_for_new_dataset() {
 
 		// Enable header refs only checkbox
 		$("#only_header_refs_checkbox").attr("disabled",false);
-		$("#show_indels_as_dropdown").attr("disabled",false);
-
-		_settings.orient_reads_by = "primary";
-		_settings.show_indels_as = "thin";
+		$("#show_indels_as_dropdown").attr("disabled",false);	
 	}
 	
 	create_dropdowns();
@@ -3160,7 +3166,7 @@ function add_examples_to_navbar() {
 				var example_file = $(this).attr("href");
 				if (example_file.substr(0,2) == "E_" && example_file.substr(example_file.length-5,example_file.length) == ".json") {
 					
-					var name = example_file.substr(2,example_file.length-7).replace("_"," ");
+					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
 					navbar_examples.append("li").append("a")
 						.attr("href",void(0))
 						.on("click",function() {read_permalink(example_file.substr(0, example_file.length-5));})
@@ -3206,6 +3212,7 @@ function load_json_bam(header) {
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_sam_input();
 	clear_coords_input();
@@ -3336,6 +3343,7 @@ function read_permalink(id) {
 					if (_settings.color_index == undefined) {
 						_settings.color_index = 0;
 					}
+					refresh_ui_for_new_dataset();
 					_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 					apply_ref_filters();
 					draw_region_view();
@@ -3592,6 +3600,7 @@ function bam_loaded() {
 	_settings.ref_match_chunk_ref_intervals = true;
 	d3.select("#ref_match_region_view").property("checked",true);
 	refresh_ui_for_new_dataset();
+	reset_settings_for_new_dataset();
 
 	clear_sam_input();
 	clear_coords_input();
