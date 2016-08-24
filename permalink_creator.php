@@ -15,21 +15,20 @@
 		return str_replace("/permalink_creator.php", "", $pageURL);
 	}
 
-	function save_image($uri, $filename) {
-		$imgData = str_replace(' ','+', $uri);
-		$imgData =  substr($imgData,strpos($imgData,",")+1);
-		$imgData = base64_decode($imgData);
-		// Write $imgData into the image file
-		$file = fopen($filename, 'w');
-		fwrite($file, $imgData);
-		fclose($file);
-	}
+	// function save_image($uri, $filename) {
+	// 	$imgData = str_replace(' ','+', $uri);
+	// 	$imgData =  substr($imgData,strpos($imgData,",")+1);
+	// 	$imgData = base64_decode($imgData);
+	// 	// Write $imgData into the image file
+	// 	$file = fopen($filename, 'w');
+	// 	fwrite($file, $imgData);
+	// 	fclose($file);
+	// }
 	
 	if (isset($_POST['ribbon'])) {
-		$data = json_decode($_POST['ribbon']);
 		$filename = generateRandomString(10);
 		$file = fopen(dirname(__FILE__) . '/permalinks/' . $filename . ".json", 'w');
-		fwrite($file, json_encode($data));
+		fwrite($file, $_POST['ribbon']);
 		fclose($file);
 		$permalink_name = "Ribbon permalink";
 		if (isset($_POST["name"])) {
