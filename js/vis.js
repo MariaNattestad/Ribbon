@@ -3219,11 +3219,11 @@ function load_json_bam(header) {
 
 }
 
+
 function write_permalink() {
 	
-	d3.select("#generate_permalink_button").property("disabled",true);
 	d3.select("#generate_permalink_button").html("Creating permalink...");
-
+	d3.select("#generate_permalink_button").property("disabled",true);
 
 	var permalink_name = get_name();
 	var header = [];
@@ -3240,7 +3240,10 @@ function write_permalink() {
 		"permalink_name": permalink_name//,
 		// "images": image_URIs
 	}};
-
+	if (_Chunk_alignments.length > 800) {
+		user_message("Warning", "A large dataset may fail to create a permalink. Reduce upload file size if this occurs.");	
+	}
+	
 	jQuery.ajax({
 		type: "POST",
 		url: "permalink_creator.php",
