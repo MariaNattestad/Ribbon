@@ -39,10 +39,10 @@
 			}
 		}
 
-		if (isset($data->ribbon_perma->images)) {
-			save_image($data->ribbon_perma->images[0], dirname(__FILE__) . '/permalinks/' . $filename . "_1.png");
-			save_image($data->ribbon_perma->images[1], dirname(__FILE__) . '/permalinks/' . $filename . "_2.png");
-		}
+		// if (isset($data->ribbon_perma->images)) {
+		// 	save_image($data->ribbon_perma->images[0], dirname(__FILE__) . '/permalinks/' . $filename . "_1.png");
+		// 	save_image($data->ribbon_perma->images[1], dirname(__FILE__) . '/permalinks/' . $filename . "_2.png");
+		// }
 
 		// Add cookie:
 		$new_dataset = array( "date"=>time(), "codename"=>$filename, "description"=> $permalink_name );
