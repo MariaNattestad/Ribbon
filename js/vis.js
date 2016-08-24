@@ -408,13 +408,15 @@ function get_name() {
 	}
 	return permalink_name;
 }
+
 d3.select("#screenshot_top").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png");
+	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png");
 });
 
 d3.select("#screenshot_bottom").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png");
+	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png");
 });
+
 
 $("#show_all_refs").click(function() {
 	show_all_chromosomes();
