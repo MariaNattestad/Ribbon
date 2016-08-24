@@ -3847,12 +3847,6 @@ function parse_bam_text(bam_text) {
 						SA = columns[j].split(":")[2];
 					}
 				}
-				if (columns[0][0] != "m") {
-					console.log("ERROR -- ERROR -- ERROR -- ERROR");
-					console.log(bam_text);
-					console.log(lines[i]);
-					throw "ERROR";
-				}
 
 				bam_records.push({"readName":columns[0],"segment":columns[2], "pos":parseInt(columns[3]), "flag":parseInt(columns[1]), "mq": parseInt(columns[4]), "cigar": columns[5], "SA":SA});
 
