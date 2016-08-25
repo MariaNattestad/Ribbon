@@ -743,16 +743,22 @@ function draw_chunk_alignments() {
 	// }
  
 	if (_Additional_ref_intervals.length > 0) {
+		for (var i in _Additional_ref_intervals) {
+			var d = _Additional_ref_intervals[i];
+			_Additional_ref_intervals[i].x_pos = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start));
+			_Additional_ref_intervals[i].width = _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start));
+		}
 		_svg2.selectAll("rect.focal_regions").data(_Additional_ref_intervals).enter()
 			.append("rect").attr("class","focal_regions")
-				.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start)); })
-				.attr("y",_positions.chunk.ref_intervals.y)
-				.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom,d.start));})
-				.attr("height", _positions.chunk.ref_intervals.height )
-				.attr("fill","none")
-				.style("stroke-width",4)
-				.style("stroke", "black");	
-	}
+				.filter(function(d) { return isNaN(d.x_pos)===false && isNaN(d.width)===false; })
+					.attr("x",function(d) { return d.x_pos })
+					.attr("y",_positions.chunk.ref_intervals.y)
+					.attr("width", function(d) {return d.width;})
+					.attr("height", _positions.chunk.ref_intervals.height )
+					.attr("fill","none")
+					.style("stroke-width",4)
+					.style("stroke", "black");	
+		}
 
 
 	var chunks = [];
