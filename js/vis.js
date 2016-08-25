@@ -81,6 +81,7 @@ _settings.highlight_selected_read = true;
 _settings.alignment_info_text = "";
 _settings.variant_info_text = "";
 _settings.bam_url = undefined;
+_settings.fetch_margin = 100;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1842,7 +1843,8 @@ function parse_cigar(cigar_string) {
 	var cigar_regex = /(\d+)(\D)/;
 	var parsed = cigar_string.split(cigar_regex);
 	if (parsed.length < 2) {
-		user_message("Error","This doesn't look like a sam file. The 6th column must be a valid cigar string.");
+		user_message("Error","This doesn't look like a SAM/BAM file. The 6th column must be a valid cigar string.");
+		console.log("Failed cigar string:", cigar_string);
 		throw("input error: not a valid cigar string");
 	}
 	// console.log(parsed);
@@ -3735,11 +3737,18 @@ var _num_loaded_regions = 0;
 var _num_bam_records_to_load = 0;
 
 function my_fetch(chrom, start, end, callback) {
+
+	var padded_start = start - _settings.fetch_margin;
+	if (padded_start < 0) {
+		padded_start = 0;
+	}
+	var padded_end = end + _settings.fetch_margin;
+
 	
 	if (_Bam.sourceType == "url") {
 		// var records = [];
 		var rawRecords = "";
-		var region = chrom + ":" + start + "-" + end;
+		var region = chrom + ":" + padded_start + "-" + padded_end;
 		var cmd = new iobio.cmd(_Bam.iobio.samtools,['view', _Bam.bamUri, region], {ssl:_Bam.ssl,})
 		cmd.on('error', function(error) {
 			// console.log(error);
@@ -3753,7 +3762,7 @@ function my_fetch(chrom, start, end, callback) {
 
 		cmd.run();
 	} else {
-		_Bam.fetch(chrom, start, end, callback);
+		_Bam.fetch(chrom, padded_start, padded_end, callback);
 	}
 }
 
@@ -3797,7 +3806,10 @@ function check_if_all_bam_records_loaded() {
 		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 		_Chunk_alignments = [];
 		for (var i in consolidated_records) {
-			_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
+			var parsed = parse_bam_record(consolidated_records[i]);
+			if (parsed != undefined) {
+				_Chunk_alignments.push(parsed);	
+			}
 		}
 		chunk_changed();
 		tell_user_how_many_records_loaded();
@@ -3838,6 +3850,9 @@ function parse_bam_record(record) {
 	var strand = "+";
 	if ((flag & 16) == 16) {
 		strand = "-";
+	}
+	if (raw_cigar == "*") {
+		return undefined;
 	}
 
 	if (mq == undefined) {
@@ -3915,7 +3930,10 @@ function use_fetched_data(records) {
 	// _settings.min_indel_size = _static.min_indel_size_for_region_view;
 	_Chunk_alignments = [];
 	for (var i in consolidated_records) {
-		_Chunk_alignments.push(parse_bam_record(consolidated_records[i]));
+		var parsed = parse_bam_record(consolidated_records[i]);
+		if (parsed != undefined) {
+			_Chunk_alignments.push(parsed);	
+		}
 	}
 	chunk_changed();
 	tell_user_how_many_records_loaded();
