@@ -305,6 +305,14 @@
 								</td>
 							</tr>
 							<tr>
+								<td class="hide_for_coords">Show features as:</td>
+								<td colspan="2"> 
+									<select class="form-control" id="show_features_as_dropdown">
+										
+								 	</select>
+								</td>
+							</tr>
+							<tr>
 								<td>Color scheme:</td>
 								<td colspan="2"> 
 									<select class="form-control" id="color_scheme_dropdown">

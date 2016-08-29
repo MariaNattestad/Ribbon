@@ -206,6 +206,10 @@ path.bedpe_variants.highlight {
 	stroke-opacity: 1;
 	stroke-width: 2px;
 }
+path.features {
+	fill: none;
+	stroke-width: 3px;
+}
 
 #no_alignments_message {
 	font-size: 2vw;

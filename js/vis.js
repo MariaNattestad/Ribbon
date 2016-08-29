@@ -51,6 +51,8 @@ _static.color_schemes = [
 _static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"],["#ffff00","#ad0000","#bdadc6", "#00ffff", "#e75200","#de1052","#ffa5a5","#7b7b00","#7bffff","#008c00","#00adff","#ff00ff","#ff0000","#ff527b","#84d6a5","#e76b52","#8400ff","#6b4242","#52ff52","#0029ff","#ffffad","#ff94ff","#004200","gray","black"],['#E41A1C', '#A73C52', '#6B5F88', '#3780B3', '#3F918C', '#47A266','#53A651', '#6D8470', '#87638F', '#A5548D', '#C96555', '#ED761C','#FF9508', '#FFC11A', '#FFEE2C', '#EBDA30', '#CC9F2C', '#AD6428','#BB614F', '#D77083', '#F37FB8', '#DA88B3', '#B990A6', '#999999']]
 _static.min_indel_size_for_region_view = 50;
 _static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
+_static.show_features_as_options = [{"id":"none","description":"None"}, {"id":"rectangles","description":"Boxes"}, {"id":"arrows","description":"Arrows"}, {"id":"names","description":"Arrows with names"}];
+_static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.07,"features":0.07};
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -83,7 +85,7 @@ _settings.alignment_info_text = "";
 _settings.variant_info_text = "";
 _settings.bam_url = undefined;
 _settings.fetch_margin = 100;
-_settings.show_features_as = "rectangles";
+_settings.show_features_as = "arrows";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -182,11 +184,7 @@ function responsive_sizing() {
 	_layout.svg2_height = _layout.svg2_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.input_margin = _padding.between;
-
-	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
-	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.07, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
-
+	
 	d3.select("#svg1_panel")
 		.style("width",_layout.left_width + "px")
 		.style("height",_layout.svg1_box_height + "px");
@@ -205,6 +203,31 @@ function responsive_sizing() {
 		draw();	
 	}
 	refresh_visibility();
+
+}
+
+function adjust_multiread_layout() {
+	var remaining_fraction_for_reads = 1.0 - _static.multiread_layout_fractions["header"] - _static.multiread_layout_fractions["footer"];
+	var fractional_pos_for_variants = 0;
+	var fractional_pos_for_features = 0;
+
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		remaining_fraction_for_reads -= _static.multiread_layout_fractions["variants"];
+	}
+	if (_Features.length > 0) {
+		remaining_fraction_for_reads -= _static.multiread_layout_fractions["features"];
+	}
+	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
+	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
+	
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
+	}
+	if (_Features.length > 0) {
+		fractional_pos_for_features = fractional_pos_for_variants + _static.multiread_layout_fractions["variants"];
+	}
+	_positions.chunk.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
+	_positions.chunk.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
 
 }
 
@@ -648,15 +671,15 @@ function draw_chunk_features() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Features.length > 0) {
 			var features_in_view = find_features_in_view(_Features,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
+			var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
 			if (_settings.show_features_as == "rectangles") {
-				var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
 				_svg2.selectAll("rect.features").data(features_in_view).enter()
 					.append("rect")
 						.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 						.attr("x",function(d) { return d.start_cum_pos })
 						.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-						.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
-						.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
+						.attr("y", function(d) {return _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps})
+						.attr("height", (_positions.chunk.features.rect_height*0.9/max_overlaps))
 						.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 						.on('mouseover', function(d) {
 							var text = d.name;
@@ -664,12 +687,69 @@ function draw_chunk_features() {
 								text = d.name + " (" + d.type + ")";
 							}
 							var x = (d.start_cum_pos + d.end_cum_pos)/2;
-							var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
+							var y =  _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text;
 							show_tooltip(text,x,y,_svg2);
 						})
 						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
-			} else if (_settings.show_features_as == "arrows") {
-					
+			} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
+
+				var feature_path_generator = function(d) {
+					var arrow = -1*_positions.chunk.features.arrow_size,
+						x1 = d.start_cum_pos,
+						x2 = d.end_cum_pos,
+						y = _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps,
+						direction = Number(d.strand=="+")*2-1;
+					var xmid = (x1 + x2)/2;
+
+					return (
+						"M " + x1     					+ " " + y 
+					 + " L " + xmid   					+ " " + y
+					 + " L " + (xmid + arrow*direction) + " " + (y + arrow)
+					 + " L " + xmid   					+ " " + y
+					 + " L " + (xmid + arrow*direction) + " " + (y - arrow)
+					 + " L " + xmid   					+ " " + y
+					 + " L " + x2   					+ " " + y);
+				}
+
+				_svg2.selectAll("path.features").data(features_in_view).enter()
+					.append("path")
+						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+						.attr("d",feature_path_generator)
+						.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+						.on('mouseover', function(d) {
+							var text = d.name;
+							if (d.type != undefined) {
+								text = d.name + " (" + d.type + ")";
+							}
+							var x = (d.start_cum_pos + d.end_cum_pos)/2;
+							var y =  _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text;
+							show_tooltip(text,x,y,_svg2);
+						})
+						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+				if (_settings.show_features_as == "names") {
+					var text_boxes = _svg2.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
+						.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
+
+					var height = _positions.chunk.features.rect_height/max_overlaps*0.9; //_layout.svg_height/40;
+					var width = height*4;
+
+					text_boxes.append("rect")
+						.attr("x",-width/2)
+						.attr("y",-height/2)
+						.attr("width",width)
+						.attr("height",height)
+						.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+
+					text_boxes.append("text")
+						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+						.attr("x", 0)
+						.attr("y", 0)
+						.attr("fill","black")
+						.style("font-size",height)
+						.style('text-anchor',"middle").attr("dominant-baseline","middle")
+						.text(function(d) {return d.name});
+				}
 			}
 		}
 	}
@@ -747,24 +827,24 @@ function draw_chunk_variants() {
 					direction2 = Number(d.strand2=="-")*2-1;
 
 				return (
-					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
-				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
-				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
-				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+					 "M " + (x1+foot_length*direction1) + " " + y_foot // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot + arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot - arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
 
-				 + " L " + x1                          + "," + y_foot // breakpoint
-				 // + " L " + x1                          + "," + y_top // up
-				 + " L " + x1                          + "," + y_ankle // ankle
-				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
-				 // + " L " + x2                          + "," + y_top // up
-				 + " L " + x2                          + "," + y_foot // breakpoint
+				 + " L " + x1                          + " " + y_foot // breakpoint
+				 // + " L " + x1                          + " " + y_top // up
+				 + " L " + x1                          + " " + y_ankle // ankle
+				 + ", S " + xmid                        + " " + ymid + " " +          x2  + " " + y_ankle // curve to breakpoint
+				 // + " L " + x2                          + " " + y_top // up
+				 + " L " + x2                          + " " + y_foot // breakpoint
 
-				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
-				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
-				 + " L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+				 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot + arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot - arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + " " + y_foot); // toe
 			}
 
 			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
@@ -1068,8 +1148,6 @@ function draw_chunk_alignments() {
 					.style("stroke-width",1);
 					
 				if (_settings.show_indels_as == "numbers") {
-					deletion_groups.append("rect")
-
 					
 					var height = (_positions.chunk.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
 					var width = height*4;
@@ -1813,6 +1891,17 @@ function create_dropdowns() {
 		_settings.show_indels_as = this.options[this.selectedIndex].value;
 		draw_region_view();
 	});
+
+	d3.select("select#show_features_as_dropdown").selectAll("option").data(_static.show_features_as_options).enter()
+		.append("option")
+			.text(function(d){return d.description})
+			.property("value",function(d){return d.id})
+			.property("selected", function(d) {return d.id === _settings.show_features_as});
+
+	d3.select("select#show_features_as_dropdown").on("change",function(d) {
+		_settings.show_features_as = this.options[this.selectedIndex].value;
+		draw_region_view();
+	});
 }
 
 function reset_settings_for_new_dataset() {
@@ -1938,6 +2027,7 @@ function refresh_ui_elements() {
 	d3.select("select#read_sorting_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.feature_to_sort_reads});
 	d3.select("select#color_scheme_dropdown").selectAll("option").property("selected",function(d){return d.id === _settings.color_index});
 	d3.select("select#show_indels_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_indels_as});
+	d3.select("select#show_features_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_features_as});
 
 }
 
@@ -2774,6 +2864,8 @@ function refresh_visibility() {
 	} else {
 		d3.selectAll(".hide_when_no_variants").style("display","none");
 	}
+
+	adjust_multiread_layout();
 }
 
 function draw() {
