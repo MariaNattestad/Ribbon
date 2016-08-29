@@ -525,6 +525,42 @@
 		</div>
 	</div>
 
+	<div class="panel-group" id="feature_input_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_feature_upload_box">Upload features</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_feature_upload_box">
+				<div class="panel-body">
+					<p>Upload a bed file</p>
+					<input type="file" id="feature_bed_file" />
+
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel-group" id="feature_table_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
+				<div class="panel-body">
+					<div id="feature_table_box">
+						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
+						<div id="feature_table_landing">
+							<!-- superTable creates a table here out of _Variants -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="panel-group" id="variant_table_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -553,7 +589,7 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
 				<div class="panel-body">
-					<div id="variant_table_box">
+					<div id="bedpe_table_box">
 						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="bedpe_table_landing">
 							<!-- superTable creates a table here out of _Bedpe -->
