@@ -111,12 +111,23 @@ _scales.feature_color_scale = d3.scale.ordinal();
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
 	parent_object.selectAll("g.tip").remove();
-	_tooltip.g = parent_object.append("g").attr("class","tip");
-	_tooltip.g.attr("transform","translate(" + x + "," + y +  ")").style("visibility","visible");
-	
+
 	_tooltip.width = (text.length + 4) * (_layout.svg_width/100);
 	_tooltip.height = (_layout.svg_height/20);
 
+	if (x -_tooltip.width/2 < 0) {
+		x = _tooltip.width/2;
+	} else if (x + _tooltip.width/2 > parent_object.attr("width")) {
+		x = parent_object.attr("width") - _tooltip.width/2;
+	}
+	if (y - _tooltip.height/2 < 0) {
+		y = _tooltip.height/2;
+	} else if (y + _tooltip.height/2 > parent_object.attr("height")) {
+		y = parent_object.attr("height") - _tooltip.height/2;
+	}
+	_tooltip.g = parent_object.append("g").attr("class","tip");
+	_tooltip.g.attr("transform","translate(" + x + "," + y +  ")").style("visibility","visible");
+	
 	_tooltip.rect = _tooltip.g.append("rect")
 			.attr("width",_tooltip.width)
 			.attr("x",(-_tooltip.width/2))
@@ -581,7 +592,7 @@ function find_features_in_view(features, mapping_function, scale_function) {
 		var feature = features[i];
 		var start_results = mapping_function(feature.chrom,feature.start);
 		var end_results = mapping_function(feature.chrom,feature.end);
-		if (start_results.precision == "exact" || end_results.precision == "exact") {
+		if (start_results.pos != end_results.pos) {
 			feature.start_cum_pos = scale_function(start_results.pos);
 			feature.start_precision = start_results.precision;
 			
@@ -604,38 +615,39 @@ function find_features_in_view(features, mapping_function, scale_function) {
 }
 
 function calculate_offsets_for_features_in_view(features_in_view) {
+	var padding = 10;
+
 	var sweep_list = [];
 	for (var i in features_in_view) {
-		sweep_list.push([features_in_view[i].start_cum_pos,"s",i]);
-		sweep_list.push([features_in_view[i].end_cum_pos,"e",i]);
+		sweep_list.push([features_in_view[i].start_cum_pos, i]);
 	}
 
-	sweep_list.sort(function(a, b){return a[0]-b[0]});
+	sweep_list.sort(function(a,b) {return a[0] - b[0]});
 
-	var max_coverage = 0;
-	var coverage = 0;
+	var channels = [];
 	for (var i in sweep_list) {
-		if (sweep_list[i][1] == "s") {
-			features_in_view[sweep_list[i][2]].offset = coverage;
-			if (coverage > max_coverage) {
-				max_coverage = coverage;
+		var found = false;
+		for (var j in channels) {
+			if (channels[j] < features_in_view[sweep_list[i][1]].start_cum_pos) {
+				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos;
+				features_in_view[sweep_list[i][1]].offset = j;
+				found = true;
+				break;
 			}
-			coverage++;
-		} else if (sweep_list[i][1] == "e") {
-			coverage--;
+		}
+		if (found == false) {
+			features_in_view[sweep_list[i][1]].offset = channels.length;
+			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos);
 		}
 	}
-	return max_coverage + 1;
+
+	return channels.length;
 }
 
 function draw_chunk_features() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Features.length > 0) {
-
 			var features_in_view = find_features_in_view(_Features,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
-
-			console.log(features_in_view);
-			_settings.show_features_as = "rectangles"; // TESTING
 			if (_settings.show_features_as == "rectangles") {
 				var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
 				_svg2.selectAll("rect.features").data(features_in_view).enter()
@@ -2420,12 +2432,11 @@ function map_chunk_whole_ref(chrom,position) {
 	return undefined;
 }
 
-
 function map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Ref_intervals.length; i++) {
-		if (_Ref_intervals[i].chrom == chrom) {
-			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+		if (_Ref_intervals[i].chrom == chrom && _Ref_intervals[i].cum_pos != -1) {
+			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start);
 			}
 		}
@@ -2435,13 +2446,31 @@ function map_ref_interval(chrom,position) {
 	// console.log(_Ref_intervals);
 	return undefined;
 }
+
+function map_chunk_ref_interval(chrom,position) {
+	
+	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
+	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
+		if (_Chunk_ref_intervals[i].chrom == chrom && _Chunk_ref_intervals[i].cum_pos != -1) {
+			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
+				return _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start);
+			}
+		}
+	}
+	
+	return undefined;
+	// console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
+	// console.log(chrom,position);
+	// console.log(_Chunk_ref_intervals);
+}
+
 function closest_map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	var closest = 0;
 	var best_distance = -1;
 	for (var i = 0; i < _Ref_intervals.length; i++) {
-		if (_Ref_intervals[i].chrom == chrom) {
-			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+		if (_Ref_intervals[i].chrom == chrom && _Ref_intervals[i].cum_pos != -1) {
+			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start)};
 			}
 			if (Math.abs(position - _Ref_intervals[i].start) < best_distance || best_distance == -1) {
@@ -2455,7 +2484,11 @@ function closest_map_ref_interval(chrom,position) {
 		}
 	}
 	// If no exact match found by the end, return the closest
-	return {"precision":"inexact","pos": closest};
+	if (best_distance != -1) {
+		return {"precision":"inexact","pos": closest};
+	} else {
+		return {"precision":"none","pos": closest};
+	}
 }
 
 function closest_map_chunk_ref_interval(chrom,position) {
@@ -2463,8 +2496,8 @@ function closest_map_chunk_ref_interval(chrom,position) {
 	var closest = 0;
 	var best_distance = -1;
 	for (var i in _Chunk_ref_intervals) {
-		if (_Chunk_ref_intervals[i].chrom == chrom) {
-			if (_Ref_intervals[i].cum_pos != -1  && position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
+		if (_Chunk_ref_intervals[i].chrom == chrom && _Chunk_ref_intervals[i].cum_pos != -1 ) {
+			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start)};
 			}
 			if (Math.abs(position - _Chunk_ref_intervals[i].start) < best_distance || best_distance == -1) {
@@ -2479,25 +2512,11 @@ function closest_map_chunk_ref_interval(chrom,position) {
 	}
 
 	// If no exact match found by the end, return the closest
-	return {"precision":"inexact","pos": closest};
-	
-}
-
-function map_chunk_ref_interval(chrom,position) {
-	
-	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
-	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
-		if (_Chunk_ref_intervals[i].chrom == chrom) {
-			if (_Chunk_ref_intervals[i].cum_pos != -1 && position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
-				return _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start);
-			}
-		}
-	}
-	
-	return undefined;
-	// console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
-	// console.log(chrom,position);
-	// console.log(_Chunk_ref_intervals);
+	if (best_distance != -1) {
+		return {"precision":"inexact","pos": closest};
+	} else {
+		return {"precision":"none","pos": closest};	
+	}	
 }
 
 function get_chromosome_sizes(ref_intervals_by_chrom) {
