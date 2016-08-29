@@ -52,7 +52,7 @@ _static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd
 _static.min_indel_size_for_region_view = 50;
 _static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
 _static.show_features_as_options = [{"id":"none","description":"None"}, {"id":"rectangles","description":"Boxes"}, {"id":"arrows","description":"Arrows"}, {"id":"names","description":"Arrows with names"}];
-_static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.07,"features":0.07};
+_static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.05,"features":0.07};
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -731,23 +731,15 @@ function draw_chunk_features() {
 					var text_boxes = _svg2.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
 						.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
 
-					var height = _positions.chunk.features.rect_height/max_overlaps*0.9; //_layout.svg_height/40;
-					var width = height*4;
-
-					text_boxes.append("rect")
-						.attr("x",-width/2)
-						.attr("y",-height/2)
-						.attr("width",width)
-						.attr("height",height)
-						.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
-
+					var height = _positions.chunk.features.rect_height/(max_overlaps+3)*2;
+					
 					text_boxes.append("text")
 						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
 						.attr("x", 0)
 						.attr("y", 0)
-						.attr("fill","black")
+						.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
 						.style("font-size",height)
-						.style('text-anchor',"middle").attr("dominant-baseline","middle")
+						.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
 						.text(function(d) {return d.name});
 				}
 			}
@@ -1188,6 +1180,7 @@ function draw_chunk_alignments() {
 function draw_region_view() {
 	reset_svg2();
 	draw_chunk_ref();
+	adjust_multiread_layout();
 
 	if (_Chunk_alignments.length > 0) {
 		draw_chunk_ref_intervals();
@@ -2864,8 +2857,6 @@ function refresh_visibility() {
 	} else {
 		d3.selectAll(".hide_when_no_variants").style("display","none");
 	}
-
-	adjust_multiread_layout();
 }
 
 function draw() {

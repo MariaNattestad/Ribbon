@@ -234,7 +234,9 @@ ul#examples_list {
 }
 
 
-
+g.features text { 
+	font-weight: 900;
+}
 
 
 
