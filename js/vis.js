@@ -580,11 +580,14 @@ function find_features_in_view(features, mapping_function, scale_function) {
 	for (var i in features) {
 		var feature = features[i];
 		var start_results = mapping_function(feature.chrom,feature.start);
-		var end_results = mapping_function(feature.chrom,feature.end); 
+		var end_results = mapping_function(feature.chrom,feature.end);
 		if (start_results.precision == "exact" || end_results.precision == "exact") {
 			feature.start_cum_pos = scale_function(start_results.pos);
 			feature.start_precision = start_results.precision;
+			
 			feature.end_cum_pos = scale_function(end_results.pos);
+			feature.end_precision = end_results.precision;
+
 			if (feature.end_cum_pos < feature.start_cum_pos + 4) {
 				feature.start_cum_pos = feature.start_cum_pos -2;
 				feature.end_cum_pos = feature.start_cum_pos + 4;
@@ -593,7 +596,7 @@ function find_features_in_view(features, mapping_function, scale_function) {
 				feature.start_cum_pos = feature.end_cum_pos;
 				feature.end_cum_pos  = tmp;
 			}
-			feature.end_precision = end_results.precision;
+			
 			features_in_view.push(feature);
 		}
 	}
@@ -665,28 +668,34 @@ function draw_chunk_variants() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Variants.length > 0) {
 
-			var variants_in_view = find_features_in_view(_Variants,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
+			var variants_in_view = find_features_in_view(_Variants, closest_map_chunk_ref_interval, _scales.chunk_ref_interval_scale);
+			var variants_to_show = [];
+			for (var i in variants_in_view) {
+				if (_settings.show_only_selected_variants == false || variants_in_view[i].highlight == true) {
+					variants_to_show.push(variants_in_view[i]);
+				}
+				
+			}
 
-			var max_overlaps = calculate_offsets_for_features_in_view(variants_in_view);
-			_svg2.selectAll("rect.variants").data(variants_in_view).enter()
+			var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
+			_svg2.selectAll("rect.variants").data(variants_to_show).enter()
 				.append("rect")
-					.filter(function(d) {return (_settings.show_only_selected_variants == false || d.highlight == true)})
-						.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
-						.attr("x",function(d) { return d.start_cum_pos })
-						.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-						.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
-						.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
-						.style("fill",function(d){return _scales.variant_color_scale(d.type)})
-						.on('mouseover', function(d) {
-							var text = d.name;
-							if (d.type != undefined) {
-								text = d.name + " (" + d.type + ")";
-							}
-							var x = (d.start_cum_pos + d.end_cum_pos)/2;
-							var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
-							show_tooltip(text,x,y,_svg2);
-						})
-						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+					.attr("x",function(d) { return d.start_cum_pos })
+					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+					.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
+					.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
+					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+					.on('mouseover', function(d) {
+						var text = d.name;
+						if (d.type != undefined) {
+							text = d.name + " (" + d.type + ")";
+						}
+						var x = (d.start_cum_pos + d.end_cum_pos)/2;
+						var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
+						show_tooltip(text,x,y,_svg2);
+					})
+					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 		}
 
 
@@ -2445,10 +2454,9 @@ function closest_map_ref_interval(chrom,position) {
 			}
 		}
 	}
-	return false;
+	// If no exact match found by the end, return the closest
+	return {"precision":"inexact","pos": closest};
 }
-
-
 
 function closest_map_chunk_ref_interval(chrom,position) {
 	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
@@ -2456,7 +2464,7 @@ function closest_map_chunk_ref_interval(chrom,position) {
 	var best_distance = -1;
 	for (var i in _Chunk_ref_intervals) {
 		if (_Chunk_ref_intervals[i].chrom == chrom) {
-			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
+			if (_Ref_intervals[i].cum_pos != -1  && position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start)};
 			}
 			if (Math.abs(position - _Chunk_ref_intervals[i].start) < best_distance || best_distance == -1) {
@@ -3015,31 +3023,36 @@ function draw_singleview_header() {
 	if (_Variants.length > 0) {
 		
 		var variants_in_view = find_features_in_view(_Variants, closest_map_ref_interval, _scales.ref_interval_scale);
-
-		var max_overlaps = calculate_offsets_for_features_in_view(variants_in_view);
+		var variants_to_show = [];
+		for (var i in variants_in_view) {
+			if (_settings.show_only_selected_variants == false || variants_in_view[i].highlight == true) {
+				variants_to_show.push(variants_in_view[i]);
+			}
+		}
+		
+		var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
 		_positions.variants = {};
 		_positions.variants.height = _positions.ref_intervals.height/max_overlaps;
 		_positions.variants.y = _positions.ref_intervals.y; // + (_positions.ref_intervals.height - _positions.variants.height)/2; //place variant in the middle of the ref_interval (y-direction)
 
-		_svg.selectAll("rect.variants").data(variants_in_view).enter()
+		_svg.selectAll("rect.variants").data(variants_to_show).enter()
 			.append("rect")
-			.filter(function(d) {return _settings.show_only_selected_variants == false || d.highlight == true})
-				.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
-					.attr("x",function(d) { return d.start_cum_pos })
-					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-					.attr("y", function(d) {return _positions.variants.y + _positions.variants.height*d.offset})
-					.attr("height", _positions.variants.height*0.9)
-					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
-					.on('mouseover', function(d) {
-						var text = d.name;
-						if (d.type != undefined) {
-							text = d.name + " (" + d.type + ")";
-						}
-						var x = (d.start_cum_pos + d.end_cum_pos)/2;
-						var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
-						show_tooltip(text,x,y,_svg);
-					})
-					.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+				.attr("x",function(d) { return d.start_cum_pos })
+				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+				.attr("y", function(d) {return _positions.variants.y + _positions.variants.height*d.offset})
+				.attr("height", _positions.variants.height*0.9)
+				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	}
 
 	if (_Bedpe.length > 0) {
