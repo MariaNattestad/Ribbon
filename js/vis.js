@@ -4,7 +4,10 @@
 var _padding = {};
 var _layout = {};
 var _positions = {};
-_positions.chunk = {};
+_positions.multiread = {};
+_positions.singleread = {};
+_positions.ribbonplot = {};
+_positions.dotplot = {};
 
 // Elements on the page
 var _svg;
@@ -53,6 +56,7 @@ _static.min_indel_size_for_region_view = 50;
 _static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
 _static.show_features_as_options = [{"id":"none","description":"None"}, {"id":"rectangles","description":"Boxes"}, {"id":"arrows","description":"Arrows"}, {"id":"names","description":"Arrows with names"}];
 _static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.05,"features":0.07};
+_static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.01, "variants":0.1, "features":0.1, "bottom_bar":0.01};
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -217,8 +221,8 @@ function adjust_multiread_layout() {
 	if (_Features.length > 0) {
 		remaining_fraction_for_reads -= _static.multiread_layout_fractions["features"];
 	}
-	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
-	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
+	_positions.multiread.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
+	_positions.multiread.reads = { "top_y":_positions.multiread.ref_intervals.y, "height":_positions.multiread.ref_intervals.height, "x": _positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width };
 	
 	if (_Variants.length > 0 || _Bedpe.length > 0) {
 		fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
@@ -226,8 +230,8 @@ function adjust_multiread_layout() {
 	if (_Features.length > 0) {
 		fractional_pos_for_features = fractional_pos_for_variants + _static.multiread_layout_fractions["variants"];
 	}
-	_positions.chunk.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
-	_positions.chunk.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
+	_positions.multiread.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
+	_positions.multiread.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
 
 }
 
@@ -515,13 +519,13 @@ function draw_chunk_ref() {
 	}
 
 	
-	_positions.chunk.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
+	_positions.multiread.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
 	// Draw "Reference" label
-	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.chunk.ref_block.x+_positions.chunk.ref_block.width/2).attr("y",_positions.chunk.ref_block.y-_positions.chunk.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
 
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
-	_scales.chunk_whole_ref_scale.range([_positions.chunk.ref_block.x, _positions.chunk.ref_block.x + _positions.chunk.ref_block.width]);
+	_scales.chunk_whole_ref_scale.range([_positions.multiread.ref_block.x, _positions.multiread.ref_block.x + _positions.multiread.ref_block.width]);
 	
 	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
@@ -529,13 +533,13 @@ function draw_chunk_ref() {
 	var ref_blocks = _svg2.selectAll("g.ref_block").data(_Whole_refs).enter()
 		.append("g").attr("class","ref_block")
 		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
-			.attr("transform",function(d) {return "translate(" + _scales.chunk_whole_ref_scale(d.filtered_cum_pos) + "," + _positions.chunk.ref_block.y + ")"})
+			.attr("transform",function(d) {return "translate(" + _scales.chunk_whole_ref_scale(d.filtered_cum_pos) + "," + _positions.multiread.ref_block.y + ")"})
 			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();})
 			.on("click",function(d) {highlight_chromosome(d.chrom)})
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2);
-				var y = _positions.chunk.ref_block.y - _padding.text*3;
+				var y = _positions.multiread.ref_block.y - _padding.text*3;
 				show_tooltip(text,x,y,_svg2);
 			});
 
@@ -543,7 +547,7 @@ function draw_chunk_ref() {
 		.attr("x", 0)
 		.attr("y", 0)
 		.attr("width", function(d) {return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos));})
-		.attr("height", _positions.chunk.ref_block.height)
+		.attr("height", _positions.multiread.ref_block.height)
 		.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 		.style("stroke-width",1).style("stroke", "black");
 			
@@ -577,23 +581,23 @@ function draw_chunk_ref_intervals() {
 
 	// console.log("draw_chunk_ref_intervals");
 	
-	_scales.chunk_ref_interval_scale.range([_positions.chunk.ref_intervals.x, _positions.chunk.ref_intervals.x+_positions.chunk.ref_intervals.width]);
+	_scales.chunk_ref_interval_scale.range([_positions.multiread.ref_intervals.x, _positions.multiread.ref_intervals.x+_positions.multiread.ref_intervals.width]);
 
 	// Zoom into reference intervals where the read maps:
 	_svg2.selectAll("rect.ref_interval").data(_Chunk_ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
 		.filter(function(d) {return d.cum_pos != -1})
 			.attr("x",function(d) { return _scales.chunk_ref_interval_scale(d.cum_pos); })
-			.attr("y",_positions.chunk.ref_intervals.y)
+			.attr("y",_positions.multiread.ref_intervals.y)
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
-			.attr("height", _positions.chunk.ref_intervals.height)
+			.attr("height", _positions.multiread.ref_intervals.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
 				var x = _scales.chunk_ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = _positions.chunk.ref_intervals.y - _padding.text;
+				var y = _positions.multiread.ref_intervals.y - _padding.text;
 				show_tooltip(text,x,y,_svg2);
 			})
 			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -678,8 +682,8 @@ function draw_chunk_features() {
 						.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 						.attr("x",function(d) { return d.start_cum_pos })
 						.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-						.attr("y", function(d) {return _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps})
-						.attr("height", (_positions.chunk.features.rect_height*0.9/max_overlaps))
+						.attr("y", function(d) {return _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps})
+						.attr("height", (_positions.multiread.features.rect_height*0.9/max_overlaps))
 						.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 						.on('mouseover', function(d) {
 							var text = d.name;
@@ -687,17 +691,17 @@ function draw_chunk_features() {
 								text = d.name + " (" + d.type + ")";
 							}
 							var x = (d.start_cum_pos + d.end_cum_pos)/2;
-							var y =  _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text;
+							var y =  _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text;
 							show_tooltip(text,x,y,_svg2);
 						})
 						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 			} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
 
 				var feature_path_generator = function(d) {
-					var arrow = -1*_positions.chunk.features.arrow_size,
+					var arrow = -1*_positions.multiread.features.arrow_size,
 						x1 = d.start_cum_pos,
 						x2 = d.end_cum_pos,
-						y = _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps,
+						y = _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps,
 						direction = Number(d.strand=="+")*2-1;
 					var xmid = (x1 + x2)/2;
 
@@ -722,16 +726,16 @@ function draw_chunk_features() {
 								text = d.name + " (" + d.type + ")";
 							}
 							var x = (d.start_cum_pos + d.end_cum_pos)/2;
-							var y =  _positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text;
+							var y =  _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text;
 							show_tooltip(text,x,y,_svg2);
 						})
 						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 
 				if (_settings.show_features_as == "names") {
 					var text_boxes = _svg2.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
-						.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.chunk.features.y + _positions.chunk.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
+						.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
 
-					var height = _positions.chunk.features.rect_height/(max_overlaps+3)*2;
+					var height = _positions.multiread.features.rect_height/(max_overlaps+3)*2;
 					
 					text_boxes.append("text")
 						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
@@ -767,8 +771,8 @@ function draw_chunk_variants() {
 					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-					.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
-					.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
+					.attr("y", function(d) {return _positions.multiread.variants.y + _positions.multiread.variants.rect_height*d.offset/max_overlaps})
+					.attr("height", (_positions.multiread.variants.rect_height*0.9/max_overlaps))
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -776,7 +780,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.start_cum_pos + d.end_cum_pos)/2;
-						var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
+						var y =  _positions.multiread.variants.y + _positions.multiread.variants.rect_height*d.offset/max_overlaps - _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -801,19 +805,19 @@ function draw_chunk_variants() {
 			}
 
 			var loop_path_generator = function(d) {
-				var foot_length = _positions.chunk.variants.foot_length;
+				var foot_length = _positions.multiread.variants.foot_length;
 
 				var x1 = d.cum_pos1,
-					y_top = _positions.chunk.ref_intervals.y,
+					y_top = _positions.multiread.ref_intervals.y,
 
 					x2 = d.cum_pos2,
-					y_foot = _positions.chunk.variants.y,
-					y_ankle = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height;
+					y_foot = _positions.multiread.variants.y,
+					y_ankle = _positions.multiread.variants.y + _positions.multiread.variants.ankle_height;
 
-				var arrow = -1*_positions.chunk.variants.arrow_size;
+				var arrow = -1*_positions.multiread.variants.arrow_size;
 
 				var xmid = (x1+x2)/2;
-				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height + _positions.chunk.variants.bezier_height; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+				var ymid = _positions.multiread.variants.y + _positions.multiread.variants.ankle_height + _positions.multiread.variants.bezier_height; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
 				
 				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
 					direction2 = Number(d.strand2=="-")*2-1;
@@ -850,7 +854,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.cum_pos1 + d.cum_pos2)/2;
-						var y =  _positions.chunk.variants.y - _padding.text;
+						var y =  _positions.multiread.variants.y - _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -868,9 +872,9 @@ function draw_chunk_alignments() {
 	// if (_focal_region != undefined) {
 	// 	_svg2.append("rect").attr("class","focal_region")
 	// 	.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-	// 	.attr("y",_positions.chunk.ref_intervals.y)
+	// 	.attr("y",_positions.multiread.ref_intervals.y)
 	// 	.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-	// 	.attr("height", _positions.chunk.ref_intervals.height )
+	// 	.attr("height", _positions.multiread.ref_intervals.height )
 	// 	.attr("fill","none")
 	// 	.style("stroke-width",5)
 	// 	.style("stroke", "black");	
@@ -886,9 +890,9 @@ function draw_chunk_alignments() {
 			.append("rect").attr("class","focal_regions")
 				.filter(function(d) { return isNaN(d.x_pos)===false && isNaN(d.width)===false; })
 					.attr("x",function(d) { return d.x_pos })
-					.attr("y",_positions.chunk.ref_intervals.y)
+					.attr("y",_positions.multiread.ref_intervals.y)
 					.attr("width", function(d) {return d.width;})
-					.attr("height", _positions.chunk.ref_intervals.height )
+					.attr("height", _positions.multiread.ref_intervals.height )
 					.attr("fill","none")
 					.style("stroke-width",4)
 					.style("stroke", "black");	
@@ -982,7 +986,7 @@ function draw_chunk_alignments() {
 		}
 
 		// Vertical position:
-		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
+		chunks[i].read_y = _positions.multiread.reads.top_y + _positions.multiread.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
 	//////////////  Draw rows  //////////////
@@ -1128,7 +1132,7 @@ function draw_chunk_alignments() {
 				insertion_groups.append("circle")
 					.attr("cx",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R))})
 					.attr("cy",0)
-					.attr("r",function(d) {return Math.min(_layout.svg_height/40, _positions.chunk.reads.height/num_reads_to_show)*0.5})
+					.attr("r",function(d) {return Math.min(_layout.svg_height/40, _positions.multiread.reads.height/num_reads_to_show)*0.5})
 					.style("fill",function(d) {
 						if (d3.select(this.parentNode).datum().flip == false) {
 							if (d.qs < d.qe) {return "blue"} else {return "red"}	
@@ -1141,7 +1145,7 @@ function draw_chunk_alignments() {
 					
 				if (_settings.show_indels_as == "numbers") {
 					
-					var height = (_positions.chunk.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
+					var height = (_positions.multiread.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
 					var width = height*4;
 
 					deletion_groups.append("rect")
@@ -2429,7 +2433,7 @@ function natural_sort(a, b) {
 function ribbon_alignment_path_generator(d) {
 
 	var bottom_y = _positions.read.y;
-	var top_y = _positions.ref_intervals.y + _positions.ref_intervals.height;
+	var top_y = _positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height;
 	
 	function get_top_coords(datum,index) {
 		// if ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[datum.r] && d.num_alignments >= _settings.min_aligns_for_ref_interval)) {
@@ -2467,19 +2471,19 @@ function ref_mapping_path_generator(d,chunk) {
 		var top = {};
 
 		if (chunk == true) {
-			bottom.y = _positions.chunk.ref_intervals.y;		
+			bottom.y = _positions.multiread.ref_intervals.y;		
 			bottom.left = _scales.chunk_ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start);
 			
-			top.y = _positions.chunk.ref_block.y + _positions.chunk.ref_block.height;
+			top.y = _positions.multiread.ref_block.y + _positions.multiread.ref_block.height;
 			top.left = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.start));
 			top.right = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.end));
 		} else {
-			bottom.y = _positions.ref_intervals.y;			
+			bottom.y = _positions.singleread.ref_intervals.y;			
 			bottom.left = _scales.ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start);
 			
-			top.y = _positions.ref_block.y + _positions.ref_block.height;
+			top.y = _positions.singleread.ref_block.y + _positions.singleread.ref_block.height;
 			top.left = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.start));
 			top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.end));
 		}
@@ -2864,6 +2868,8 @@ function draw() {
 		// console.log("no alignments, not drawing anything");
 		return;
 	}
+	adjust_singleread_layout();
+
 	if (_settings.ribbon_vs_dotplot == "dotplot") {
 		draw_dotplot();
 	} else {
@@ -2937,35 +2943,35 @@ function draw_dotplot() {
 		// Make square
 		var square = Math.min(_layout.svg_height,_layout.svg_width);
 
-		_positions.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
-		_positions.padding = {"top": square * _positions.fractions.top_right, "right": square * _positions.fractions.top_right, "bottom": square * _positions.fractions.bottom_left, "left": square * _positions.fractions.bottom_left};
-		_positions.main = square*_positions.fractions.main;
-		// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
-		_positions.canvas = {'x':_layout.svg_width/2-_positions.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
+		_positions.dotplot.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
+		_positions.dotplot.padding = {"top": square * _positions.dotplot.fractions.top_right, "right": square * _positions.dotplot.fractions.top_right, "bottom": square * _positions.dotplot.fractions.bottom_left, "left": square * _positions.dotplot.fractions.bottom_left};
+		_positions.dotplot.main = square*_positions.dotplot.fractions.main;
+		// _positions.dotplot.canvas = {'x':_layout.svg_width-_positions.dotplot.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
+		_positions.dotplot.canvas = {'x':_layout.svg_width/2-_positions.dotplot.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
 		
 	} else {
 		draw_singleview_header();
-		_positions.canvas = {'x':_positions.ref_intervals.x,'y':_positions.ref_intervals.y + _positions.ref_intervals.height,'width':_positions.ref_intervals.width,'height':_layout.svg_height - (_positions.ref_intervals.y + _positions.ref_intervals.height) - _layout.svg_height*0.05};
+		_positions.dotplot.canvas = {'x':_positions.singleread.ref_intervals.x,'y':_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height,'width':_positions.singleread.ref_intervals.width,'height':_layout.svg_height - (_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height) - _layout.svg_height*0.05};
 		
 	}
 
 
-	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")");
-	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.canvas.width).attr("height",_positions.canvas.height);
+	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")");
+	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.dotplot.canvas.width).attr("height",_positions.dotplot.canvas.height);
 
 	// Relative to canvas
-	_positions.ref = {"left":0, "right":_positions.canvas.width, "y":_positions.canvas.height};
-	_positions.read = {"top":0, "bottom":_positions.canvas.height, "x":_positions.canvas.width};
+	_positions.ref = {"left":0, "right":_positions.dotplot.canvas.width, "y":_positions.dotplot.canvas.height};
+	_positions.read = {"top":0, "bottom":_positions.dotplot.canvas.height, "x":_positions.dotplot.canvas.width};
 
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
 	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
-		 .attr("transform", "translate("+ 0 + "," + (_positions.canvas.y + _positions.canvas.height/2)+")rotate(-90)")
+		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)")
 
 
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
-	_svg.append("text").text("Reference").attr("x",_positions.canvas.x + _positions.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 
 
 	
@@ -2978,14 +2984,14 @@ function draw_dotplot() {
 			.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
 			.attr("y",0)
 			.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-			.attr("height", _positions.canvas.height)
+			.attr("height", _positions.dotplot.canvas.height)
 			.attr("fill",function(d) {
 				if (_settings.colorful) {return _scales.ref_color_scale(d.chrom);} else {return "white"}})
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-				var x = _positions.canvas.x + _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = _positions.canvas.y + _positions.canvas.height + _padding.text;
+				var x = _positions.dotplot.canvas.x + _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+				var y = _positions.dotplot.canvas.y + _positions.dotplot.canvas.height + _padding.text;
 				show_tooltip(text,x,y,_svg);
 			})
 			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();})
@@ -3029,8 +3035,8 @@ function draw_dotplot() {
 				.style("fill","none")
 				.on('mouseover', function(d) {
 					var text = Math.abs(d.qe-d.qs) + " bp"; 
-					var x = _positions.canvas.x + _scales.ref_interval_scale(map_ref_interval(d.r,(d.rs+d.re)/2));
-					var y = _padding.text*(-3) + _positions.canvas.y + _scales.read_scale((d.qs+d.qe)/2);
+					var x = _positions.dotplot.canvas.x + _scales.ref_interval_scale(map_ref_interval(d.r,(d.rs+d.re)/2));
+					var y = _padding.text*(-3) + _positions.dotplot.canvas.y + _scales.read_scale((d.qs+d.qe)/2);
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -3038,7 +3044,7 @@ function draw_dotplot() {
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("left").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
-		.attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")")
+		.attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")")
 		.call(read_axis);
 
 	if (_Additional_ref_intervals.length > 0) {
@@ -3054,31 +3060,55 @@ function draw_dotplot() {
 	}
 }
 
+function adjust_singleread_layout() {
+	
+	// _static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.01, "variants":0.1, "features":0.1, "bottom_bar":0.01};
+	_positions.singleread.variants = {};
+	_positions.singleread.features = {};
+	var total_header = _static.singleread_layout_fractions.ref_and_mapping + _static.singleread_layout_fractions.ref_and_mapping.top_bar;
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		_positions.singleread.variants.y = _layout.svg_height*total_header;
+		total_header += _static.singleread_layout_fractions.variants;
+		_positions.singleread.variants.height = _layout.svg_height*_static.singleread_layout_fractions.variants
+	}
+	if (_Features.length > 0) {
+		_positions.singleread.features.y = _layout.svg_height*total_header;
+		total_header += _static.singleread_layout_fractions.features;
+		_positions.singleread.features.height = _layout.svg_height*_static.singleread_layout_fractions.features;
+	}
+
+	total_header += _static.singleread_layout_fractions.ref_and_mapping.bottom_bar;
+	_positions.singleread.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.singleread.ref_intervals = {"y":_layout.svg_height*_static.singleread_layout_fractions.ref_and_mapping, "height": _layout.svg_height*_static.singleread_layout_fractions.top_bar, "x":_positions.singleread.ref_block.x, "width":_positions.singleread.ref_block.width};
+	
+	_positions.singleread.variants.height = _positions.singleread.ref_intervals.height;
+
+}
 function draw_singleview_header() {
-	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
-	_positions.ref_intervals = {"y":_positions.ref_block.y + _layout.svg_height*0.15, "x":_positions.ref_block.x, "width":_positions.ref_block.width, "height":_positions.ref_block.height*2.5};
+	adjust_singleread_layout();
+
 	// Draw "Reference" label
-	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
 	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
 	
-	_scales.whole_ref_scale.range([_positions.ref_block.x, _positions.ref_block.x + _positions.ref_block.width]);
-	_scales.ref_interval_scale.range([_positions.ref_intervals.x, _positions.ref_intervals.x+_positions.ref_intervals.width]);
+	_scales.whole_ref_scale.range([_positions.singleread.ref_block.x, _positions.singleread.ref_block.x + _positions.singleread.ref_block.width]);
+	_scales.ref_interval_scale.range([_positions.singleread.ref_intervals.x, _positions.singleread.ref_intervals.x+_positions.singleread.ref_intervals.width]);
 	
 	// Whole reference chromosomes for the relevant references:
 	_svg.selectAll("rect.ref_block").data(_Whole_refs).enter()
 		.append("rect").attr("class","ref_block")
 			.attr("x",function(d) { return _scales.whole_ref_scale(d.cum_pos); })
-			.attr("y",_positions.ref_block.y)
+			.attr("y",_positions.singleread.ref_block.y)
 			.attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos));})
-			.attr("height", _positions.ref_block.height)
+			.attr("height", _positions.singleread.ref_block.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.whole_ref_scale(d.cum_pos + d.size/2);
-				var y = _positions.ref_block.y - _padding.text;
+				var y = _positions.singleread.ref_block.y - _padding.text;
 				show_tooltip(text,x,y,_svg);
 			})
 			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -3088,9 +3118,9 @@ function draw_singleview_header() {
 			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((font_size/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
-				.attr("y",_positions.ref_block.y - _padding.text)
+				.attr("y",_positions.singleread.ref_block.y - _padding.text)
 				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
-				// .attr("height", _positions.ref_block.height)
+				// .attr("height", _positions.singleread.ref_block.height)
 				// .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
 				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 	
@@ -3099,15 +3129,15 @@ function draw_singleview_header() {
 		.append("rect").attr("class","ref_interval")
 			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
-				.attr("y",_positions.ref_intervals.y)
+				.attr("y",_positions.singleread.ref_intervals.y)
 				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-				.attr("height", _positions.ref_intervals.height)
+				.attr("height", _positions.singleread.ref_intervals.height)
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 				.style("stroke-width",1).style("stroke", "black")
 				.on('mouseover', function(d) {
 					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
 					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-					var y = _positions.ref_intervals.y - _padding.text;
+					var y = _positions.singleread.ref_intervals.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -3116,8 +3146,6 @@ function draw_singleview_header() {
 		.append("path").attr("class","ref_mapping")
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined && ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,false)})
-				// .style("stroke-width",2)
-				// .style("stroke","black")
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 
 
@@ -3133,17 +3161,14 @@ function draw_singleview_header() {
 		}
 		
 		var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
-		_positions.variants = {};
-		_positions.variants.height = _positions.ref_intervals.height/max_overlaps;
-		_positions.variants.y = _positions.ref_intervals.y; // + (_positions.ref_intervals.height - _positions.variants.height)/2; //place variant in the middle of the ref_interval (y-direction)
 
 		_svg.selectAll("rect.variants").data(variants_to_show).enter()
 			.append("rect")
 			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 				.attr("x",function(d) { return d.start_cum_pos })
 				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-				.attr("y", function(d) {return _positions.variants.y + _positions.variants.height*d.offset})
-				.attr("height", _positions.variants.height*0.9)
+				.attr("y", function(d) {return _positions.singleread.variants.y + _positions.singleread.variants.height*d.offset/max_overlaps})
+				.attr("height", _positions.singleread.variants.height/max_overlaps*0.9)
 				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 				.on('mouseover', function(d) {
 					var text = d.name;
@@ -3151,7 +3176,7 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.start_cum_pos + d.end_cum_pos)/2;
-					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
+					var y =  _positions.singleread.ref_intervals.y +  _positions.singleread.ref_intervals.height/max_overlaps + _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -3175,17 +3200,17 @@ function draw_singleview_header() {
 
 		var loop_path_generator = function(d) {
 
-			var foot_length = _positions.chunk.variants.foot_length;
+			var foot_length = _positions.multiread.variants.foot_length;
 
-			var bottom_y = _positions.ref_intervals.y + _positions.ref_intervals.height*0.9; // - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
-			var highest_point = _positions.ref_intervals.height*0.7; // (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
+			var bottom_y = _positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height*0.9; // - (_positions.singleread.ref_intervals.y - _positions.singleread.ref_block.y)*0.05; // + _positions.singleread.ref_intervals.height*0.9;
+			var highest_point = _positions.singleread.ref_intervals.height*0.7; // (_positions.singleread.ref_intervals.y - _positions.singleread.ref_block.y - _positions.singleread.ref_block.height)*0.4; // _positions.singleread.ref_intervals.height*0.8;
 			var x1 = d.cum_pos1,
 				y_ankle = bottom_y - highest_point/2,
 
 				x2 = d.cum_pos2,
 				y_foot = bottom_y;
 
-			var arrow = -1*_positions.chunk.variants.arrow_size;
+			var arrow = -1*_positions.multiread.variants.arrow_size;
 
 			var xmid = (x1+x2)/2;
 			var ymid = bottom_y - highest_point*2;  // bezier curve pointing toward 2*highest_point ends up around highest_point at the top of the curve
@@ -3234,7 +3259,7 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.cum_pos1 + d.cum_pos2)/2;
-					var y =  _positions.ref_intervals.y - _padding.text;
+					var y =  _positions.singleread.ref_intervals.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -3253,7 +3278,7 @@ function draw_ribbons() {
 	draw_singleview_header();
 
 	// Calculate layouts within the svg
-	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
 	
 	// Draw read
 	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
