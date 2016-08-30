@@ -95,11 +95,11 @@ input[type="file"] {
 	padding: 0vmin 1vmin 1vmin 1vmin;
 }
 
-#region_selector_panel, #variant_input_panel, #variant_table_panel, #bedpe_table_panel {
+#region_selector_panel, #variant_input_panel, #feature_input_panel, #variant_table_panel, #bedpe_table_panel, #feature_table_panel {
 	display: none;
 }
 
-#variant_table_box {
+#variant_table_box, #feature_table_box, #bedpe_table_box {
 	height: 30%;
 	overflow: scroll;
 }
@@ -206,6 +206,10 @@ path.bedpe_variants.highlight {
 	stroke-opacity: 1;
 	stroke-width: 2px;
 }
+path.features {
+	fill: none;
+	stroke-width: 3px;
+}
 
 #no_alignments_message {
 	font-size: 2vw;
@@ -230,8 +234,14 @@ ul#examples_list {
 }
 
 
+g.features text { 
+	font-weight: 900;
+}
 
-
-
+path.ref_mapping {
+	stroke: #000000;
+	stroke-width: 0.5px;
+	
+}
 
 

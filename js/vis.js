@@ -10,7 +10,10 @@ ga('send', 'pageview');
 var _padding = {};
 var _layout = {};
 var _positions = {};
-_positions.chunk = {};
+_positions.multiread = {};
+_positions.singleread = {};
+_positions.ribbonplot = {};
+_positions.dotplot = {};
 
 // Elements on the page
 var _svg;
@@ -29,6 +32,7 @@ var _Refs_show_or_hide = {};
 var _Variants = [];
 var _Bedpe = [];
 var _Additional_ref_intervals = [];
+var _Features = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
@@ -56,6 +60,9 @@ _static.color_schemes = [
 _static.color_collections = [["#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd"],["#ffff00","#ad0000","#bdadc6", "#00ffff", "#e75200","#de1052","#ffa5a5","#7b7b00","#7bffff","#008c00","#00adff","#ff00ff","#ff0000","#ff527b","#84d6a5","#e76b52","#8400ff","#6b4242","#52ff52","#0029ff","#ffffad","#ff94ff","#004200","gray","black"],['#E41A1C', '#A73C52', '#6B5F88', '#3780B3', '#3F918C', '#47A266','#53A651', '#6D8470', '#87638F', '#A5548D', '#C96555', '#ED761C','#FF9508', '#FFC11A', '#FFEE2C', '#EBDA30', '#CC9F2C', '#AD6428','#BB614F', '#D77083', '#F37FB8', '#DA88B3', '#B990A6', '#999999']]
 _static.min_indel_size_for_region_view = 50;
 _static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
+_static.show_features_as_options = [{"id":"none","description":"None"}, {"id":"rectangles","description":"Boxes"}, {"id":"arrows","description":"Arrows"}, {"id":"names","description":"Arrows with names"}];
+_static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.05,"features":0.07};
+_static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.07, "variants":0.06, "features":0.1, "bottom_bar":0.03};
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -88,6 +95,7 @@ _settings.alignment_info_text = "";
 _settings.variant_info_text = "";
 _settings.bam_url = undefined;
 _settings.fetch_margin = 100;
+_settings.show_features_as = "arrows";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -110,16 +118,28 @@ _scales.ref_interval_scale = d3.scale.linear();
 _scales.chunk_ref_interval_scale = d3.scale.linear();
 _scales.ref_color_scale = d3.scale.ordinal().range(_static.color_collections[_settings.color_index]);
 _scales.variant_color_scale = d3.scale.ordinal();
+_scales.feature_color_scale = d3.scale.ordinal();
 
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
 	parent_object.selectAll("g.tip").remove();
-	_tooltip.g = parent_object.append("g").attr("class","tip");
-	_tooltip.g.attr("transform","translate(" + x + "," + y +  ")").style("visibility","visible");
-	
+
 	_tooltip.width = (text.length + 4) * (_layout.svg_width/100);
 	_tooltip.height = (_layout.svg_height/20);
 
+	if (x -_tooltip.width/2 < 0) {
+		x = _tooltip.width/2;
+	} else if (x + _tooltip.width/2 > parent_object.attr("width")) {
+		x = parent_object.attr("width") - _tooltip.width/2;
+	}
+	if (y - _tooltip.height/2 < 0) {
+		y = _tooltip.height/2;
+	} else if (y + _tooltip.height/2 > parent_object.attr("height")) {
+		y = parent_object.attr("height") - _tooltip.height/2;
+	}
+	_tooltip.g = parent_object.append("g").attr("class","tip");
+	_tooltip.g.attr("transform","translate(" + x + "," + y +  ")").style("visibility","visible");
+	
 	_tooltip.rect = _tooltip.g.append("rect")
 			.attr("width",_tooltip.width)
 			.attr("x",(-_tooltip.width/2))
@@ -174,11 +194,7 @@ function responsive_sizing() {
 	_layout.svg2_height = _layout.svg2_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.input_margin = _padding.between;
-
-	_positions.chunk.ref_intervals = {"y":_layout.svg2_height*0.25, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.65};
-	_positions.chunk.reads = { "top_y":_positions.chunk.ref_intervals.y, "height":_positions.chunk.ref_intervals.height, "x": _positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width };
-	_positions.chunk.variants = {"y":(_positions.chunk.ref_intervals.y+_positions.chunk.ref_intervals.height)*1.01,"rect_height":_layout.svg2_height*0.07, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*0.03, "foot_length":_layout.svg2_height*0.02, "arrow_size":_layout.svg2_height*0.005};
-
+	
 	d3.select("#svg1_panel")
 		.style("width",_layout.left_width + "px")
 		.style("height",_layout.svg1_box_height + "px");
@@ -197,6 +213,31 @@ function responsive_sizing() {
 		draw();	
 	}
 	refresh_visibility();
+
+}
+
+function adjust_multiread_layout() {
+	var remaining_fraction_for_reads = 1.0 - _static.multiread_layout_fractions["header"] - _static.multiread_layout_fractions["footer"];
+	var fractional_pos_for_variants = 0;
+	var fractional_pos_for_features = 0;
+
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		remaining_fraction_for_reads -= _static.multiread_layout_fractions["variants"];
+	}
+	if (_Features.length > 0) {
+		remaining_fraction_for_reads -= _static.multiread_layout_fractions["features"];
+	}
+	_positions.multiread.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
+	_positions.multiread.reads = { "top_y":_positions.multiread.ref_intervals.y, "height":_positions.multiread.ref_intervals.height, "x": _positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width };
+	
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
+	}
+	if (_Features.length > 0) {
+		fractional_pos_for_features = fractional_pos_for_variants + _static.multiread_layout_fractions["variants"];
+	}
+	_positions.multiread.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
+	_positions.multiread.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
 
 }
 
@@ -484,13 +525,13 @@ function draw_chunk_ref() {
 	}
 
 	
-	_positions.chunk.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
+	_positions.multiread.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
 	// Draw "Reference" label
-	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.chunk.ref_block.x+_positions.chunk.ref_block.width/2).attr("y",_positions.chunk.ref_block.y-_positions.chunk.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
 
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
-	_scales.chunk_whole_ref_scale.range([_positions.chunk.ref_block.x, _positions.chunk.ref_block.x + _positions.chunk.ref_block.width]);
+	_scales.chunk_whole_ref_scale.range([_positions.multiread.ref_block.x, _positions.multiread.ref_block.x + _positions.multiread.ref_block.width]);
 	
 	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
@@ -498,13 +539,13 @@ function draw_chunk_ref() {
 	var ref_blocks = _svg2.selectAll("g.ref_block").data(_Whole_refs).enter()
 		.append("g").attr("class","ref_block")
 		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
-			.attr("transform",function(d) {return "translate(" + _scales.chunk_whole_ref_scale(d.filtered_cum_pos) + "," + _positions.chunk.ref_block.y + ")"})
+			.attr("transform",function(d) {return "translate(" + _scales.chunk_whole_ref_scale(d.filtered_cum_pos) + "," + _positions.multiread.ref_block.y + ")"})
 			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();})
 			.on("click",function(d) {highlight_chromosome(d.chrom)})
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2);
-				var y = _positions.chunk.ref_block.y - _padding.text*3;
+				var y = _positions.multiread.ref_block.y - _padding.text*3;
 				show_tooltip(text,x,y,_svg2);
 			});
 
@@ -512,7 +553,7 @@ function draw_chunk_ref() {
 		.attr("x", 0)
 		.attr("y", 0)
 		.attr("width", function(d) {return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos));})
-		.attr("height", _positions.chunk.ref_block.height)
+		.attr("height", _positions.multiread.ref_block.height)
 		.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 		.style("stroke-width",1).style("stroke", "black");
 			
@@ -546,23 +587,23 @@ function draw_chunk_ref_intervals() {
 
 	// console.log("draw_chunk_ref_intervals");
 	
-	_scales.chunk_ref_interval_scale.range([_positions.chunk.ref_intervals.x, _positions.chunk.ref_intervals.x+_positions.chunk.ref_intervals.width]);
+	_scales.chunk_ref_interval_scale.range([_positions.multiread.ref_intervals.x, _positions.multiread.ref_intervals.x+_positions.multiread.ref_intervals.width]);
 
 	// Zoom into reference intervals where the read maps:
 	_svg2.selectAll("rect.ref_interval").data(_Chunk_ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
 		.filter(function(d) {return d.cum_pos != -1})
 			.attr("x",function(d) { return _scales.chunk_ref_interval_scale(d.cum_pos); })
-			.attr("y",_positions.chunk.ref_intervals.y)
+			.attr("y",_positions.multiread.ref_intervals.y)
 			.attr("width", function(d) {return (_scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start));})
-			.attr("height", _positions.chunk.ref_intervals.height)
+			.attr("height", _positions.multiread.ref_intervals.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
 				var x = _scales.chunk_ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = _positions.chunk.ref_intervals.y - _padding.text;
+				var y = _positions.multiread.ref_intervals.y - _padding.text;
 				show_tooltip(text,x,y,_svg2);
 			})
 			.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -577,70 +618,167 @@ function draw_chunk_ref_intervals() {
 
 }
 
-function calculate_offsets_for_variants_in_view(variants_in_view) {
-	var sweep_list = [];
-	for (var i in variants_in_view) {
-		sweep_list.push([variants_in_view[i].start_cum_pos,"s",i]);
-		sweep_list.push([variants_in_view[i].end_cum_pos,"e",i]);
-	}
+function find_features_in_view(features, mapping_function, scale_function) {
+	var features_in_view = [];
 
-	sweep_list.sort(function(a, b){return a[0]-b[0]});
+	for (var i in features) {
+		var feature = features[i];
+		var start_results = mapping_function(feature.chrom,feature.start);
+		var end_results = mapping_function(feature.chrom,feature.end);
+		if (start_results.pos != end_results.pos) {
+			feature.start_cum_pos = scale_function(start_results.pos);
+			feature.start_precision = start_results.precision;
+			
+			feature.end_cum_pos = scale_function(end_results.pos);
+			feature.end_precision = end_results.precision;
 
-	var max_coverage = 0;
-	var coverage = 0;
-	for (var i in sweep_list) {
-		if (sweep_list[i][1] == "s") {
-			variants_in_view[sweep_list[i][2]].offset = coverage;
-			if (coverage > max_coverage) {
-				max_coverage = coverage;
+			if (feature.end_cum_pos < feature.start_cum_pos + 4) {
+				feature.start_cum_pos = feature.start_cum_pos -2;
+				feature.end_cum_pos = feature.start_cum_pos + 4;
+			} else if (feature.end_cum_pos < feature.start_cum_pos) {
+				var tmp = feature.start_cum_pos;
+				feature.start_cum_pos = feature.end_cum_pos;
+				feature.end_cum_pos  = tmp;
 			}
-			coverage++;
-		} else if (sweep_list[i][1] == "e") {
-			coverage--;
+			
+			features_in_view.push(feature);
 		}
 	}
-	return max_coverage + 1;
+	return features_in_view;
 }
 
+function calculate_offsets_for_features_in_view(features_in_view) {
+	var padding = 10;
+
+	var sweep_list = [];
+	for (var i in features_in_view) {
+		sweep_list.push([features_in_view[i].start_cum_pos, i]);
+	}
+
+	sweep_list.sort(function(a,b) {return a[0] - b[0]});
+
+	var channels = [];
+	for (var i in sweep_list) {
+		var found = false;
+		for (var j in channels) {
+			if (channels[j] < features_in_view[sweep_list[i][1]].start_cum_pos) {
+				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos;
+				features_in_view[sweep_list[i][1]].offset = j;
+				found = true;
+				break;
+			}
+		}
+		if (found == false) {
+			features_in_view[sweep_list[i][1]].offset = channels.length;
+			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos);
+		}
+	}
+
+	return channels.length;
+}
+
+function draw_chunk_features() {
+	if (_Chunk_alignments.length > 0) {
+		if (_Features.length > 0) {
+			var features_in_view = find_features_in_view(_Features,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
+			var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
+			if (_settings.show_features_as == "rectangles") {
+				_svg2.selectAll("rect.features").data(features_in_view).enter()
+					.append("rect")
+						.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+						.attr("x",function(d) { return d.start_cum_pos })
+						.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+						.attr("y", function(d) {return _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps})
+						.attr("height", (_positions.multiread.features.rect_height*0.9/max_overlaps))
+						.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+						.on('mouseover', function(d) {
+							var text = d.name;
+							if (d.type != undefined) {
+								text = d.name + " (" + d.type + ")";
+							}
+							var x = (d.start_cum_pos + d.end_cum_pos)/2;
+							var y =  _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text;
+							show_tooltip(text,x,y,_svg2);
+						})
+						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+			} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
+
+				var feature_path_generator = function(d) {
+					var arrow = -1*_positions.multiread.features.arrow_size,
+						x1 = d.start_cum_pos,
+						x2 = d.end_cum_pos,
+						y = _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps,
+						direction = Number(d.strand=="+")*2-1;
+					var xmid = (x1 + x2)/2;
+
+					return (
+						"M " + x1     					+ " " + y 
+					 + " L " + xmid   					+ " " + y
+					 + " L " + (xmid + arrow*direction) + " " + (y + arrow)
+					 + " L " + xmid   					+ " " + y
+					 + " L " + (xmid + arrow*direction) + " " + (y - arrow)
+					 + " L " + xmid   					+ " " + y
+					 + " L " + x2   					+ " " + y);
+				}
+
+				_svg2.selectAll("path.features").data(features_in_view).enter()
+					.append("path")
+						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+						.attr("d",feature_path_generator)
+						.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+						.on('mouseover', function(d) {
+							var text = d.name;
+							if (d.type != undefined) {
+								text = d.name + " (" + d.type + ")";
+							}
+							var x = (d.start_cum_pos + d.end_cum_pos)/2;
+							var y =  _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text;
+							show_tooltip(text,x,y,_svg2);
+						})
+						.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+				if (_settings.show_features_as == "names") {
+					var text_boxes = _svg2.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
+						.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
+
+					var height = _positions.multiread.features.rect_height/(max_overlaps+3)*2;
+					
+					text_boxes.append("text")
+						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+						.attr("x", 0)
+						.attr("y", 0)
+						.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+						.style("font-size",height)
+						.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
+						.text(function(d) {return d.name});
+				}
+			}
+		}
+	}
+}
 function draw_chunk_variants() {
 	// Show bed file contents:
 
 	if (_Chunk_alignments.length > 0) {
 		if (_Variants.length > 0) {
 
-			var variants_in_view = [];
-
-			for (var i in _Variants) {
-				if (_settings.show_only_selected_variants == false || _Variants[i].highlight == true) {
-					if (map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].start) != undefined || map_chunk_ref_interval(_Variants[i].chrom,_Variants[i].end) != undefined) {
-						var variant = _Variants[i];
-						var start_results = closest_map_chunk_ref_interval(variant.chrom,variant.start);
-						variant.start_cum_pos = _scales.chunk_ref_interval_scale(start_results.pos);
-						variant.start_precision = start_results.precision;
-						var end_results = closest_map_chunk_ref_interval(variant.chrom,variant.end); 
-						variant.end_cum_pos = _scales.chunk_ref_interval_scale(end_results.pos);
-						if (variant.end_cum_pos < variant.start_cum_pos + 4) {
-							variant.start_cum_pos = variant.start_cum_pos -2;
-							variant.end_cum_pos = variant.start_cum_pos + 4;
-						} else if (variant.end_cum_pos < variant.start_cum_pos) {
-							var tmp = variant.start_cum_pos;
-							variant.start_cum_pos = variant.end_cum_pos;
-							variant.end_cum_pos  = tmp;
-						}
-						variant.end_precision = end_results.precision;
-						variants_in_view.push(variant);
-					}
+			var variants_in_view = find_features_in_view(_Variants, closest_map_chunk_ref_interval, _scales.chunk_ref_interval_scale);
+			var variants_to_show = [];
+			for (var i in variants_in_view) {
+				if (_settings.show_only_selected_variants == false || variants_in_view[i].highlight == true) {
+					variants_to_show.push(variants_in_view[i]);
 				}
+				
 			}
 
-			var max_overlaps = calculate_offsets_for_variants_in_view(variants_in_view);
-			_svg2.selectAll("rect.variants").data(variants_in_view).enter()
+			var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
+			_svg2.selectAll("rect.variants").data(variants_to_show).enter()
 				.append("rect")
 					.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 					.attr("x",function(d) { return d.start_cum_pos })
 					.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-					.attr("y", function(d) {return _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps})
-					.attr("height", (_positions.chunk.variants.rect_height*0.9/max_overlaps))
+					.attr("y", function(d) {return _positions.multiread.variants.y + _positions.multiread.variants.rect_height*d.offset/max_overlaps})
+					.attr("height", (_positions.multiread.variants.rect_height*0.9/max_overlaps))
 					.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 					.on('mouseover', function(d) {
 						var text = d.name;
@@ -648,7 +786,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.start_cum_pos + d.end_cum_pos)/2;
-						var y =  _positions.chunk.variants.y + _positions.chunk.variants.rect_height*d.offset/max_overlaps - _padding.text;
+						var y =  _positions.multiread.variants.y + _positions.multiread.variants.rect_height*d.offset/max_overlaps - _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -673,42 +811,42 @@ function draw_chunk_variants() {
 			}
 
 			var loop_path_generator = function(d) {
-				var foot_length = _positions.chunk.variants.foot_length;
+				var foot_length = _positions.multiread.variants.foot_length;
 
 				var x1 = d.cum_pos1,
-					y_top = _positions.chunk.ref_intervals.y,
+					y_top = _positions.multiread.ref_intervals.y,
 
 					x2 = d.cum_pos2,
-					y_foot = _positions.chunk.variants.y,
-					y_ankle = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height;
+					y_foot = _positions.multiread.variants.y,
+					y_ankle = _positions.multiread.variants.y + _positions.multiread.variants.ankle_height;
 
-				var arrow = -1*_positions.chunk.variants.arrow_size;
+				var arrow = -1*_positions.multiread.variants.arrow_size;
 
 				var xmid = (x1+x2)/2;
-				var ymid = _positions.chunk.variants.y + _positions.chunk.variants.ankle_height + _positions.chunk.variants.bezier_height; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
+				var ymid = _positions.multiread.variants.y + _positions.multiread.variants.ankle_height + _positions.multiread.variants.bezier_height; //y1 + _scales.connection_loops["top"](Math.abs(d.pos1-d.pos2))
 				
 				var direction1 = Number(d.strand1=="-")*2-1, // negative strands means the read is mappping to the right of the breakpoint
 					direction2 = Number(d.strand2=="-")*2-1;
 
 				return (
-					 "M " + (x1+foot_length*direction1) + "," + y_foot // toe
-				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot + arrow) // arrow
-				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
-				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + "," + (y_foot - arrow) // arrow
-				 + " L " + (x1+foot_length*direction1) + "," + (y_foot) // toe
+					 "M " + (x1+foot_length*direction1) + " " + y_foot // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot + arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
+				 + " L " + (x1+foot_length*direction1 + arrow*direction1) + " " + (y_foot - arrow) // arrow
+				 + " L " + (x1+foot_length*direction1) + " " + (y_foot) // toe
 
-				 + " L " + x1                          + "," + y_foot // breakpoint
-				 // + " L " + x1                          + "," + y_top // up
-				 + " L " + x1                          + "," + y_ankle // ankle
-				 + ", S " + xmid                        + "," + ymid + "," +          x2  + "," + y_ankle // curve to breakpoint
-				 // + " L " + x2                          + "," + y_top // up
-				 + " L " + x2                          + "," + y_foot // breakpoint
+				 + " L " + x1                          + " " + y_foot // breakpoint
+				 // + " L " + x1                          + " " + y_top // up
+				 + " L " + x1                          + " " + y_ankle // ankle
+				 + " S " + xmid                        + " " + ymid + " " +          x2  + " " + y_ankle // curve to breakpoint
+				 // + " L " + x2                          + " " + y_top // up
+				 + " L " + x2                          + " " + y_foot // breakpoint
 
-				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot + arrow) // arrow
-				 + " L " + (x2+foot_length*direction2) + "," + (y_foot) // toe
-				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + "," + (y_foot - arrow) // arrow
-				 + " L " + (x2+foot_length*direction2) + "," + y_foot); // toe
+				 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot + arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + " " + (y_foot) // toe
+				 + " L " + (x2+foot_length*direction2 + arrow*direction2) + " " + (y_foot - arrow) // arrow
+				 + " L " + (x2+foot_length*direction2) + " " + y_foot); // toe
 			}
 
 			_svg2.selectAll("path.bedpe_variants").data(variants_in_view).enter()
@@ -722,7 +860,7 @@ function draw_chunk_variants() {
 							text = d.name + " (" + d.type + ")";
 						}
 						var x = (d.cum_pos1 + d.cum_pos2)/2;
-						var y =  _positions.chunk.variants.y - _padding.text;
+						var y =  _positions.multiread.variants.y - _padding.text;
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
@@ -740,9 +878,9 @@ function draw_chunk_alignments() {
 	// if (_focal_region != undefined) {
 	// 	_svg2.append("rect").attr("class","focal_region")
 	// 	.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-	// 	.attr("y",_positions.chunk.ref_intervals.y)
+	// 	.attr("y",_positions.multiread.ref_intervals.y)
 	// 	.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-	// 	.attr("height", _positions.chunk.ref_intervals.height )
+	// 	.attr("height", _positions.multiread.ref_intervals.height )
 	// 	.attr("fill","none")
 	// 	.style("stroke-width",5)
 	// 	.style("stroke", "black");	
@@ -758,9 +896,9 @@ function draw_chunk_alignments() {
 			.append("rect").attr("class","focal_regions")
 				.filter(function(d) { return isNaN(d.x_pos)===false && isNaN(d.width)===false; })
 					.attr("x",function(d) { return d.x_pos })
-					.attr("y",_positions.chunk.ref_intervals.y)
+					.attr("y",_positions.multiread.ref_intervals.y)
 					.attr("width", function(d) {return d.width;})
-					.attr("height", _positions.chunk.ref_intervals.height )
+					.attr("height", _positions.multiread.ref_intervals.height )
 					.attr("fill","none")
 					.style("stroke-width",4)
 					.style("stroke", "black");	
@@ -854,7 +992,7 @@ function draw_chunk_alignments() {
 		}
 
 		// Vertical position:
-		chunks[i].read_y = _positions.chunk.reads.top_y + _positions.chunk.reads.height*(i+0.5)/num_reads_to_show;
+		chunks[i].read_y = _positions.multiread.reads.top_y + _positions.multiread.reads.height*(i+0.5)/num_reads_to_show;
 	}
 
 	//////////////  Draw rows  //////////////
@@ -1000,7 +1138,7 @@ function draw_chunk_alignments() {
 				insertion_groups.append("circle")
 					.attr("cx",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.chrom, d.R))})
 					.attr("cy",0)
-					.attr("r",function(d) {return Math.min(_layout.svg_height/40, _positions.chunk.reads.height/num_reads_to_show)*0.5})
+					.attr("r",function(d) {return Math.min(_layout.svg_height/40, _positions.multiread.reads.height/num_reads_to_show)*0.5})
 					.style("fill",function(d) {
 						if (d3.select(this.parentNode).datum().flip == false) {
 							if (d.qs < d.qe) {return "blue"} else {return "red"}	
@@ -1012,10 +1150,8 @@ function draw_chunk_alignments() {
 					.style("stroke-width",1);
 					
 				if (_settings.show_indels_as == "numbers") {
-					deletion_groups.append("rect")
-
 					
-					var height = (_positions.chunk.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
+					var height = (_positions.multiread.reads.height/num_reads_to_show)*0.9; //_layout.svg_height/40;
 					var width = height*4;
 
 					deletion_groups.append("rect")
@@ -1054,11 +1190,13 @@ function draw_chunk_alignments() {
 function draw_region_view() {
 	reset_svg2();
 	draw_chunk_ref();
+	adjust_multiread_layout();
 
 	if (_Chunk_alignments.length > 0) {
 		draw_chunk_ref_intervals();
 		draw_chunk_alignments();
 		draw_chunk_variants();
+		draw_chunk_features();
 	}
 }
 
@@ -1147,6 +1285,7 @@ function chunk_changed() {
 		apply_ref_filters();
 
 		d3.select("#variant_input_panel").style("display","block");
+		d3.select("#feature_input_panel").style("display","block");
 
 		draw_region_view();
 		
@@ -1379,6 +1518,18 @@ function calculate_type_colors(variant_list) {
 	return {"names":variant_names, "colors":colors_for_variants};
 }
 
+// function feature_row_click(d) {
+// 	d3.select("#text_region_output").html("Selected variant: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
+// 	// Mark variant as selected:
+// 	for (var i in _Features) {
+// 		_Features[i].highlight = (_Features[i].name == d.name);
+// 	}
+// 	var query_start = (d.start+d.end)/2;
+// 	var query_end = (d.start+d.end)/2+1;
+// 	_Additional_ref_intervals = [{"chrom":d.chrom,"start":query_start,"end":query_end}];
+// 	go_to_region(d.chrom,query_start,query_end);
+// }
+
 
 function variant_row_click(d) {
 	_Additional_ref_intervals = [{"chrom":d.chrom,"start":d.start,"end":d.end}];
@@ -1399,6 +1550,19 @@ function check_bam_done_fetching() {
 	}
 }
 
+function show_feature_table() {
+	d3.select("#feature_table_panel").style("display","block");
+	
+	d3.select("#feature_table_landing").call(
+		d3.superTable()
+			.table_data(_Features)
+			.num_rows_to_show(15)
+			.show_advanced_filters(true)
+	);
+	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
+		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. You can also apply multiple filters in the same column, just separate them with spaces.");
+	});
+}
 function show_variant_table() {
 	d3.select("#variant_table_panel").style("display","block");
 	
@@ -1543,6 +1707,11 @@ $('#bed_input').bind('input propertychange', function() {
 	bed_input_changed(this.value);
 });
 
+function update_features() {
+	var color_calculations = calculate_type_colors(_Features);
+	_scales.feature_color_scale.domain(color_calculations.names).range(color_calculations.colors);
+	show_feature_table();
+}
 
 function vcf_input_changed(vcf_input) {
 	var input_text = vcf_input.split("\n");
@@ -1738,6 +1907,17 @@ function create_dropdowns() {
 		_settings.show_indels_as = this.options[this.selectedIndex].value;
 		draw_region_view();
 	});
+
+	d3.select("select#show_features_as_dropdown").selectAll("option").data(_static.show_features_as_options).enter()
+		.append("option")
+			.text(function(d){return d.description})
+			.property("value",function(d){return d.id})
+			.property("selected", function(d) {return d.id === _settings.show_features_as});
+
+	d3.select("select#show_features_as_dropdown").on("change",function(d) {
+		_settings.show_features_as = this.options[this.selectedIndex].value;
+		draw_region_view();
+	});
 }
 
 function reset_settings_for_new_dataset() {
@@ -1863,6 +2043,7 @@ function refresh_ui_elements() {
 	d3.select("select#read_sorting_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.feature_to_sort_reads});
 	d3.select("select#color_scheme_dropdown").selectAll("option").property("selected",function(d){return d.id === _settings.color_index});
 	d3.select("select#show_indels_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_indels_as});
+	d3.select("select#show_features_as_dropdown").selectAll("option").property("selected", function(d) {return d.id === _settings.show_features_as});
 
 }
 
@@ -2271,7 +2452,7 @@ function natural_sort(a, b) {
 function ribbon_alignment_path_generator(d) {
 
 	var bottom_y = _positions.read.y;
-	var top_y = _positions.ref_intervals.y + _positions.ref_intervals.height;
+	var top_y = _positions.singleread.bottom_bar.y + _positions.singleread.bottom_bar.height;
 	
 	function get_top_coords(datum,index) {
 		// if ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[datum.r] && d.num_alignments >= _settings.min_aligns_for_ref_interval)) {
@@ -2309,19 +2490,19 @@ function ref_mapping_path_generator(d,chunk) {
 		var top = {};
 
 		if (chunk == true) {
-			bottom.y = _positions.chunk.ref_intervals.y;		
+			bottom.y = _positions.multiread.ref_intervals.y;		
 			bottom.left = _scales.chunk_ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.chunk_ref_interval_scale(d.end)-_scales.chunk_ref_interval_scale(d.start);
 			
-			top.y = _positions.chunk.ref_block.y + _positions.chunk.ref_block.height;
+			top.y = _positions.multiread.ref_block.y + _positions.multiread.ref_block.height;
 			top.left = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.start));
 			top.right = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.end));
 		} else {
-			bottom.y = _positions.ref_intervals.y;			
+			bottom.y = _positions.singleread.top_bar.y;			
 			bottom.left = _scales.ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start);
 			
-			top.y = _positions.ref_block.y + _positions.ref_block.height;
+			top.y = _positions.singleread.ref_block.y + _positions.singleread.ref_block.height;
 			top.left = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.start));
 			top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom,d.end));
 		}
@@ -2357,12 +2538,11 @@ function map_chunk_whole_ref(chrom,position) {
 	return undefined;
 }
 
-
 function map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	for (var i = 0; i < _Ref_intervals.length; i++) {
-		if (_Ref_intervals[i].chrom == chrom) {
-			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+		if (_Ref_intervals[i].chrom == chrom && _Ref_intervals[i].cum_pos != -1) {
+			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start);
 			}
 		}
@@ -2372,13 +2552,31 @@ function map_ref_interval(chrom,position) {
 	// console.log(_Ref_intervals);
 	return undefined;
 }
+
+function map_chunk_ref_interval(chrom,position) {
+	
+	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
+	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
+		if (_Chunk_ref_intervals[i].chrom == chrom && _Chunk_ref_intervals[i].cum_pos != -1) {
+			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
+				return _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start);
+			}
+		}
+	}
+	
+	return undefined;
+	// console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
+	// console.log(chrom,position);
+	// console.log(_Chunk_ref_intervals);
+}
+
 function closest_map_ref_interval(chrom,position) {
 	// _Ref_intervals has chrom, start, end, size, cum_pos
 	var closest = 0;
 	var best_distance = -1;
 	for (var i = 0; i < _Ref_intervals.length; i++) {
-		if (_Ref_intervals[i].chrom == chrom) {
-			if (_Ref_intervals[i].cum_pos != -1 && position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
+		if (_Ref_intervals[i].chrom == chrom && _Ref_intervals[i].cum_pos != -1) {
+			if (position >= _Ref_intervals[i].start && position <= _Ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Ref_intervals[i].cum_pos + (position - _Ref_intervals[i].start)};
 			}
 			if (Math.abs(position - _Ref_intervals[i].start) < best_distance || best_distance == -1) {
@@ -2391,17 +2589,20 @@ function closest_map_ref_interval(chrom,position) {
 			}
 		}
 	}
-	return false;
+	// If no exact match found by the end, return the closest
+	if (best_distance != -1) {
+		return {"precision":"inexact","pos": closest};
+	} else {
+		return {"precision":"none","pos": closest};
+	}
 }
-
-
 
 function closest_map_chunk_ref_interval(chrom,position) {
 	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
 	var closest = 0;
 	var best_distance = -1;
 	for (var i in _Chunk_ref_intervals) {
-		if (_Chunk_ref_intervals[i].chrom == chrom) {
+		if (_Chunk_ref_intervals[i].chrom == chrom && _Chunk_ref_intervals[i].cum_pos != -1 ) {
 			if (position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
 				return {"precision":"exact","pos": _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start)};
 			}
@@ -2417,25 +2618,11 @@ function closest_map_chunk_ref_interval(chrom,position) {
 	}
 
 	// If no exact match found by the end, return the closest
-	return {"precision":"inexact","pos": closest};
-	
-}
-
-function map_chunk_ref_interval(chrom,position) {
-	
-	// _Chunk_ref_intervals has chrom, start, end, size, cum_pos
-	for (var i = 0; i < _Chunk_ref_intervals.length; i++) {
-		if (_Chunk_ref_intervals[i].chrom == chrom) {
-			if (_Chunk_ref_intervals[i].cum_pos != -1 && position >= _Chunk_ref_intervals[i].start && position <= _Chunk_ref_intervals[i].end ) {
-				return _Chunk_ref_intervals[i].cum_pos + (position - _Chunk_ref_intervals[i].start);
-			}
-		}
-	}
-	
-	return undefined;
-	// console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
-	// console.log(chrom,position);
-	// console.log(_Chunk_ref_intervals);
+	if (best_distance != -1) {
+		return {"precision":"inexact","pos": closest};
+	} else {
+		return {"precision":"none","pos": closest};	
+	}	
 }
 
 function get_chromosome_sizes(ref_intervals_by_chrom) {
@@ -2700,6 +2887,8 @@ function draw() {
 		// console.log("no alignments, not drawing anything");
 		return;
 	}
+	adjust_singleread_layout();
+
 	if (_settings.ribbon_vs_dotplot == "dotplot") {
 		draw_dotplot();
 	} else {
@@ -2773,35 +2962,35 @@ function draw_dotplot() {
 		// Make square
 		var square = Math.min(_layout.svg_height,_layout.svg_width);
 
-		_positions.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
-		_positions.padding = {"top": square * _positions.fractions.top_right, "right": square * _positions.fractions.top_right, "bottom": square * _positions.fractions.bottom_left, "left": square * _positions.fractions.bottom_left};
-		_positions.main = square*_positions.fractions.main;
-		// _positions.canvas = {'x':_layout.svg_width-_positions.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
-		_positions.canvas = {'x':_layout.svg_width/2-_positions.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.main,'height':_positions.main};
+		_positions.dotplot.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
+		_positions.dotplot.padding = {"top": square * _positions.dotplot.fractions.top_right, "right": square * _positions.dotplot.fractions.top_right, "bottom": square * _positions.dotplot.fractions.bottom_left, "left": square * _positions.dotplot.fractions.bottom_left};
+		_positions.dotplot.main = square*_positions.dotplot.fractions.main;
+		// _positions.dotplot.canvas = {'x':_layout.svg_width-_positions.dotplot.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
+		_positions.dotplot.canvas = {'x':_layout.svg_width/2-_positions.dotplot.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
 		
 	} else {
-		draw_singleview_header();
-		_positions.canvas = {'x':_positions.ref_intervals.x,'y':_positions.ref_intervals.y + _positions.ref_intervals.height,'width':_positions.ref_intervals.width,'height':_layout.svg_height - (_positions.ref_intervals.y + _positions.ref_intervals.height) - _layout.svg_height*0.05};
+		draw_singleread_header();
+		_positions.dotplot.canvas = {'x':_positions.singleread.ref_intervals.x,'y':_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height,'width':_positions.singleread.ref_intervals.width,'height':_layout.svg_height - (_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height) - _layout.svg_height*0.05};
 		
 	}
 
 
-	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")");
-	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.canvas.width).attr("height",_positions.canvas.height);
+	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")");
+	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.dotplot.canvas.width).attr("height",_positions.dotplot.canvas.height);
 
 	// Relative to canvas
-	_positions.ref = {"left":0, "right":_positions.canvas.width, "y":_positions.canvas.height};
-	_positions.read = {"top":0, "bottom":_positions.canvas.height, "x":_positions.canvas.width};
+	_positions.ref = {"left":0, "right":_positions.dotplot.canvas.width, "y":_positions.dotplot.canvas.height};
+	_positions.read = {"top":0, "bottom":_positions.dotplot.canvas.height, "x":_positions.dotplot.canvas.width};
 
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
 	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
-		 .attr("transform", "translate("+ 0 + "," + (_positions.canvas.y + _positions.canvas.height/2)+")rotate(-90)")
+		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)")
 
 
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
-	_svg.append("text").text("Reference").attr("x",_positions.canvas.x + _positions.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 
 
 	
@@ -2814,14 +3003,14 @@ function draw_dotplot() {
 			.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
 			.attr("y",0)
 			.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-			.attr("height", _positions.canvas.height)
+			.attr("height", _positions.dotplot.canvas.height)
 			.attr("fill",function(d) {
 				if (_settings.colorful) {return _scales.ref_color_scale(d.chrom);} else {return "white"}})
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-				var x = _positions.canvas.x + _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-				var y = _positions.canvas.y + _positions.canvas.height + _padding.text;
+				var x = _positions.dotplot.canvas.x + _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+				var y = _positions.dotplot.canvas.y + _positions.dotplot.canvas.height + _padding.text;
 				show_tooltip(text,x,y,_svg);
 			})
 			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();})
@@ -2865,8 +3054,8 @@ function draw_dotplot() {
 				.style("fill","none")
 				.on('mouseover', function(d) {
 					var text = Math.abs(d.qe-d.qs) + " bp"; 
-					var x = _positions.canvas.x + _scales.ref_interval_scale(map_ref_interval(d.r,(d.rs+d.re)/2));
-					var y = _padding.text*(-3) + _positions.canvas.y + _scales.read_scale((d.qs+d.qe)/2);
+					var x = _positions.dotplot.canvas.x + _scales.ref_interval_scale(map_ref_interval(d.r,(d.rs+d.re)/2));
+					var y = _padding.text*(-3) + _positions.dotplot.canvas.y + _scales.read_scale((d.qs+d.qe)/2);
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -2874,7 +3063,7 @@ function draw_dotplot() {
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("left").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
-		.attr("transform","translate(" + _positions.canvas.x + "," + _positions.canvas.y + ")")
+		.attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")")
 		.call(read_axis);
 
 	if (_Additional_ref_intervals.length > 0) {
@@ -2890,31 +3079,62 @@ function draw_dotplot() {
 	}
 }
 
-function draw_singleview_header() {
-	_positions.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
-	_positions.ref_intervals = {"y":_positions.ref_block.y + _layout.svg_height*0.15, "x":_positions.ref_block.x, "width":_positions.ref_block.width, "height":_positions.ref_block.height*2.5};
+function adjust_singleread_layout() {
+	
+	_positions.singleread.top_bar = {"y":_layout.svg_height*_static.singleread_layout_fractions.ref_and_mapping, "height": _layout.svg_height*_static.singleread_layout_fractions.top_bar};
+
+	var total_header = _static.singleread_layout_fractions.ref_and_mapping;
+
+	if (_Features.length > 0 || _Variants.length > 0 || _Bedpe.length > 0) {
+		total_header += _static.singleread_layout_fractions.top_bar;
+	}
+
+	if (_Features.length > 0) {
+		_positions.singleread.features = {"arrow_size":_layout.svg2_height*_static.singleread_layout_fractions["features"]/7};
+		_positions.singleread.features.y = _layout.svg_height*total_header;
+		total_header += _static.singleread_layout_fractions.features;
+		_positions.singleread.features.rect_height = _layout.svg_height*_static.singleread_layout_fractions.features;
+	}
+
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		_positions.singleread.variants = {};
+		_positions.singleread.variants.y = _layout.svg_height*total_header;
+		total_header += _static.singleread_layout_fractions.variants;
+		_positions.singleread.variants.height = _layout.svg_height*_static.singleread_layout_fractions.variants;
+	}
+	
+	_positions.singleread.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.singleread.ref_intervals = {"x":_positions.singleread.ref_block.x, "width":_positions.singleread.ref_block.width};
+	
+	_positions.singleread.bottom_bar = {"y":_layout.svg_height*total_header, "height": _layout.svg_height*_static.singleread_layout_fractions.bottom_bar}
+	// total_header += _static.singleread_layout_fractions.bottom_bar;
+}
+
+function draw_singleread_header() {
+	adjust_singleread_layout();
+
 	// Draw "Reference" label
-	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.ref_block.x+_positions.ref_block.width/2).attr("y",_positions.ref_block.y-_positions.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
 
 	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
 	
-	_scales.whole_ref_scale.range([_positions.ref_block.x, _positions.ref_block.x + _positions.ref_block.width]);
-	_scales.ref_interval_scale.range([_positions.ref_intervals.x, _positions.ref_intervals.x+_positions.ref_intervals.width]);
+	_scales.whole_ref_scale.range([_positions.singleread.ref_block.x, _positions.singleread.ref_block.x + _positions.singleread.ref_block.width]);
+	_scales.ref_interval_scale.range([_positions.singleread.ref_intervals.x, _positions.singleread.ref_intervals.x+_positions.singleread.ref_intervals.width]);
 	
 	// Whole reference chromosomes for the relevant references:
 	_svg.selectAll("rect.ref_block").data(_Whole_refs).enter()
 		.append("rect").attr("class","ref_block")
 			.attr("x",function(d) { return _scales.whole_ref_scale(d.cum_pos); })
-			.attr("y",_positions.ref_block.y)
+			.attr("y",_positions.singleread.ref_block.y)
 			.attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos));})
-			.attr("height", _positions.ref_block.height)
+			.attr("height", _positions.singleread.ref_block.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.style("stroke-width",1).style("stroke", "black")
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.whole_ref_scale(d.cum_pos + d.size/2);
-				var y = _positions.ref_block.y - _padding.text;
+				var y = _positions.singleread.ref_block.y - _padding.text;
 				show_tooltip(text,x,y,_svg);
 			})
 			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
@@ -2924,77 +3144,74 @@ function draw_singleview_header() {
 			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((font_size/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
-				.attr("y",_positions.ref_block.y - _padding.text)
+				.attr("y",_positions.singleread.ref_block.y - _padding.text)
 				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
-				// .attr("height", _positions.ref_block.height)
+				// .attr("height", _positions.singleread.ref_block.height)
 				// .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
 				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 	
 	// Zoom into reference intervals where the read maps:
-	_svg.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
-		.append("rect").attr("class","ref_interval")
+	_svg.selectAll("rect.top_bar").data(_Ref_intervals).enter()
+		.append("rect").attr("class","top_bar")
 			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
-				.attr("y",_positions.ref_intervals.y)
+				.attr("y",_positions.singleread.top_bar.y)
 				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-				.attr("height", _positions.ref_intervals.height)
+				.attr("height", _positions.singleread.bottom_bar.y - _positions.singleread.top_bar.y)
+				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
+				.style("stroke-width",1).style("stroke", "black").style("opacity",0.5)
+				.on('mouseover', function(d) {
+					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
+					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+					var y = _positions.singleread.top_bar.y - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+	_svg.selectAll("rect.bottom_bar").data(_Ref_intervals).enter()
+		.append("rect").attr("class","bottom_bar")
+			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
+				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
+				.attr("y",_positions.singleread.bottom_bar.y)
+				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
+				.attr("height", _positions.singleread.bottom_bar.height)
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 				.style("stroke-width",1).style("stroke", "black")
 				.on('mouseover', function(d) {
 					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
 					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-					var y = _positions.ref_intervals.y - _padding.text;
+					var y = _positions.singleread.bottom_bar.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
 
 	_svg.selectAll("path.ref_mapping").data(_Ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
 			.filter(function(d) {return map_whole_ref(d.chrom,d.start) != undefined && ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("d",function(d) {return ref_mapping_path_generator(d,false)})
-				// .style("stroke-width",2)
-				// .style("stroke","black")
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 
 
 	/////////////////////////   Variants   /////////////////////////////
 	if (_Variants.length > 0) {
-		var variants_in_view = [];
-		for (var i in _Variants) {
-			if (_settings.show_only_selected_variants == false || _Variants[i].highlight == true) {
-				var variant = _Variants[i];
-				var start_results = closest_map_ref_interval(variant.chrom,variant.start);
-				var end_results = closest_map_ref_interval(variant.chrom,variant.end); 
-				if (start_results.precision == "exact" && end_results.precision == "exact") {
-					variant.start_cum_pos = _scales.ref_interval_scale(start_results.pos);
-					variant.start_precision = start_results.precision;
-					variant.end_cum_pos = _scales.ref_interval_scale(end_results.pos);
-					if (variant.end_cum_pos < variant.start_cum_pos + 4) {
-						variant.start_cum_pos = variant.start_cum_pos -2;
-						variant.end_cum_pos = variant.start_cum_pos + 4;
-					} else if (variant.end_cum_pos < variant.start_cum_pos) {
-						var tmp = variant.start_cum_pos;
-						variant.start_cum_pos = variant.end_cum_pos;
-						variant.end_cum_pos  = tmp;
-					}
-					variant.end_precision = end_results.precision;
-					variants_in_view.push(variant);
-				}
+		var variants_in_view = find_features_in_view(_Variants, closest_map_ref_interval, _scales.ref_interval_scale);
+		var variants_to_show = [];
+		for (var i in variants_in_view) {
+			if (_settings.show_only_selected_variants == false || variants_in_view[i].highlight == true) {
+				variants_to_show.push(variants_in_view[i]);
 			}
 		}
+		
+		var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
 
-		var max_overlaps = calculate_offsets_for_variants_in_view(variants_in_view);
-		_positions.variants = {};
-		_positions.variants.height = _positions.ref_intervals.height/max_overlaps;
-		_positions.variants.y = _positions.ref_intervals.y; // + (_positions.ref_intervals.height - _positions.variants.height)/2; //place variant in the middle of the ref_interval (y-direction)
-
-		_svg.selectAll("rect.variants").data(variants_in_view).enter()
+		_svg.selectAll("rect.variants").data(variants_to_show).enter()
 			.append("rect")
 			.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
 				.attr("x",function(d) { return d.start_cum_pos })
 				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
-				.attr("y", function(d) {return _positions.variants.y + _positions.variants.height*d.offset})
-				.attr("height", _positions.variants.height*0.9)
+				.attr("y", function(d) {return _positions.singleread.variants.y + _positions.singleread.variants.height*d.offset/max_overlaps})
+				.attr("height", _positions.singleread.variants.height/max_overlaps*0.9)
 				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
 				.on('mouseover', function(d) {
 					var text = d.name;
@@ -3002,12 +3219,15 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.start_cum_pos + d.end_cum_pos)/2;
-					var y =  _positions.ref_intervals.y +  _positions.ref_intervals.height + _padding.text;
+					var y =  _positions.singleread.variants.y +  _positions.singleread.ref_intervals.height/max_overlaps + _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	}
 
+	if (_Features.length > 0) {
+		draw_singleread_features();
+	}
 	if (_Bedpe.length > 0) {
 		var variants_in_view = []
 		for (var i in _Bedpe) {
@@ -3026,17 +3246,17 @@ function draw_singleview_header() {
 
 		var loop_path_generator = function(d) {
 
-			var foot_length = _positions.chunk.variants.foot_length;
+			var foot_length = _positions.multiread.variants.foot_length;
 
-			var bottom_y = _positions.ref_intervals.y + _positions.ref_intervals.height*0.9; // - (_positions.ref_intervals.y - _positions.ref_block.y)*0.05; // + _positions.ref_intervals.height*0.9;
-			var highest_point = _positions.ref_intervals.height*0.7; // (_positions.ref_intervals.y - _positions.ref_block.y - _positions.ref_block.height)*0.4; // _positions.ref_intervals.height*0.8;
+			var bottom_y = _positions.singleread.variants.y + _positions.singleread.variants.height*0.9; 
+			var highest_point = _positions.singleread.variants.height*0.7; 
 			var x1 = d.cum_pos1,
 				y_ankle = bottom_y - highest_point/2,
 
 				x2 = d.cum_pos2,
 				y_foot = bottom_y;
 
-			var arrow = -1*_positions.chunk.variants.arrow_size;
+			var arrow = -1*_positions.multiread.variants.arrow_size;
 
 			var xmid = (x1+x2)/2;
 			var ymid = bottom_y - highest_point*2;  // bezier curve pointing toward 2*highest_point ends up around highest_point at the top of the curve
@@ -3085,14 +3305,88 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.cum_pos1 + d.cum_pos2)/2;
-					var y =  _positions.ref_intervals.y - _padding.text;
+					var y =  _positions.singleread.variants.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	}
+}
 
 
+function draw_singleread_features() {
+	var features_in_view = find_features_in_view(_Features, closest_map_ref_interval, _scales.ref_interval_scale);
+	var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
+	if (_settings.show_features_as == "rectangles") {
+		_svg.selectAll("rect.features").data(features_in_view).enter()
+			.append("rect")
+				.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+				.attr("x",function(d) { return d.start_cum_pos })
+				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+				.attr("y", function(d) {return _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps})
+				.attr("height", (_positions.singleread.features.rect_height*0.9/max_overlaps))
+				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+	} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
 
+		var feature_path_generator = function(d) {
+			var arrow = -1*_positions.singleread.features.arrow_size,
+				x1 = d.start_cum_pos,
+				x2 = d.end_cum_pos,
+				y = _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps,
+				direction = Number(d.strand=="+")*2-1;
+			var xmid = (x1 + x2)/2;
+
+			return (
+				"M " + x1     					+ " " + y 
+			 + " L " + xmid   					+ " " + y
+			 + " L " + (xmid + arrow*direction) + " " + (y + arrow)
+			 + " L " + xmid   					+ " " + y
+			 + " L " + (xmid + arrow*direction) + " " + (y - arrow)
+			 + " L " + xmid   					+ " " + y
+			 + " L " + x2   					+ " " + y);
+		}
+
+		_svg.selectAll("path.features").data(features_in_view).enter()
+			.append("path")
+				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+				.attr("d",feature_path_generator)
+				.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+		if (_settings.show_features_as == "names") {
+			var text_boxes = _svg.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
+				.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
+
+			var height = _positions.singleread.features.rect_height/(max_overlaps+3)*2;
+			
+			text_boxes.append("text")
+				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.style("font-size",height)
+				.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
+				.text(function(d) {return d.name});
+		}
+	}
 }
 
 function draw_ribbons() {
@@ -3101,10 +3395,10 @@ function draw_ribbons() {
 	if (_Alignments == undefined) {
 		return;
 	}
-	draw_singleview_header();
+	draw_singleread_header();
 
 	// Calculate layouts within the svg
-	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.chunk.ref_intervals.x, "width":_positions.chunk.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
 	
 	// Draw read
 	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
@@ -3181,6 +3475,7 @@ function show_info_panel() {
 d3.select("#click_info_link").on("click",show_info_panel)
 
 function add_examples_to_navbar() {
+	var core_url = window.location.href.split("?")[0];
 	d3.select("#examples_navbar_item").style("visibility","visible");
 	navbar_examples = d3.select("ul#examples_list");
 
@@ -3198,8 +3493,8 @@ function add_examples_to_navbar() {
 					
 					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
 					navbar_examples.append("li").append("a")
-						.attr("href",void(0))
-						.on("click",function() {read_permalink(example_file.substr(0, example_file.length-5));})
+						.attr("target","_blank")
+						.attr("href", (core_url+"?perma=" + example_file.substr(0, example_file.length-5)))
 						.text(name);
 				}
 			})
@@ -3262,6 +3557,7 @@ function load_json_bam(header) {
 
 	d3.select("#region_selector_panel").style("display","block");
 	d3.select("#variant_input_panel").style("display","block");
+	d3.select("#feature_input_panel").style("display","block");
 
 }
 
@@ -3284,6 +3580,7 @@ function write_permalink() {
 		"alignments": _Chunk_alignments, 
 		"variants":_Variants, 
 		"bedpe":_Bedpe, 
+		"features":_Features, 
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
 		"permalink_name": permalink_name//,
@@ -3364,6 +3661,10 @@ function read_permalink(id) {
 				if (json_data["ribbon_perma"]["variants"] != undefined && json_data["ribbon_perma"]["variants"].length > 0) {
 					_Variants = json_data["ribbon_perma"]["variants"];
 					update_variants();
+				}
+				if (json_data["ribbon_perma"]["features"] != undefined && json_data["ribbon_perma"]["features"].length > 0) {
+					_Features = json_data["ribbon_perma"]["features"];
+					update_features();
 				}
 				if (json_data["ribbon_perma"]["bedpe"] != undefined && json_data["ribbon_perma"]["bedpe"].length > 0) {
 					_Bedpe = json_data["ribbon_perma"]["bedpe"];
@@ -3498,9 +3799,64 @@ function open_variant_file(event) {
 	}
 }
 
+function features_just_loaded() {
+	// refresh_visibility();
+	d3.select("#collapsible_feature_upload_box").attr("class","panel-collapse collapse");
+}
+
+function read_feature_bed(raw_data) {
+	var input_text = raw_data.split("\n");
+	
+	_Features = [];
+	for (var i in input_text) {
+		var columns = input_text[i].split(/\s+/);
+		if (columns.length>2) {
+			var start = parseInt(columns[1]);
+			var end = parseInt(columns[2]);
+			var score = parseFloat(columns[4]);
+			if (isNaN(score)) {
+				score = 0;
+			}
+			if (isNaN(start) || isNaN(end)) {
+				user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
+				return;
+			}
+			_Features.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
+		}
+	}
+
+	user_message("Info","Loaded " + _Features.length + " features from bed file");
+	
+	update_features();
+	draw_region_view();
+	refresh_ui_elements();
+}
+
+
+
+function open_feature_bed_file(event) {
+	if (this.files[0].size > 1000000) {
+		user_message("Warning","Loading large file may take a while.");
+	}
+	
+	var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
+	if (file_extension == "bed") {
+		var raw_data;
+		var reader = new FileReader();
+		reader.readAsText(this.files[0]);
+		reader.onload = function(event) {
+			raw_data = event.target.result;
+			read_feature_bed(raw_data);
+			features_just_loaded();
+		}
+	} else {
+		user_message("Error","File extension must be .bed");
+	}
+}
+
 d3.select("#variant_file").on("change",open_variant_file);
 d3.select("#bedpe_file").on("change",open_bedpe_file);
-
+d3.select("#feature_bed_file").on("change", open_feature_bed_file);
 
 // ===========================================================================
 // == Load coords file
@@ -3664,6 +4020,7 @@ function bam_loaded() {
 
 	d3.select("#region_selector_panel").style("display","block");
 	d3.select("#variant_input_panel").style("display","block");
+	d3.select("#feature_input_panel").style("display","block");
 
 
 	var PG_count = 0;
