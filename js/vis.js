@@ -56,7 +56,7 @@ _static.min_indel_size_for_region_view = 50;
 _static.show_indels_as_options = [{"id":"none","description":"None"}, {"id":"gaps","description":"Gaps"}, {"id":"thin","description":"Marks"}, {"id":"numbers","description":"Numbers indicating size"}];
 _static.show_features_as_options = [{"id":"none","description":"None"}, {"id":"rectangles","description":"Boxes"}, {"id":"arrows","description":"Arrows"}, {"id":"names","description":"Arrows with names"}];
 _static.multiread_layout_fractions = {"header":0.25,"footer":0.02,"variants":0.10,"bedpe":0.05,"features":0.07};
-_static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.01, "variants":0.1, "features":0.1, "bottom_bar":0.01};
+_static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.07, "variants":0.06, "features":0.1, "bottom_bar":0.03};
 
 var _settings = {};
 _settings.region_min_mapping_quality = 0;
@@ -832,7 +832,7 @@ function draw_chunk_variants() {
 				 + " L " + x1                          + " " + y_foot // breakpoint
 				 // + " L " + x1                          + " " + y_top // up
 				 + " L " + x1                          + " " + y_ankle // ankle
-				 + ", S " + xmid                        + " " + ymid + " " +          x2  + " " + y_ankle // curve to breakpoint
+				 + " S " + xmid                        + " " + ymid + " " +          x2  + " " + y_ankle // curve to breakpoint
 				 // + " L " + x2                          + " " + y_top // up
 				 + " L " + x2                          + " " + y_foot // breakpoint
 
@@ -2433,7 +2433,7 @@ function natural_sort(a, b) {
 function ribbon_alignment_path_generator(d) {
 
 	var bottom_y = _positions.read.y;
-	var top_y = _positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height;
+	var top_y = _positions.singleread.bottom_bar.y + _positions.singleread.bottom_bar.height;
 	
 	function get_top_coords(datum,index) {
 		// if ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[datum.r] && d.num_alignments >= _settings.min_aligns_for_ref_interval)) {
@@ -2479,7 +2479,7 @@ function ref_mapping_path_generator(d,chunk) {
 			top.left = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.start));
 			top.right = _scales.chunk_whole_ref_scale(map_chunk_whole_ref(d.chrom,d.end));
 		} else {
-			bottom.y = _positions.singleread.ref_intervals.y;			
+			bottom.y = _positions.singleread.top_bar.y;			
 			bottom.left = _scales.ref_interval_scale(d.cum_pos);
 			bottom.right = bottom.left + _scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start);
 			
@@ -2950,7 +2950,7 @@ function draw_dotplot() {
 		_positions.dotplot.canvas = {'x':_layout.svg_width/2-_positions.dotplot.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
 		
 	} else {
-		draw_singleview_header();
+		draw_singleread_header();
 		_positions.dotplot.canvas = {'x':_positions.singleread.ref_intervals.x,'y':_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height,'width':_positions.singleread.ref_intervals.width,'height':_layout.svg_height - (_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height) - _layout.svg_height*0.05};
 		
 	}
@@ -3062,29 +3062,36 @@ function draw_dotplot() {
 
 function adjust_singleread_layout() {
 	
-	// _static.singleread_layout_fractions = {"ref_and_mapping":0.33, "top_bar":0.01, "variants":0.1, "features":0.1, "bottom_bar":0.01};
-	_positions.singleread.variants = {};
-	_positions.singleread.features = {};
-	var total_header = _static.singleread_layout_fractions.ref_and_mapping + _static.singleread_layout_fractions.ref_and_mapping.top_bar;
-	if (_Variants.length > 0 || _Bedpe.length > 0) {
-		_positions.singleread.variants.y = _layout.svg_height*total_header;
-		total_header += _static.singleread_layout_fractions.variants;
-		_positions.singleread.variants.height = _layout.svg_height*_static.singleread_layout_fractions.variants
+	_positions.singleread.top_bar = {"y":_layout.svg_height*_static.singleread_layout_fractions.ref_and_mapping, "height": _layout.svg_height*_static.singleread_layout_fractions.top_bar};
+
+	var total_header = _static.singleread_layout_fractions.ref_and_mapping;
+
+	if (_Features.length > 0 || _Variants.length > 0 || _Bedpe.length > 0) {
+		total_header += _static.singleread_layout_fractions.top_bar;
 	}
+
 	if (_Features.length > 0) {
+		_positions.singleread.features = {"arrow_size":_layout.svg2_height*_static.singleread_layout_fractions["features"]/7};
 		_positions.singleread.features.y = _layout.svg_height*total_header;
 		total_header += _static.singleread_layout_fractions.features;
-		_positions.singleread.features.height = _layout.svg_height*_static.singleread_layout_fractions.features;
+		_positions.singleread.features.rect_height = _layout.svg_height*_static.singleread_layout_fractions.features;
 	}
 
-	total_header += _static.singleread_layout_fractions.ref_and_mapping.bottom_bar;
-	_positions.singleread.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
-	_positions.singleread.ref_intervals = {"y":_layout.svg_height*_static.singleread_layout_fractions.ref_and_mapping, "height": _layout.svg_height*_static.singleread_layout_fractions.top_bar, "x":_positions.singleread.ref_block.x, "width":_positions.singleread.ref_block.width};
+	if (_Variants.length > 0 || _Bedpe.length > 0) {
+		_positions.singleread.variants = {};
+		_positions.singleread.variants.y = _layout.svg_height*total_header;
+		total_header += _static.singleread_layout_fractions.variants;
+		_positions.singleread.variants.height = _layout.svg_height*_static.singleread_layout_fractions.variants;
+	}
 	
-	_positions.singleread.variants.height = _positions.singleread.ref_intervals.height;
-
+	_positions.singleread.ref_block = {"y":_layout.svg_height*0.15, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
+	_positions.singleread.ref_intervals = {"x":_positions.singleread.ref_block.x, "width":_positions.singleread.ref_block.width};
+	
+	_positions.singleread.bottom_bar = {"y":_layout.svg_height*total_header, "height": _layout.svg_height*_static.singleread_layout_fractions.bottom_bar}
+	// total_header += _static.singleread_layout_fractions.bottom_bar;
 }
-function draw_singleview_header() {
+
+function draw_singleread_header() {
 	adjust_singleread_layout();
 
 	// Draw "Reference" label
@@ -3125,22 +3132,40 @@ function draw_singleview_header() {
 				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 	
 	// Zoom into reference intervals where the read maps:
-	_svg.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
-		.append("rect").attr("class","ref_interval")
+	_svg.selectAll("rect.top_bar").data(_Ref_intervals).enter()
+		.append("rect").attr("class","top_bar")
 			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
 				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
-				.attr("y",_positions.singleread.ref_intervals.y)
+				.attr("y",_positions.singleread.top_bar.y)
 				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
-				.attr("height", _positions.singleread.ref_intervals.height)
+				.attr("height", _positions.singleread.bottom_bar.y - _positions.singleread.top_bar.y)
+				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
+				.style("stroke-width",1).style("stroke", "black").style("opacity",0.5)
+				.on('mouseover', function(d) {
+					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
+					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
+					var y = _positions.singleread.top_bar.y - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+	_svg.selectAll("rect.bottom_bar").data(_Ref_intervals).enter()
+		.append("rect").attr("class","bottom_bar")
+			.filter(function(d) {return ((_settings.ref_match_chunk_ref_intervals == false) || (_Refs_show_or_hide[d.chrom] && d.num_alignments >= _settings.min_aligns_for_ref_interval))})
+				.attr("x",function(d) { return _scales.ref_interval_scale(d.cum_pos); })
+				.attr("y",_positions.singleread.bottom_bar.y)
+				.attr("width", function(d) {return (_scales.ref_interval_scale(d.end)-_scales.ref_interval_scale(d.start));})
+				.attr("height", _positions.singleread.bottom_bar.height)
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 				.style("stroke-width",1).style("stroke", "black")
 				.on('mouseover', function(d) {
 					var text = d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
 					var x = _scales.ref_interval_scale(d.cum_pos + (d.end-d.start)/2);
-					var y = _positions.singleread.ref_intervals.y - _padding.text;
+					var y = _positions.singleread.bottom_bar.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
 
 	_svg.selectAll("path.ref_mapping").data(_Ref_intervals).enter()
 		.append("path").attr("class","ref_mapping")
@@ -3151,7 +3176,6 @@ function draw_singleview_header() {
 
 	/////////////////////////   Variants   /////////////////////////////
 	if (_Variants.length > 0) {
-		
 		var variants_in_view = find_features_in_view(_Variants, closest_map_ref_interval, _scales.ref_interval_scale);
 		var variants_to_show = [];
 		for (var i in variants_in_view) {
@@ -3176,12 +3200,15 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.start_cum_pos + d.end_cum_pos)/2;
-					var y =  _positions.singleread.ref_intervals.y +  _positions.singleread.ref_intervals.height/max_overlaps + _padding.text;
+					var y =  _positions.singleread.variants.y +  _positions.singleread.ref_intervals.height/max_overlaps + _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	}
 
+	if (_Features.length > 0) {
+		draw_singleread_features();
+	}
 	if (_Bedpe.length > 0) {
 		var variants_in_view = []
 		for (var i in _Bedpe) {
@@ -3202,8 +3229,8 @@ function draw_singleview_header() {
 
 			var foot_length = _positions.multiread.variants.foot_length;
 
-			var bottom_y = _positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height*0.9; // - (_positions.singleread.ref_intervals.y - _positions.singleread.ref_block.y)*0.05; // + _positions.singleread.ref_intervals.height*0.9;
-			var highest_point = _positions.singleread.ref_intervals.height*0.7; // (_positions.singleread.ref_intervals.y - _positions.singleread.ref_block.y - _positions.singleread.ref_block.height)*0.4; // _positions.singleread.ref_intervals.height*0.8;
+			var bottom_y = _positions.singleread.variants.y + _positions.singleread.variants.height*0.9; 
+			var highest_point = _positions.singleread.variants.height*0.7; 
 			var x1 = d.cum_pos1,
 				y_ankle = bottom_y - highest_point/2,
 
@@ -3259,14 +3286,88 @@ function draw_singleview_header() {
 						text = d.name + " (" + d.type + ")";
 					}
 					var x = (d.cum_pos1 + d.cum_pos2)/2;
-					var y =  _positions.singleread.ref_intervals.y - _padding.text;
+					var y =  _positions.singleread.variants.y - _padding.text;
 					show_tooltip(text,x,y,_svg);
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	}
+}
 
 
+function draw_singleread_features() {
+	var features_in_view = find_features_in_view(_Features, closest_map_ref_interval, _scales.ref_interval_scale);
+	var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
+	if (_settings.show_features_as == "rectangles") {
+		_svg.selectAll("rect.features").data(features_in_view).enter()
+			.append("rect")
+				.attr("class",function(d) {if (d.highlight == true) {return "variants highlight"} else {return "variants"}})
+				.attr("x",function(d) { return d.start_cum_pos })
+				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
+				.attr("y", function(d) {return _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps})
+				.attr("height", (_positions.singleread.features.rect_height*0.9/max_overlaps))
+				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+	} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
 
+		var feature_path_generator = function(d) {
+			var arrow = -1*_positions.singleread.features.arrow_size,
+				x1 = d.start_cum_pos,
+				x2 = d.end_cum_pos,
+				y = _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps,
+				direction = Number(d.strand=="+")*2-1;
+			var xmid = (x1 + x2)/2;
+
+			return (
+				"M " + x1     					+ " " + y 
+			 + " L " + xmid   					+ " " + y
+			 + " L " + (xmid + arrow*direction) + " " + (y + arrow)
+			 + " L " + xmid   					+ " " + y
+			 + " L " + (xmid + arrow*direction) + " " + (y - arrow)
+			 + " L " + xmid   					+ " " + y
+			 + " L " + x2   					+ " " + y);
+		}
+
+		_svg.selectAll("path.features").data(features_in_view).enter()
+			.append("path")
+				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+				.attr("d",feature_path_generator)
+				.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+				.on('mouseover', function(d) {
+					var text = d.name;
+					if (d.type != undefined) {
+						text = d.name + " (" + d.type + ")";
+					}
+					var x = (d.start_cum_pos + d.end_cum_pos)/2;
+					var y =  _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text;
+					show_tooltip(text,x,y,_svg);
+				})
+				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+
+		if (_settings.show_features_as == "names") {
+			var text_boxes = _svg.selectAll("g.features").data(features_in_view).enter().append("g").attr("class","features")
+				.attr("transform",function(d) {return "translate(" + ((d.start_cum_pos + d.end_cum_pos)/2) + "," + (_positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps - _padding.text) + ")"});
+
+			var height = _positions.singleread.features.rect_height/(max_overlaps+3)*2;
+			
+			text_boxes.append("text")
+				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.style("font-size",height)
+				.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
+				.text(function(d) {return d.name});
+		}
+	}
 }
 
 function draw_ribbons() {
@@ -3275,7 +3376,7 @@ function draw_ribbons() {
 	if (_Alignments == undefined) {
 		return;
 	}
-	draw_singleview_header();
+	draw_singleread_header();
 
 	// Calculate layouts within the svg
 	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
