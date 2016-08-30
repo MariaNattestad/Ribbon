@@ -1898,6 +1898,7 @@ function create_dropdowns() {
 	d3.select("select#show_features_as_dropdown").on("change",function(d) {
 		_settings.show_features_as = this.options[this.selectedIndex].value;
 		draw_region_view();
+		draw();
 	});
 }
 
