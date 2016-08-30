@@ -3456,6 +3456,7 @@ function show_info_panel() {
 d3.select("#click_info_link").on("click",show_info_panel)
 
 function add_examples_to_navbar() {
+	var core_url = window.location.href.split("?")[0];
 	d3.select("#examples_navbar_item").style("visibility","visible");
 	navbar_examples = d3.select("ul#examples_list");
 
@@ -3473,8 +3474,8 @@ function add_examples_to_navbar() {
 					
 					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
 					navbar_examples.append("li").append("a")
-						.attr("href",void(0))
-						.on("click",function() {read_permalink(example_file.substr(0, example_file.length-5));})
+						.attr("target","_blank")
+						.attr("href", (core_url+"?perma=" + example_file.substr(0, example_file.length-5)))
 						.text(name);
 				}
 			})
