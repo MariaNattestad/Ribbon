@@ -684,7 +684,7 @@ function draw_chunk_features() {
 						.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
 						.attr("y", function(d) {return _positions.multiread.features.y + _positions.multiread.features.rect_height*d.offset/max_overlaps})
 						.attr("height", (_positions.multiread.features.rect_height*0.9/max_overlaps))
-						.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+						.style("fill",function(d){return _scales.feature_color_scale(d.type)})
 						.on('mouseover', function(d) {
 							var text = d.name;
 							if (d.type != undefined) {
@@ -719,7 +719,7 @@ function draw_chunk_features() {
 					.append("path")
 						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
 						.attr("d",feature_path_generator)
-						.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+						.style("stroke",function(d){return _scales.feature_color_scale(d.type)})
 						.on('mouseover', function(d) {
 							var text = d.name;
 							if (d.type != undefined) {
@@ -741,7 +741,7 @@ function draw_chunk_features() {
 						.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
 						.attr("x", 0)
 						.attr("y", 0)
-						.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+						.attr("fill",function(d){return _scales.feature_color_scale(d.type)})
 						.style("font-size",height)
 						.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
 						.text(function(d) {return d.name});
@@ -1485,18 +1485,19 @@ function calculate_type_colors(variant_list) {
 	var variant_names = [];
 	for (var type in variant_types) {
 		variant_names.push(type);
-		if (type.toUpperCase().indexOf("DEL") != -1) {
-			colors_for_variants.push("blue");	
-		} else if (type.toUpperCase().indexOf("INS") != -1) {
+		console.log(type);
+		if (type.toUpperCase().indexOf("DEL") != -1 || type.toUpperCase().indexOf("PROTEIN") != -1) {
+			colors_for_variants.push("blue");
+		} else if (type.toUpperCase().indexOf("INS") != -1 || type.toUpperCase().indexOf("RNA") != -1) {
 			colors_for_variants.push("red");
-		} else if (type.toUpperCase().indexOf("INV") != -1) {
+		} else if (type.toUpperCase().indexOf("INV") != -1 || type.toUpperCase().indexOf("PSEUDO") != -1) {
 			colors_for_variants.push("orange");
 		} else if (type.toUpperCase().indexOf("TRA") != -1) {
 			colors_for_variants.push("black");	
 		} else if (type.toUpperCase().indexOf("BND") != -1) {
 			colors_for_variants.push("black");	
 		} else if (type.toUpperCase().indexOf("DUP") != -1) {
-			colors_for_variants.push("green");	
+			colors_for_variants.push("green");
 		} else if (variant_types[type] > 1) {
 			colors_for_variants.push(_static.color_collections[2][other_colors_index])
 			other_colors_index++;
@@ -3306,7 +3307,7 @@ function draw_singleread_features() {
 				.attr("width",function(d) { return  d.end_cum_pos - d.start_cum_pos})
 				.attr("y", function(d) {return _positions.singleread.features.y + _positions.singleread.features.rect_height*d.offset/max_overlaps})
 				.attr("height", (_positions.singleread.features.rect_height*0.9/max_overlaps))
-				.style("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.style("fill",function(d){return _scales.feature_color_scale(d.type)})
 				.on('mouseover', function(d) {
 					var text = d.name;
 					if (d.type != undefined) {
@@ -3341,7 +3342,7 @@ function draw_singleread_features() {
 			.append("path")
 				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
 				.attr("d",feature_path_generator)
-				.style("stroke",function(d){return _scales.variant_color_scale(d.type)})
+				.style("stroke",function(d){return _scales.feature_color_scale(d.type)})
 				.on('mouseover', function(d) {
 					var text = d.name;
 					if (d.type != undefined) {
@@ -3363,7 +3364,7 @@ function draw_singleread_features() {
 				.attr("class",function(d) {if (d.highlight == true) {return "features highlight"} else {return "features"}})
 				.attr("x", 0)
 				.attr("y", 0)
-				.attr("fill",function(d){return _scales.variant_color_scale(d.type)})
+				.attr("fill",function(d){return _scales.feature_color_scale(d.type)})
 				.style("font-size",height)
 				.style('text-anchor',"middle").attr("dominant-baseline","ideographic")
 				.text(function(d) {return d.name});
