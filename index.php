@@ -443,6 +443,7 @@
 						<li class="active"><a data-toggle="tab" href="#sam">sam</a></li>
 						<li><a data-toggle="tab" href="#bam">load bam file</a></li>
 						<li><a data-toggle="tab" href="#coords">coordinates</a></li>
+						<li><a data-toggle="tab" href="#url_bam">bam from url</a></li>
 						<!-- <li><a data-toggle="tab" href="#igv">from igv</a></li> -->
 					</ul>
 					
@@ -463,6 +464,14 @@
 							<p>Select bam and corresponding bam.bai</p>
 							<input type="file" name="files[]" id="bam_file"	multiple />
 							<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span> Instructions</span>
+						</div>
+						<div id="url_bam" class="tab-pane fade">
+							<input type="text" id="bam_url_input" value="http://">
+							<input type="submit" id="submit_bam_url" value="Load bam file from a url">
+							<p>Make sure the bam file exists and that it has a corresponding .bai file with an identical filename except for the addition of the .bai suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
+							</p>
+							<p>Note that the bam file does not get read into memory, but the .bai file does, so if the .bai file is huge, it will take a while the first time you fetch reads from the bam file. 
+							</p>
 						</div>
 					<!-- Coords input -->
 						<div id="coords" class="tab-pane fade">
