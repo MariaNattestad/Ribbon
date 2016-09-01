@@ -2956,26 +2956,9 @@ function draw_dotplot() {
 	if (_Alignments == undefined || _Alignments == []) {
 		return;
 	}
-
-	var square = false;
-
-	if (square == true) {
-
-		// Make square
-		var square = Math.min(_layout.svg_height,_layout.svg_width);
-
-		_positions.dotplot.fractions = {'main':0.8,'top_right':0.05, 'bottom_left':0.15};
-		_positions.dotplot.padding = {"top": square * _positions.dotplot.fractions.top_right, "right": square * _positions.dotplot.fractions.top_right, "bottom": square * _positions.dotplot.fractions.bottom_left, "left": square * _positions.dotplot.fractions.bottom_left};
-		_positions.dotplot.main = square*_positions.dotplot.fractions.main;
-		// _positions.dotplot.canvas = {'x':_layout.svg_width-_positions.dotplot.main-_positions._padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
-		_positions.dotplot.canvas = {'x':_layout.svg_width/2-_positions.dotplot.main/2-_positions.padding.right,'y':_positions.padding.top,'width':_positions.dotplot.main,'height':_positions.dotplot.main};
-		
-	} else {
-		draw_singleread_header();
-		_positions.dotplot.canvas = {'x':_positions.singleread.ref_intervals.x,'y':_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height,'width':_positions.singleread.ref_intervals.width,'height':_layout.svg_height - (_positions.singleread.ref_intervals.y + _positions.singleread.ref_intervals.height) - _layout.svg_height*0.05};
-		
-	}
-
+	
+	draw_singleread_header();
+	_positions.dotplot.canvas = {'x':_positions.singleread.ref_intervals.x,'y':_positions.singleread.bottom_bar.y + _positions.singleread.bottom_bar.height,'width':_positions.singleread.ref_intervals.width,'height':_layout.svg_height - (_positions.singleread.bottom_bar.y + _positions.singleread.bottom_bar.height) - _layout.svg_height*0.05};
 
 	var canvas = _svg.append("g").attr("class","dotplot_canvas").attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")");
 	canvas.append("rect").style("fill","#eeeeee").attr("width",_positions.dotplot.canvas.width).attr("height",_positions.dotplot.canvas.height);
