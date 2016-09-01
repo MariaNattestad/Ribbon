@@ -305,7 +305,7 @@
 								</td>
 							</tr>
 							<tr>
-								<td class="hide_for_coords">Show features as:</td>
+								<td class="when_features_only">Show features as:</td>
 								<td colspan="2"> 
 									<select class="form-control" id="show_features_as_dropdown">
 										
@@ -324,6 +324,10 @@
 								<td>Show only the selected variants</td>
 								<td><input id="show_only_selected_variants" type="checkbox"></td>
 							<tr>
+							<tr class="when_features_only">
+								<td>Filter feature types</td>
+								<td><table id="feature_type_table"></table></td>
+							</tr>
 							<tr>
 								<td>Collapse reference sequences within distance:</td>
 								<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>

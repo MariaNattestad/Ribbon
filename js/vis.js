@@ -90,6 +90,7 @@ _settings.variant_info_text = "";
 _settings.bam_url = undefined;
 _settings.fetch_margin = 100;
 _settings.show_features_as = "arrows";
+_settings.feature_types_to_show = {"protein_coding":true};
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -224,15 +225,15 @@ function adjust_multiread_layout() {
 	_positions.multiread.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
 	_positions.multiread.reads = { "top_y":_positions.multiread.ref_intervals.y, "height":_positions.multiread.ref_intervals.height, "x": _positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width };
 	
+
+	fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
 	if (_Variants.length > 0 || _Bedpe.length > 0) {
-		fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
-	}
-	if (_Features.length > 0) {
 		fractional_pos_for_features = fractional_pos_for_variants + _static.multiread_layout_fractions["variants"];
+	} else {
+		fractional_pos_for_features = fractional_pos_for_variants;
 	}
 	_positions.multiread.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
 	_positions.multiread.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
-
 }
 
 function getUrlVars() {
@@ -617,25 +618,27 @@ function find_features_in_view(features, mapping_function, scale_function) {
 
 	for (var i in features) {
 		var feature = features[i];
-		var start_results = mapping_function(feature.chrom,feature.start);
-		var end_results = mapping_function(feature.chrom,feature.end);
-		if (start_results.pos != end_results.pos) {
-			feature.start_cum_pos = scale_function(start_results.pos);
-			feature.start_precision = start_results.precision;
-			
-			feature.end_cum_pos = scale_function(end_results.pos);
-			feature.end_precision = end_results.precision;
+		if (feature.show != false) {
+			var start_results = mapping_function(feature.chrom,feature.start);
+			var end_results = mapping_function(feature.chrom,feature.end);
+			if (start_results.pos != end_results.pos) {
+				feature.start_cum_pos = scale_function(start_results.pos);
+				feature.start_precision = start_results.precision;
+				
+				feature.end_cum_pos = scale_function(end_results.pos);
+				feature.end_precision = end_results.precision;
 
-			if (feature.end_cum_pos < feature.start_cum_pos + 4) {
-				feature.start_cum_pos = feature.start_cum_pos -2;
-				feature.end_cum_pos = feature.start_cum_pos + 4;
-			} else if (feature.end_cum_pos < feature.start_cum_pos) {
-				var tmp = feature.start_cum_pos;
-				feature.start_cum_pos = feature.end_cum_pos;
-				feature.end_cum_pos  = tmp;
+				if (feature.end_cum_pos < feature.start_cum_pos + 4) {
+					feature.start_cum_pos = feature.start_cum_pos -2;
+					feature.end_cum_pos = feature.start_cum_pos + 4;
+				} else if (feature.end_cum_pos < feature.start_cum_pos) {
+					var tmp = feature.start_cum_pos;
+					feature.start_cum_pos = feature.end_cum_pos;
+					feature.end_cum_pos  = tmp;
+				}
+				
+				features_in_view.push(feature);
 			}
-			
-			features_in_view.push(feature);
 		}
 	}
 	return features_in_view;
@@ -643,7 +646,7 @@ function find_features_in_view(features, mapping_function, scale_function) {
 
 function calculate_offsets_for_features_in_view(features_in_view) {
 	var padding = 10;
-
+	
 	var sweep_list = [];
 	for (var i in features_in_view) {
 		sweep_list.push([features_in_view[i].start_cum_pos, i]);
@@ -656,7 +659,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 		var found = false;
 		for (var j in channels) {
 			if (channels[j] < features_in_view[sweep_list[i][1]].start_cum_pos) {
-				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos;
+				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos + padding;
 				features_in_view[sweep_list[i][1]].offset = j;
 				found = true;
 				break;
@@ -664,7 +667,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 		}
 		if (found == false) {
 			features_in_view[sweep_list[i][1]].offset = channels.length;
-			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos);
+			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos + padding);
 		}
 	}
 
@@ -674,6 +677,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 function draw_chunk_features() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Features.length > 0) {
+
 			var features_in_view = find_features_in_view(_Features,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
 			var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
 			if (_settings.show_features_as == "rectangles") {
@@ -1233,6 +1237,16 @@ function show_all_chromosomes() {
 	d3.select("#show_all_refs").style("display","none");
 }
 
+function apply_feature_filters() {
+	for (var f in _Features) {
+		if (_settings.feature_types_to_show[_Features[f].type] === true) {
+			_Features[f].show = true;
+		} else {
+			_Features[f].show = false;
+		}
+	}
+}
+
 function apply_ref_filters() {
 	var interval_cumulative_position = 0;
 	for (var i in _Chunk_ref_intervals) {
@@ -1470,7 +1484,6 @@ function coords_input_changed(coords_input_value) {
 $('#coords_input').bind('input propertychange', function() {remove_coords_file(); coords_input_changed(this.value)});
 
 
-
 function calculate_type_colors(variant_list) {
 	var variant_types = {};
 	for (var i in variant_list) {
@@ -1485,7 +1498,6 @@ function calculate_type_colors(variant_list) {
 	var variant_names = [];
 	for (var type in variant_types) {
 		variant_names.push(type);
-		console.log(type);
 		if (type.toUpperCase().indexOf("DEL") != -1 || type.toUpperCase().indexOf("PROTEIN") != -1) {
 			colors_for_variants.push("blue");
 		} else if (type.toUpperCase().indexOf("INS") != -1 || type.toUpperCase().indexOf("RNA") != -1) {
@@ -1842,6 +1854,42 @@ function all_read_analysis() {
 	_settings.min_read_length = 0;
 }
 
+function feature_type_checkbox(d) {
+	_settings.feature_types_to_show[d.type] = d3.event.target.checked;
+	apply_feature_filters();
+	draw_region_view();
+	draw();
+}
+function make_feature_type_table() {
+	var type_counts = {};
+	_settings.feature_types_to_show = {};
+
+	for (var i in _Features) {
+		if (type_counts[_Features[i].type] == undefined) {
+			type_counts[_Features[i].type] = 1;
+			_settings.feature_types_to_show[_Features[i].type] = false;
+		} else {
+			type_counts[_Features[i].type]++;
+		}
+	}
+	
+	// Put into list so we can sort it
+	var data_for_table = [];
+	for (var type in type_counts) {
+		data_for_table.push({"type":type,"count":type_counts[type]})
+	}
+	data_for_table.sort(function(a, b){return b.count-a.count});
+
+	var header = ["type","count","show"];
+	d3.select("#feature_type_table").html("");
+	d3.select("#feature_type_table").append("tr").selectAll("th").data(header).enter().append("th").html(function(d) {return d});
+	var rows = d3.select("#feature_type_table").selectAll("tr.data").data(data_for_table).enter().append("tr").attr("class","data");
+	rows.append("td").html(function(d) {return d.type});
+	rows.append("td").html(function(d) {return d.count});
+	rows.append("td").append("input").property("type","checkbox").property("checked",false).on("change",feature_type_checkbox);
+}
+
+
 function create_dropdowns() {
 	d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
 		.append("option")
@@ -1956,6 +2004,13 @@ function refresh_ui_elements() {
 	} else {
 		d3.selectAll(".when_variants_only").style("color","#dddddd");
 		$("#show_only_selected_variants").attr("disabled",true);
+	}
+	if (_Features.length > 0) {
+		d3.selectAll(".when_features_only").style("color","black");
+		$("#show_features_as_dropdown").attr("disabled",false);
+	} else {
+		d3.selectAll(".when_features_only").style("color","#dddddd");
+		$("#show_features_as_dropdown").attr("disabled",true);
 	}
 
 	// Mapping quality in region view
@@ -3302,7 +3357,6 @@ function draw_singleread_features() {
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
-
 		var feature_path_generator = function(d) {
 			var arrow = -1*_positions.singleread.features.arrow_size,
 				x1 = d.start_cum_pos,
@@ -3640,6 +3694,9 @@ function read_permalink(id) {
 					if (_settings.color_index == undefined) {
 						_settings.color_index = 0;
 					}
+					if (_settings.feature_types_to_show == undefined) {
+						_settings.feature_types_to_show = {"protein_coding":true};
+					}
 					refresh_ui_for_new_dataset();
 					_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 					apply_ref_filters();
@@ -3784,7 +3841,10 @@ function read_feature_bed(raw_data) {
 	
 	update_features();
 	draw_region_view();
+	draw();
 	refresh_ui_elements();
+
+	make_feature_type_table();
 }
 
 
