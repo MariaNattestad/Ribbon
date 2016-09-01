@@ -4385,6 +4385,13 @@ d3.select("#region_start").on("keyup",function(){ if (d3.event.keyCode == 13 && 
 // d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 
+function submit_bam_url() {
+	var url = d3.select("#bam_url_input").property("value");
+	console.log(url);
+	read_bam_url(url);
+
+}
+d3.select("#submit_bam_url").on("click",submit_bam_url);
 
 if (splitthreader_data != "") {
 	console.log("Found SplitThreader data");
