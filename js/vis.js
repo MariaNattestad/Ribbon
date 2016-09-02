@@ -14,6 +14,7 @@ _positions.multiread = {};
 _positions.singleread = {};
 _positions.ribbonplot = {};
 _positions.dotplot = {};
+_positions.fontsize = 12;
 
 // Elements on the page
 var _svg;
@@ -96,6 +97,8 @@ _settings.variant_info_text = "";
 _settings.bam_url = undefined;
 _settings.fetch_margin = 100;
 _settings.show_features_as = "arrows";
+_settings.feature_types_to_show = {"protein_coding":true};
+_settings.single_chrom_highlighted = false;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -194,6 +197,8 @@ function responsive_sizing() {
 	_layout.svg2_height = _layout.svg2_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.input_margin = _padding.between;
+
+	_positions.fontsize = _layout.svg2_width*0.012;
 	
 	d3.select("#svg1_panel")
 		.style("width",_layout.left_width + "px")
@@ -230,15 +235,15 @@ function adjust_multiread_layout() {
 	_positions.multiread.ref_intervals = {"y":_layout.svg2_height*_static.multiread_layout_fractions["header"], "height":_layout.svg2_height*remaining_fraction_for_reads, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90};
 	_positions.multiread.reads = { "top_y":_positions.multiread.ref_intervals.y, "height":_positions.multiread.ref_intervals.height, "x": _positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width };
 	
+
+	fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
 	if (_Variants.length > 0 || _Bedpe.length > 0) {
-		fractional_pos_for_variants = _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
-	}
-	if (_Features.length > 0) {
 		fractional_pos_for_features = fractional_pos_for_variants + _static.multiread_layout_fractions["variants"];
+	} else {
+		fractional_pos_for_features = fractional_pos_for_variants;
 	}
 	_positions.multiread.variants = {"y":_layout.svg2_height*fractional_pos_for_variants,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "ankle_height":_layout.svg2_height*0.015,"bezier_height":_layout.svg2_height*_static.multiread_layout_fractions["variants"]*0.9, "foot_length":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/5, "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["variants"]/20};
 	_positions.multiread.features = {"y":_layout.svg2_height*fractional_pos_for_features,"rect_height":_layout.svg2_height*_static.multiread_layout_fractions["features"], "arrow_size":_layout.svg2_height*_static.multiread_layout_fractions["features"]/7};
-
 }
 
 function getUrlVars() {
@@ -455,11 +460,11 @@ function get_name() {
 }
 
 d3.select("#screenshot_top").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png");
+	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png", {scale: 4});
 });
 
 d3.select("#screenshot_bottom").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png");
+	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png", {scale: 4});
 });
 
 
@@ -527,13 +532,11 @@ function draw_chunk_ref() {
 	
 	_positions.multiread.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
 	// Draw "Reference" label
-	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle").style("font-size",_positions.fontsize);
 
 
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
 	_scales.chunk_whole_ref_scale.range([_positions.multiread.ref_block.x, _positions.multiread.ref_block.x + _positions.multiread.ref_block.width]);
-	
-	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
 	// Whole reference chromosomes for the relevant references:
 	var ref_blocks = _svg2.selectAll("g.ref_block").data(_Whole_refs).enter()
@@ -559,11 +562,12 @@ function draw_chunk_ref() {
 			
 	ref_blocks.append("text").attr("class","ref_block")
 		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
-			.filter(function(d) { return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos) > ((font_size/5.)*d.chrom.length));})
+			.filter(function(d) { return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos) > ((_positions.fontsize/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos)})
 				.attr("y", -_padding.text)
-				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
+				.style('text-anchor',"middle").attr("dominant-baseline","bottom")
+				.style("font-size",_positions.fontsize);
 }
 
 function comma_format(x) {
@@ -623,25 +627,27 @@ function find_features_in_view(features, mapping_function, scale_function) {
 
 	for (var i in features) {
 		var feature = features[i];
-		var start_results = mapping_function(feature.chrom,feature.start);
-		var end_results = mapping_function(feature.chrom,feature.end);
-		if (start_results.pos != end_results.pos) {
-			feature.start_cum_pos = scale_function(start_results.pos);
-			feature.start_precision = start_results.precision;
-			
-			feature.end_cum_pos = scale_function(end_results.pos);
-			feature.end_precision = end_results.precision;
+		if (feature.show != false) {
+			var start_results = mapping_function(feature.chrom,feature.start);
+			var end_results = mapping_function(feature.chrom,feature.end);
+			if (start_results.pos != end_results.pos) {
+				feature.start_cum_pos = scale_function(start_results.pos);
+				feature.start_precision = start_results.precision;
+				
+				feature.end_cum_pos = scale_function(end_results.pos);
+				feature.end_precision = end_results.precision;
 
-			if (feature.end_cum_pos < feature.start_cum_pos + 4) {
-				feature.start_cum_pos = feature.start_cum_pos -2;
-				feature.end_cum_pos = feature.start_cum_pos + 4;
-			} else if (feature.end_cum_pos < feature.start_cum_pos) {
-				var tmp = feature.start_cum_pos;
-				feature.start_cum_pos = feature.end_cum_pos;
-				feature.end_cum_pos  = tmp;
+				if (feature.end_cum_pos < feature.start_cum_pos + 4) {
+					feature.start_cum_pos = feature.start_cum_pos -2;
+					feature.end_cum_pos = feature.start_cum_pos + 4;
+				} else if (feature.end_cum_pos < feature.start_cum_pos) {
+					var tmp = feature.start_cum_pos;
+					feature.start_cum_pos = feature.end_cum_pos;
+					feature.end_cum_pos  = tmp;
+				}
+				
+				features_in_view.push(feature);
 			}
-			
-			features_in_view.push(feature);
 		}
 	}
 	return features_in_view;
@@ -649,7 +655,7 @@ function find_features_in_view(features, mapping_function, scale_function) {
 
 function calculate_offsets_for_features_in_view(features_in_view) {
 	var padding = 10;
-
+	
 	var sweep_list = [];
 	for (var i in features_in_view) {
 		sweep_list.push([features_in_view[i].start_cum_pos, i]);
@@ -662,7 +668,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 		var found = false;
 		for (var j in channels) {
 			if (channels[j] < features_in_view[sweep_list[i][1]].start_cum_pos) {
-				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos;
+				channels[j] = features_in_view[sweep_list[i][1]].end_cum_pos + padding;
 				features_in_view[sweep_list[i][1]].offset = j;
 				found = true;
 				break;
@@ -670,7 +676,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 		}
 		if (found == false) {
 			features_in_view[sweep_list[i][1]].offset = channels.length;
-			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos);
+			channels.push(features_in_view[sweep_list[i][1]].end_cum_pos + padding);
 		}
 	}
 
@@ -680,6 +686,7 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 function draw_chunk_features() {
 	if (_Chunk_alignments.length > 0) {
 		if (_Features.length > 0) {
+
 			var features_in_view = find_features_in_view(_Features,closest_map_chunk_ref_interval,_scales.chunk_ref_interval_scale);
 			var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
 			if (_settings.show_features_as == "rectangles") {
@@ -1210,22 +1217,34 @@ function clear_data() {
 }
 
 function highlight_chromosome(chromosome) {
-	for (var chrom in _Refs_show_or_hide) {
-		// console.log("hiding " + chrom);
-		_Refs_show_or_hide[chrom] = false;
+	
+	if (_settings.single_chrom_highlighted == true) {
+		show_all_chromosomes();
+		apply_ref_filters();
+		draw_region_view();
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			apply_ref_filters();
+			select_read();
+		}
+		_settings.single_chrom_highlighted = false;
+	} else {
+		for (var chrom in _Refs_show_or_hide) {
+			// console.log("hiding " + chrom);
+			_Refs_show_or_hide[chrom] = false;
+		}
+		_Refs_show_or_hide[chromosome] = true;
+
+		apply_ref_filters();
+		draw_region_view();
+
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			select_read();
+		}
+
+		d3.select("#chrom_highlighted").html(chromosome);
+		d3.select("#show_all_refs").style("display","inline");
+		_settings.single_chrom_highlighted = true;
 	}
-	_Refs_show_or_hide[chromosome] = true;
-
-	apply_ref_filters();
-	draw_region_view();
-
-	if (_settings.ref_match_chunk_ref_intervals == true) {
-		select_read();
-	}
-
-
-	d3.select("#chrom_highlighted").html(chromosome);
-	d3.select("#show_all_refs").style("display","inline");
 }
 
 function show_all_chromosomes() {
@@ -1237,6 +1256,16 @@ function show_all_chromosomes() {
 	}
 	d3.select("#chrom_highlighted").html("all");
 	d3.select("#show_all_refs").style("display","none");
+}
+
+function apply_feature_filters() {
+	for (var f in _Features) {
+		if (_settings.feature_types_to_show[_Features[f].type] === true) {
+			_Features[f].show = true;
+		} else {
+			_Features[f].show = false;
+		}
+	}
 }
 
 function apply_ref_filters() {
@@ -1481,7 +1510,6 @@ $('#coords_input').bind('input propertychange', function() {
 });
 
 
-
 function calculate_type_colors(variant_list) {
 	var variant_types = {};
 	for (var i in variant_list) {
@@ -1496,7 +1524,6 @@ function calculate_type_colors(variant_list) {
 	var variant_names = [];
 	for (var type in variant_types) {
 		variant_names.push(type);
-		console.log(type);
 		if (type.toUpperCase().indexOf("DEL") != -1 || type.toUpperCase().indexOf("PROTEIN") != -1) {
 			colors_for_variants.push("blue");
 		} else if (type.toUpperCase().indexOf("INS") != -1 || type.toUpperCase().indexOf("RNA") != -1) {
@@ -1861,6 +1888,44 @@ function all_read_analysis() {
 	_settings.min_read_length = 0;
 }
 
+function feature_type_checkbox(d) {
+	_settings.feature_types_to_show[d.type] = d3.event.target.checked;
+	apply_feature_filters();
+	draw_region_view();
+	draw();
+}
+function make_feature_type_table() {
+	d3.select("#feature_filter_tab").style("display","inline");
+
+	var type_counts = {};
+	_settings.feature_types_to_show = {};
+
+	for (var i in _Features) {
+		if (type_counts[_Features[i].type] == undefined) {
+			type_counts[_Features[i].type] = 1;
+			_settings.feature_types_to_show[_Features[i].type] = false;
+		} else {
+			type_counts[_Features[i].type]++;
+		}
+	}
+	
+	// Put into list so we can sort it
+	var data_for_table = [];
+	for (var type in type_counts) {
+		data_for_table.push({"type":type,"count":type_counts[type]})
+	}
+	data_for_table.sort(function(a, b){return b.count-a.count});
+
+	var header = ["type","count","show"];
+	d3.select("#feature_type_table").html("");
+	d3.select("#feature_type_table").append("tr").selectAll("th").data(header).enter().append("th").html(function(d) {return d});
+	var rows = d3.select("#feature_type_table").selectAll("tr.data").data(data_for_table).enter().append("tr").attr("class","data");
+	rows.append("td").html(function(d) {return d.type});
+	rows.append("td").html(function(d) {return d.count});
+	rows.append("td").append("input").property("type","checkbox").property("checked",false).on("change",feature_type_checkbox);
+}
+
+
 function create_dropdowns() {
 	d3.select("select#read_orientation_dropdown").selectAll("option").data(_static.read_orientation_options).enter()
 		.append("option")
@@ -1976,6 +2041,13 @@ function refresh_ui_elements() {
 		d3.selectAll(".when_variants_only").style("color","#dddddd");
 		$("#show_only_selected_variants").attr("disabled",true);
 	}
+	if (_Features.length > 0) {
+		d3.selectAll(".when_features_only").style("color","black");
+		$("#show_features_as_dropdown").attr("disabled",false);
+	} else {
+		d3.selectAll(".when_features_only").style("color","#dddddd");
+		$("#show_features_as_dropdown").attr("disabled",true);
+	}
 
 	// Mapping quality in region view
 	$('#region_mq_slider').slider("option","max", _ui_properties.region_mq_slider_max);
@@ -2022,12 +2094,12 @@ function refresh_ui_elements() {
 
 	// Dot plot vs. Ribbon plot
 	if (_settings.ribbon_vs_dotplot == "ribbon") {
-		d3.selectAll(".ribbon_settings").style("display","block");
+		d3.selectAll(".ribbon_settings").style("display","table-row");
 		d3.selectAll(".dotplot_settings").style("display","none");
 		d3.select("#select_ribbon").property("checked",true);
 		d3.select("#select_dotplot").property("checked",false);
 	} else {
-		d3.selectAll(".dotplot_settings").style("display","block");
+		d3.selectAll(".dotplot_settings").style("display","table-row");
 		d3.selectAll(".ribbon_settings").style("display","none");
 		d3.select("#select_dotplot").property("checked",true);
 		d3.select("#select_ribbon").property("checked",false);
@@ -2905,7 +2977,8 @@ function reset_svg2() {
 	_svg2 = d3.select("#svg2_panel").append("svg")
 		.attr("width",_layout.svg2_width)
 		.attr("height",_layout.svg2_height)
-		.attr("id","svg_multi_read");
+		.attr("id","svg_multi_read")
+		.style("background-color","#ffffff");
 
 	_svg2.append("text")
 			.attr("id","no_alignments_message")
@@ -2926,7 +2999,8 @@ function reset_svg() {
 	_svg = d3.select("#svg1_panel").append("svg")
 		.attr("width",_layout.svg_width)
 		.attr("height",_layout.svg_height)
-		.attr("id","svg_single_read");
+		.attr("id","svg_single_read")
+		.style("background-color","#ffffff");
 }
 
 function dotplot_alignment_path_generator(d) {
@@ -2970,18 +3044,14 @@ function draw_dotplot() {
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
 	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
-		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)")
-
+		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)").style("font-size",_positions.fontsize);
 
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
-	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
 
-
-	
 	_scales.ref_interval_scale.range([_positions.ref.left, _positions.ref.right]);
 	
-
 	canvas.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
 			.filter(function(d) {return d.cum_pos != -1})
@@ -3003,7 +3073,6 @@ function draw_dotplot() {
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 
 	// Alignments
-
 	var flip = false;
 	
 	if (_settings.orient_reads_by == "primary") {
@@ -3025,7 +3094,6 @@ function draw_dotplot() {
 		// _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
 		_scales.read_scale.range([_positions.read.bottom, _positions.read.top]);
 	}
-
 
 	var a_groups = canvas.selectAll("g.alignment").data(_Alignments).enter()
 		.append("g").attr("class","alignment");
@@ -3049,7 +3117,9 @@ function draw_dotplot() {
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
 		.attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")")
+		.style("font-size",_positions.fontsize)
 		.call(read_axis);
+	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
 
 	if (_Additional_ref_intervals.length > 0) {
 		canvas.selectAll("rect.focal_regions").data(_Additional_ref_intervals).enter()
@@ -3099,10 +3169,7 @@ function draw_singleread_header() {
 	adjust_singleread_layout();
 
 	// Draw "Reference" label
-	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
-
-	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
-
+	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle").style("font-size",_positions.fontsize);
 	
 	_scales.whole_ref_scale.range([_positions.singleread.ref_block.x, _positions.singleread.ref_block.x + _positions.singleread.ref_block.width]);
 	_scales.ref_interval_scale.range([_positions.singleread.ref_intervals.x, _positions.singleread.ref_intervals.x+_positions.singleread.ref_intervals.width]);
@@ -3116,6 +3183,7 @@ function draw_singleread_header() {
 			.attr("height", _positions.singleread.ref_block.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.style("stroke-width",1).style("stroke", "black")
+			.on("click",function(d) {highlight_chromosome(d.chrom)})
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.whole_ref_scale(d.cum_pos + d.size/2);
@@ -3126,11 +3194,12 @@ function draw_singleread_header() {
 
 	_svg.selectAll("text.ref_block").data(_Whole_refs).enter()
 		.append("text").attr("class","ref_block")
-			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((font_size/5.)*d.chrom.length));})
+			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((_positions.fontsize/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
 				.attr("y",_positions.singleread.ref_block.y - _padding.text)
-				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
+				.style('text-anchor',"middle").attr("dominant-baseline","bottom")
+				.style("font-size",_positions.fontsize);
 				// .attr("height", _positions.singleread.ref_block.height)
 				// .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
 				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
@@ -3321,7 +3390,6 @@ function draw_singleread_features() {
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 	} else if (_settings.show_features_as == "arrows" || _settings.show_features_as == "names") {
-
 		var feature_path_generator = function(d) {
 			var arrow = -1*_positions.singleread.features.arrow_size,
 				x1 = d.start_cum_pos,
@@ -3394,7 +3462,7 @@ function draw_ribbons() {
 			show_tooltip(text,x,y,_svg);
 		})
 		.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
 	
 	
 
@@ -3442,6 +3510,7 @@ function draw_ribbons() {
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
 		.call(read_axis);
+	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
 
 }
 
@@ -3502,7 +3571,7 @@ function set_variant_info_text() {
 
 function load_bam_url_in_background(url) {
 	_Bam = new Bam(url);
-	_Bam.getHeader(function() {console.log("got header")});
+	_Bam.getHeader(function() {console.log("got header from url bam")});
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
 }
@@ -3665,6 +3734,9 @@ function read_permalink(id) {
 					if (_settings.color_index == undefined) {
 						_settings.color_index = 0;
 					}
+					if (_settings.feature_types_to_show == undefined) {
+						_settings.feature_types_to_show = {"protein_coding":true};
+					}
 					refresh_ui_for_new_dataset();
 					_scales.ref_color_scale.range(_static.color_collections[_settings.color_index]);
 					apply_ref_filters();
@@ -3814,7 +3886,10 @@ function read_feature_bed(raw_data) {
 	
 	update_features();
 	draw_region_view();
+	draw();
 	refresh_ui_elements();
+
+	make_feature_type_table();
 }
 
 
@@ -4422,6 +4497,7 @@ if (splitthreader_data != "") {
 	}
 	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
 	$('.nav-tabs a[href="#bam"]').tab('show');
+
 
 	update_bedpe();
 	draw_region_view();

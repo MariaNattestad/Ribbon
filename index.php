@@ -164,8 +164,6 @@
 			    </div>
 			</div>		
 	</div>
-	
-	
 
 	<div id="svg2_panel"></div>
 	<div id="svg1_panel"></div>
@@ -174,7 +172,6 @@
 
 
 <div id="right_panel">
-
 
 
 	<div class="panel-group" id="data_description_panel">
@@ -212,16 +209,6 @@
 				    <hr>
 					  <button id="screenshot_top">Download top view as png</button>
 					  <button id="screenshot_bottom">Download bottom view as png</button>
-
-					<!-- <table>
-						<col width="100%">
-							<tr>
-								<th>Selected region</th>
-							</tr>
-							<tr>
-								<td style="width:100%"><div id="text_region_output"></div></td>
-							</tr>
-					</table> -->
 				</div>
 			</div>
 		</div>
@@ -233,105 +220,140 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Region view settings</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Multi-read settings</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
-					<table class="settings_table">
-						<col width="45%">
-						<col width="20%">
-						<col width="30%">
-							<tr><th colspan="3">Filter reads</th></tr>
-							<tr><td>Number of alignments:</td>
-								<td> <span id="num_aligns_range_label"></span> </td>
-								<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
-							</tr>
-							<tr>
-								<td>Minimum read length:</td>
-								<!-- <td><span id="min_read_length_input"></span> </td> -->
-								<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
-								<td> <div class="slider" id="min_read_length_slider"></div> </td>
-							</tr>
-							<tr>
-								<td id="region_min_mq_title" >Minimum mapping quality: </td>
-								<td><span id="region_mq_label">0</span></td>
-								<td><div class="slider" id="region_mq_slider"></td>
-							</tr>
-							<tr><th colspan="3">Filter reference</th></tr>
-							<tr>
-								<td>Zoom to chromosome</td>
-								<td><p id="chrom_highlighted">all</p></td>
-								<td>
-									<div id="chrom_livesearch"></div>
-									<!-- <div class="input-group"><input class="form-control"  autocomplete="off" id="chrom_search_input" type="text" placeholder="chr1"><span class="input-group-btn"> -->
-									
-									<!-- </div> -->
-									<!-- <ul id="chrom_livesearch"></ul> -->
-									<button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
-								</td>
-							</tr>
-							<tr>
-								<td>Minimum number of alignments:</td>
-								<td><p id="min_aligns_for_ref_interval_label">1</p></td>
-								<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
-							</tr>
-							<tr>
-								<td>Maximum chromosome length:</td>
-								<td><input class="snug" type="number" id="max_ref_length_input"></td>
-								<!-- <td><span id="max_ref_length_input"></span> </td> -->
-								<td> <div class="slider" id="max_ref_length_slider"></div> </td>
-							</tr>
-							<tr><th colspan="3">Settings</th></tr>
-							<tr>
-								<td>Sort reads vertically:</td>
-								<td colspan="2">
-									<select class="form-control" id="read_sorting_dropdown">
-										
-									 </select>
-								</td>
-							</tr>
-							<tr>
-								<td>Orient reads by:</td>
-								<td colspan="2">
-									<select class="form-control" id="read_orientation_dropdown">
-										
-									 </select>
-								</td>
-							</tr>
-							<tr>
-								<td class="hide_for_coords">Show indels as:</td>
-								<td colspan="2"> 
-									<select class="form-control" id="show_indels_as_dropdown">
-										
-								 	</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="hide_for_coords">Show features as:</td>
-								<td colspan="2"> 
-									<select class="form-control" id="show_features_as_dropdown">
-										
-								 	</select>
-								</td>
-							</tr>
-							<tr>
-								<td>Color scheme:</td>
-								<td colspan="2"> 
-									<select class="form-control" id="color_scheme_dropdown">
-										
-								 	</select>
-								</td>
-							</tr>
-							<tr class="when_variants_only">
-								<td>Show only the selected variants</td>
-								<td><input id="show_only_selected_variants" type="checkbox"></td>
-							<tr>
-							<tr>
-								<td>Collapse reference sequences within distance:</td>
-								<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
-							<tr>
-					</table>
+					<ul class="nav nav-tabs">
+						<li class="active"><a data-toggle="tab" href="#tab_reference">Reference</a></li>
+						<li><a data-toggle="tab" href="#tab_reads">Reads</a></li>
+						<li><a data-toggle="tab" href="#tab_settings">Settings</a></li>
+						<li id="feature_filter_tab"><a data-toggle="tab" href="#tab_features">Filter features by type</a></li>
+					</ul>
+
+					<div class="tab-content">
+						<div id="tab_reference" class="tab-pane fade in active">
+							<table class="settings_table">
+								<col width="45%">
+								<col width="20%">
+								<col width="30%">
+								
+								<tr><th colspan="3">Filter reference chromosomes</th></tr>
+								<tr>
+									<td>Zoom to chromosome</td>
+									<td><p id="chrom_highlighted">all</p></td>
+									<td>
+										<div id="chrom_livesearch"></div>
+										<button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
+									</td>
+								</tr>
+								<tr>
+									<td>Minimum number of alignments:</td>
+									<td><p id="min_aligns_for_ref_interval_label">1</p></td>
+									<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
+								</tr>
+								<tr>
+									<td>Maximum chromosome length:</td>
+									<td><input class="snug" type="number" id="max_ref_length_input"></td>
+									<!-- <td><span id="max_ref_length_input"></span> </td> -->
+									<td> <div class="slider" id="max_ref_length_slider"></div> </td>
+								</tr>
+								<tr><th colspan="3">Reference settings</th></tr>
+								<tr>
+									<td>Color scheme:</td>
+									<td colspan="2">
+										<select class="form-control" id="color_scheme_dropdown">
+											
+									 	</select>
+									</td>
+								</tr>
+								<tr>
+									<td>Collapse reference sequences within distance:</td>
+									<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
+								</tr>
+							</table>
+						</div>
+
+						<!-- Read filtering-->
+						<div id="tab_reads" class="tab-pane fade">
+							<table class="settings_table">
+								<col width="45%">
+								<col width="20%">
+								<col width="30%">
+								<tr><th colspan="3">Filter reads</th></tr>
+								<tr><td>Number of alignments:</td>
+									<td> <span id="num_aligns_range_label"></span> </td>
+									<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
+								</tr>
+								<tr>
+									<td>Minimum read length:</td>
+									<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
+									<td> <div class="slider" id="min_read_length_slider"></div> </td>
+								</tr>
+								<tr>
+									<td id="region_min_mq_title" >Minimum mapping quality: </td>
+									<td><span id="region_mq_label">0</span></td>
+									<td><div class="slider" id="region_mq_slider"></div></td>
+								</tr>
+								<tr><th colspan="3">Read settings</th></tr>
+								<tr>
+									<td>Sort reads vertically:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_sorting_dropdown">
+											
+										 </select>
+									</td>
+								</tr>
+								<tr>
+									<td>Orient reads by:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_orientation_dropdown">
+											
+										 </select>
+									</td>
+								</tr>
+							</table>
+						</div>
+						
+
+
+						<div id="tab_features" class="tab-pane fade">
+							<table id="feature_type_table"></table>
+						</div>
+
+
+						<div id="tab_settings" class="tab-pane fade">
+							<table class="settings_table">
+								<col width="30%">
+								<col width="50%">
+								<col width="20%">
+								<tr><th colspan="3">Indels</th></tr>
+								<tr>
+									<td class="hide_for_coords">Show indels as:</td>
+									<td colspan="2"> 
+										<select class="form-control" id="show_indels_as_dropdown">
+											
+									 	</select>
+									</td>
+								</tr>
+								<tr><th colspan="3">Features</th></tr>
+								<tr>
+									<td class="when_features_only">Show features as:</td>
+									<td colspan="2"> 
+										<select class="form-control" id="show_features_as_dropdown">
+											
+									 	</select>
+									</td>
+								</tr>
+								<tr><th colspan="3">Variants</th></tr>
+								<tr class="when_variants_only">
+									<td colspan="2">Show only the chosen variant when others are in view</td>
+									<td><input id="show_only_selected_variants" type="checkbox"></td>
+								</tr>
+							</table>
+						</div>
+					</div> <!-- end of tab content -->
 				</div>
 			</div>
 		</div>
@@ -341,87 +363,99 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_detail_settings_box">Detailed view settings</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_detail_settings_box">Single-read settings</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_detail_settings_box">
 				<div class="panel-body">
-					<!-- <form> -->
-						<table class="settings_table">
-							<col width="50%">
-							<col width="20%">
-							<col width="30%">
-							
-							<tr>
-								<th colspan="3">Selected read</th>
-							</tr>
-							<tr>
-								<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
-							</tr>
-							<tr>
-								<td>Highlight selected read</td>
-								<td><input id="highlight_selected_read" type="checkbox" checked></td>
-							</tr>
-							<tr>
-								<th colspan="3">Settings</th>
-							</tr>
+					<div class="panel-body">
+						<div id="ribbon_vs_dotplot_container">
+							<label class="radio-inline">
+								<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
+							</label>
 
-							<tr>
-								<td>Search reads:</td>
-								<td colspan="2">
-									<div id="readname_livesearch"></div>
-									<!-- <input class="snug"  autocomplete="off" type="text" id="readname_search_input">
-									<ul id="readname_livesearch"></ul> -->
-								</td>
-							</tr>
-							<tr>
-								<td>Match reference from region view </td>
-								<td><input id="ref_match_region_view" type="checkbox" checked></td>
-							<tr>
-								<td class="hide_for_coords">Minimum indel size to split: </td>
-								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
-								<td><div class="slider" id="indel_size_slider"></td>
-							</tr>
-							<tr><th colspan="3">Filter alignments</td></tr>
-							<tr>
-								<td id="min_mq_title">Minimum mapping quality: </td>
-								<td><span id="mq_label">0</span></td>
-								<td><div class="slider" id="mq_slider"></td>
-							</tr>
-							<tr>
-								<td>Minimum alignment length: </td>
-								<td><span id="align_length_label">inf</span></td>
-								<td><div class="slider" id="align_length_slider"></td>
-								
-							</tr>
-							<!-- <tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
-								<td><input id="only_header_refs_checkbox" type="checkbox"></td>
-							</tr>	 -->
+							<label class="radio-inline">
+								<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
+							</label>
+						</div>
 
-							<tr id="table_sep">
-								<td colspan="5">
+						<ul class="nav nav-tabs">
+							<li class="active"><a data-toggle="tab" href="#tab_select_read">Select read</a></li>
+							<li><a data-toggle="tab" href="#tab_filter_alignments">Filter alignments</a></li>
+							<li><a data-toggle="tab" href="#tab_singleread_settings">Settings</a></li>
+						</ul>
+
+						<div class="tab-content">
+							<div id="tab_select_read" class="tab-pane fade in active">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<th colspan="3">Selected read</th>
+									</tr>
+									<tr>
+										<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
+									</tr>
+									<tr>
+										<td>Search reads:</td>
+										<td colspan="2">
+											<div id="readname_livesearch"></div>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<div id="tab_filter_alignments" class="tab-pane fade">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<td id="min_mq_title">Minimum mapping quality: </td>
+										<td><span id="mq_label">0</span></td>
+										<td><div class="slider" id="mq_slider"></div></td>
+									</tr>
+									<tr>
+										<td>Minimum alignment length: </td>
+										<td><span id="align_length_label">inf</span></td>
+										<td><div class="slider" id="align_length_slider"></div></td>
+										
+									</tr>
+								</table>
+							</div>
+							<div id="tab_singleread_settings" class="tab-pane fade">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<td>Match reference from region view </td>
+										<td><input id="ref_match_region_view" type="checkbox" checked></td>
+									</tr>
+									<tr>
+										<td>Highlight selected read</td>
+										<td><input id="highlight_selected_read" type="checkbox" checked></td>
+									</tr>
+									<tr>
+										<td class="hide_for_coords">Minimum indel size to split: </td>
+										<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
+										<td><div class="slider" id="indel_size_slider"></div></td>
+									</tr>
+									<tr class="ribbon_settings">
+										<td>Alignment outlines on ribbon plot: </td>
+										<td><input id="outline_checkbox" type="checkbox"/></td>
+									</tr>
+									<!-- <tr class="dotplot_settings"><th colspan="3">Dot plot settings</th></tr> -->
+									<tr class="dotplot_settings">
+										<td>Colors on dotplot: </td>
+										<td><input id="colors_checkbox" type="checkbox" checked/></td>
+									</tr>
+									<!-- <tr class="ribbon_settings"><th colspan="3">Ribbon plot settings</th></tr> -->
 									
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
-									</label>
-
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
-									</label>
-
-								</td>
-							</tr>
-
-							<tr class="dotplot_settings"><th colspan="5">Dot plot settings</td></tr>
-							<tr class="dotplot_settings">
-								<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
-							</tr>
-							<tr class="ribbon_settings"><th colspan="5">Ribbon plot settings</td></tr>
-							<tr class="ribbon_settings">
-								<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox"></td>
-							</tr>
-						</table>
-					<!-- </form> -->
+								</table>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -554,33 +588,13 @@
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_feature_upload_box">
 				<div class="panel-body">
-					<p>Upload a bed file</p>
+					<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
 					<input type="file" id="feature_bed_file" />
-
+					<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="panel-group" id="feature_table_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
-				<div class="panel-body">
-					<div id="feature_table_box">
-						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
-						<div id="feature_table_landing">
-							<!-- superTable creates a table here out of _Variants -->
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<div class="panel-group" id="variant_table_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -643,7 +657,29 @@
 		</div>
 	</div>
 
+	<div class="panel-group" id="feature_table_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
+				<div class="panel-body">
+					<div id="feature_table_box">
+						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
+						<div id="feature_table_landing">
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
 </div>
+
 
 <!-- <div id="image_capture_test_landing"></div> -->
 <script>
