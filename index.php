@@ -161,8 +161,6 @@
 			    </div>
 			</div>		
 	</div>
-	
-	
 
 	<div id="svg2_panel"></div>
 	<div id="svg1_panel"></div>
@@ -171,7 +169,6 @@
 
 
 <div id="right_panel">
-
 
 
 	<div class="panel-group" id="data_description_panel">
@@ -209,16 +206,6 @@
 				    <hr>
 					  <button id="screenshot_top">Download top view as png</button>
 					  <button id="screenshot_bottom">Download bottom view as png</button>
-
-					<!-- <table>
-						<col width="100%">
-							<tr>
-								<th>Selected region</th>
-							</tr>
-							<tr>
-								<td style="width:100%"><div id="text_region_output"></div></td>
-							</tr>
-					</table> -->
 				</div>
 			</div>
 		</div>
@@ -236,54 +223,14 @@
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
 				<div class="panel-body">
 					<ul class="nav nav-tabs">
-						<li class="active"><a data-toggle="tab" href="#tab_reads">Reads</a></li>
-						<li><a data-toggle="tab" href="#tab_reference">Reference</a></li>
+						<li class="active"><a data-toggle="tab" href="#tab_reference">Reference</a></li>
+						<li><a data-toggle="tab" href="#tab_reads">Reads</a></li>
 						<li><a data-toggle="tab" href="#tab_settings">Settings</a></li>
 						<li id="feature_filter_tab"><a data-toggle="tab" href="#tab_features">Filter features by type</a></li>
 					</ul>
 
 					<div class="tab-content">
-						<!-- Read filtering-->
-						<div id="tab_reads" class="tab-pane fade in active">
-							<table class="settings_table">
-								<col width="45%">
-								<col width="20%">
-								<col width="30%">
-								<tr><th colspan="3">Filter reads</th></tr>
-								<tr><td>Number of alignments:</td>
-									<td> <span id="num_aligns_range_label"></span> </td>
-									<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
-								</tr>
-								<tr>
-									<td>Minimum read length:</td>
-									<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
-									<td> <div class="slider" id="min_read_length_slider"></div> </td>
-								</tr>
-								<tr>
-									<td id="region_min_mq_title" >Minimum mapping quality: </td>
-									<td><span id="region_mq_label">0</span></td>
-									<td><div class="slider" id="region_mq_slider"></div></td>
-								</tr>
-								<tr><th colspan="3">Read settings</th></tr>
-								<tr>
-									<td>Sort reads vertically:</td>
-									<td colspan="2">
-										<select class="form-control" id="read_sorting_dropdown">
-											
-										 </select>
-									</td>
-								</tr>
-								<tr>
-									<td>Orient reads by:</td>
-									<td colspan="2">
-										<select class="form-control" id="read_orientation_dropdown">
-											
-										 </select>
-									</td>
-								</tr>
-							</table>
-						</div>
-						<div id="tab_reference" class="tab-pane fade">
+						<div id="tab_reference" class="tab-pane fade in active">
 							<table class="settings_table">
 								<col width="45%">
 								<col width="20%">
@@ -324,9 +271,55 @@
 								</tr>
 							</table>
 						</div>
+
+						<!-- Read filtering-->
+						<div id="tab_reads" class="tab-pane fade">
+							<table class="settings_table">
+								<col width="45%">
+								<col width="20%">
+								<col width="30%">
+								<tr><th colspan="3">Filter reads</th></tr>
+								<tr><td>Number of alignments:</td>
+									<td> <span id="num_aligns_range_label"></span> </td>
+									<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
+								</tr>
+								<tr>
+									<td>Minimum read length:</td>
+									<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
+									<td> <div class="slider" id="min_read_length_slider"></div> </td>
+								</tr>
+								<tr>
+									<td id="region_min_mq_title" >Minimum mapping quality: </td>
+									<td><span id="region_mq_label">0</span></td>
+									<td><div class="slider" id="region_mq_slider"></div></td>
+								</tr>
+								<tr><th colspan="3">Read settings</th></tr>
+								<tr>
+									<td>Sort reads vertically:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_sorting_dropdown">
+											
+										 </select>
+									</td>
+								</tr>
+								<tr>
+									<td>Orient reads by:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_orientation_dropdown">
+											
+										 </select>
+									</td>
+								</tr>
+							</table>
+						</div>
+						
+
+
 						<div id="tab_features" class="tab-pane fade">
 							<table id="feature_type_table"></table>
 						</div>
+
+
 						<div id="tab_settings" class="tab-pane fade">
 							<table class="settings_table">
 								<col width="30%">
