@@ -8,6 +8,7 @@ _positions.multiread = {};
 _positions.singleread = {};
 _positions.ribbonplot = {};
 _positions.dotplot = {};
+_positions.fontsize = 12;
 
 // Elements on the page
 var _svg;
@@ -190,6 +191,8 @@ function responsive_sizing() {
 	_layout.svg2_height = _layout.svg2_box_height - _padding.between_top_and_bottom_svg
 
 	_layout.input_margin = _padding.between;
+
+	_positions.fontsize = _layout.svg2_width*0.012;
 	
 	d3.select("#svg1_panel")
 		.style("width",_layout.left_width + "px")
@@ -451,11 +454,11 @@ function get_name() {
 }
 
 d3.select("#screenshot_top").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png");
+	saveSvgAsPng(document.getElementById("svg_multi_read"), get_name()  + "_multi-read.png", {scale: 4});
 });
 
 d3.select("#screenshot_bottom").on("click", function() {
-	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png");
+	saveSvgAsPng(document.getElementById("svg_single_read"), get_name() + "_single-read.png", {scale: 4});
 });
 
 
@@ -523,13 +526,11 @@ function draw_chunk_ref() {
 	
 	_positions.multiread.ref_block = {"y":_layout.svg2_height*0.15, "x":_layout.svg2_width*0.05, "width":_layout.svg2_width*0.90, "height":_layout.svg2_height*0.03};
 	// Draw "Reference" label
-	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
+	_svg2.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.multiread.ref_block.x+_positions.multiread.ref_block.width/2).attr("y",_positions.multiread.ref_block.y-_positions.multiread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle").style("font-size",_positions.fontsize);
 
 
 	// _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
 	_scales.chunk_whole_ref_scale.range([_positions.multiread.ref_block.x, _positions.multiread.ref_block.x + _positions.multiread.ref_block.width]);
-	
-	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
 
 	// Whole reference chromosomes for the relevant references:
 	var ref_blocks = _svg2.selectAll("g.ref_block").data(_Whole_refs).enter()
@@ -555,11 +556,12 @@ function draw_chunk_ref() {
 			
 	ref_blocks.append("text").attr("class","ref_block")
 		.filter(function(d) {return _Refs_show_or_hide[d.chrom]})
-			.filter(function(d) { return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos) > ((font_size/5.)*d.chrom.length));})
+			.filter(function(d) { return (_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos) > ((_positions.fontsize/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size/2) - _scales.chunk_whole_ref_scale(d.filtered_cum_pos)})
 				.attr("y", -_padding.text)
-				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
+				.style('text-anchor',"middle").attr("dominant-baseline","bottom")
+				.style("font-size",_positions.fontsize);
 }
 
 function comma_format(x) {
@@ -3023,11 +3025,11 @@ function draw_dotplot() {
 	// Draw read
 	canvas.append("line").attr("x1",0).attr("x2", 0).attr("y1",_positions.read.top).attr("y2",_positions.read.bottom).style("stroke-width",1).style("stroke", "black");
 	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
-		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)")
+		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)").style("font-size",_positions.fontsize);
 
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
-	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
 
 	_scales.ref_interval_scale.range([_positions.ref.left, _positions.ref.right]);
 	
@@ -3052,7 +3054,6 @@ function draw_dotplot() {
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 
 	// Alignments
-
 	var flip = false;
 	
 	if (_settings.orient_reads_by == "primary") {
@@ -3074,7 +3075,6 @@ function draw_dotplot() {
 		// _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
 		_scales.read_scale.range([_positions.read.bottom, _positions.read.top]);
 	}
-
 
 	var a_groups = canvas.selectAll("g.alignment").data(_Alignments).enter()
 		.append("g").attr("class","alignment");
@@ -3098,7 +3098,9 @@ function draw_dotplot() {
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
 		.attr("transform","translate(" + _positions.dotplot.canvas.x + "," + _positions.dotplot.canvas.y + ")")
+		.style("font-size",_positions.fontsize)
 		.call(read_axis);
+	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
 
 	if (_Additional_ref_intervals.length > 0) {
 		canvas.selectAll("rect.focal_regions").data(_Additional_ref_intervals).enter()
@@ -3148,10 +3150,7 @@ function draw_singleread_header() {
 	adjust_singleread_layout();
 
 	// Draw "Reference" label
-	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle");
-
-	var font_size = parseFloat(d3.select("#ref_tag").style("font-size"));
-
+	_svg.append("text").attr("id","ref_tag").text("Reference").attr("x",_positions.singleread.ref_block.x+_positions.singleread.ref_block.width/2).attr("y",_positions.singleread.ref_block.y-_positions.singleread.ref_block.height*3).style('text-anchor',"middle").attr("dominant-baseline","middle").style("font-size",_positions.fontsize);
 	
 	_scales.whole_ref_scale.range([_positions.singleread.ref_block.x, _positions.singleread.ref_block.x + _positions.singleread.ref_block.width]);
 	_scales.ref_interval_scale.range([_positions.singleread.ref_intervals.x, _positions.singleread.ref_intervals.x+_positions.singleread.ref_intervals.width]);
@@ -3176,11 +3175,12 @@ function draw_singleread_header() {
 
 	_svg.selectAll("text.ref_block").data(_Whole_refs).enter()
 		.append("text").attr("class","ref_block")
-			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((font_size/5.)*d.chrom.length));})
+			.filter(function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size) - _scales.whole_ref_scale(d.cum_pos) > ((_positions.fontsize/5.)*d.chrom.length));})
 				.text(function(d){var chrom = d.chrom; return chrom.replace("chr","")})
 				.attr("x", function(d) { return _scales.whole_ref_scale(d.cum_pos + d.size/2)})
 				.attr("y",_positions.singleread.ref_block.y - _padding.text)
-				.style('text-anchor',"middle").attr("dominant-baseline","bottom");
+				.style('text-anchor',"middle").attr("dominant-baseline","bottom")
+				.style("font-size",_positions.fontsize);
 				// .attr("height", _positions.singleread.ref_block.height)
 				// .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
 				// .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
@@ -3443,7 +3443,7 @@ function draw_ribbons() {
 			show_tooltip(text,x,y,_svg);
 		})
 		.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
 	
 	
 
@@ -3491,6 +3491,7 @@ function draw_ribbons() {
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
 		.call(read_axis);
+	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
 
 }
 
