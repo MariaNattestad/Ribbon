@@ -1861,6 +1861,8 @@ function feature_type_checkbox(d) {
 	draw();
 }
 function make_feature_type_table() {
+	d3.select("#feature_filter_tab").style("display","inline");
+
 	var type_counts = {};
 	_settings.feature_types_to_show = {};
 
@@ -3537,7 +3539,7 @@ function set_variant_info_text() {
 
 function load_bam_url_in_background(url) {
 	_Bam = new Bam(url);
-	_Bam.getHeader(function() {console.log("got header")});
+	_Bam.getHeader(function() {console.log("got header from url bam")});
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
 }
@@ -4445,6 +4447,7 @@ if (splitthreader_data != "") {
 	}
 	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
 	$('.nav-tabs a[href="#bam"]').tab('show');
+
 
 	update_bedpe();
 	draw_region_view();
