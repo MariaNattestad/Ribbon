@@ -91,6 +91,7 @@ _settings.bam_url = undefined;
 _settings.fetch_margin = 100;
 _settings.show_features_as = "arrows";
 _settings.feature_types_to_show = {"protein_coding":true};
+_settings.single_chrom_highlighted = false;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1208,22 +1209,34 @@ function clear_data() {
 }
 
 function highlight_chromosome(chromosome) {
-	for (var chrom in _Refs_show_or_hide) {
-		// console.log("hiding " + chrom);
-		_Refs_show_or_hide[chrom] = false;
+	
+	if (_settings.single_chrom_highlighted == true) {
+		show_all_chromosomes();
+		apply_ref_filters();
+		draw_region_view();
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			apply_ref_filters();
+			select_read();
+		}
+		_settings.single_chrom_highlighted = false;
+	} else {
+		for (var chrom in _Refs_show_or_hide) {
+			// console.log("hiding " + chrom);
+			_Refs_show_or_hide[chrom] = false;
+		}
+		_Refs_show_or_hide[chromosome] = true;
+
+		apply_ref_filters();
+		draw_region_view();
+
+		if (_settings.ref_match_chunk_ref_intervals == true) {
+			select_read();
+		}
+
+		d3.select("#chrom_highlighted").html(chromosome);
+		d3.select("#show_all_refs").style("display","inline");
+		_settings.single_chrom_highlighted = true;
 	}
-	_Refs_show_or_hide[chromosome] = true;
-
-	apply_ref_filters();
-	draw_region_view();
-
-	if (_settings.ref_match_chunk_ref_intervals == true) {
-		select_read();
-	}
-
-
-	d3.select("#chrom_highlighted").html(chromosome);
-	d3.select("#show_all_refs").style("display","inline");
 }
 
 function show_all_chromosomes() {
@@ -2060,12 +2073,12 @@ function refresh_ui_elements() {
 
 	// Dot plot vs. Ribbon plot
 	if (_settings.ribbon_vs_dotplot == "ribbon") {
-		d3.selectAll(".ribbon_settings").style("display","block");
+		d3.selectAll(".ribbon_settings").style("display","table-row");
 		d3.selectAll(".dotplot_settings").style("display","none");
 		d3.select("#select_ribbon").property("checked",true);
 		d3.select("#select_dotplot").property("checked",false);
 	} else {
-		d3.selectAll(".dotplot_settings").style("display","block");
+		d3.selectAll(".dotplot_settings").style("display","table-row");
 		d3.selectAll(".ribbon_settings").style("display","none");
 		d3.select("#select_dotplot").property("checked",true);
 		d3.select("#select_ribbon").property("checked",false);
@@ -2943,7 +2956,8 @@ function reset_svg2() {
 	_svg2 = d3.select("#svg2_panel").append("svg")
 		.attr("width",_layout.svg2_width)
 		.attr("height",_layout.svg2_height)
-		.attr("id","svg_multi_read");
+		.attr("id","svg_multi_read")
+		.style("background-color","#ffffff");
 
 	_svg2.append("text")
 			.attr("id","no_alignments_message")
@@ -2964,7 +2978,8 @@ function reset_svg() {
 	_svg = d3.select("#svg1_panel").append("svg")
 		.attr("width",_layout.svg_width)
 		.attr("height",_layout.svg_height)
-		.attr("id","svg_single_read");
+		.attr("id","svg_single_read")
+		.style("background-color","#ffffff");
 }
 
 function dotplot_alignment_path_generator(d) {
@@ -3010,16 +3025,12 @@ function draw_dotplot() {
 	_svg.append("text").text("Read / Query").style('text-anchor',"middle").attr("dominant-baseline","hanging")
 		 .attr("transform", "translate("+ 0 + "," + (_positions.dotplot.canvas.y + _positions.dotplot.canvas.height/2)+")rotate(-90)")
 
-
 	// Draw ref
 	canvas.append("line").attr("x1",_positions.ref.left).attr("x2", _positions.ref.right).attr("y1",_positions.ref.y).attr("y2",_positions.ref.y).style("stroke-width",1).style("stroke", "black");
 	_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic");
 
-
-	
 	_scales.ref_interval_scale.range([_positions.ref.left, _positions.ref.right]);
 	
-
 	canvas.selectAll("rect.ref_interval").data(_Ref_intervals).enter()
 		.append("rect").attr("class","ref_interval")
 			.filter(function(d) {return d.cum_pos != -1})
@@ -3154,6 +3165,7 @@ function draw_singleread_header() {
 			.attr("height", _positions.singleread.ref_block.height)
 			.attr("fill",function(d) {return _scales.ref_color_scale(d.chrom);})
 			.style("stroke-width",1).style("stroke", "black")
+			.on("click",function(d) {highlight_chromosome(d.chrom)})
 			.on('mouseover', function(d) {
 				var text = d.chrom + ": " + bp_format(d.size);
 				var x = _scales.whole_ref_scale(d.cum_pos + d.size/2);

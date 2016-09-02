@@ -217,7 +217,7 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Settings</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Multi-read settings</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
@@ -360,85 +360,99 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_detail_settings_box">Detailed view settings</a>
+					<a data-toggle="collapse" class="active" href="#collapsible_detail_settings_box">Single-read settings</a>
 				</h4>
 			</div>
 			<div class="panel-collapse collapse in" id="collapsible_detail_settings_box">
 				<div class="panel-body">
-					<!-- <form> -->
-						<table class="settings_table">
-							<col width="50%">
-							<col width="20%">
-							<col width="30%">
-							
-							<tr>
-								<th colspan="3">Selected read</th>
-							</tr>
-							<tr>
-								<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
-							</tr>
-							<tr>
-								<td>Highlight selected read</td>
-								<td><input id="highlight_selected_read" type="checkbox" checked></td>
-							</tr>
-							<tr>
-								<th colspan="3">Settings</th>
-							</tr>
+					<div class="panel-body">
+						<div id="ribbon_vs_dotplot_container">
+							<label class="radio-inline">
+								<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
+							</label>
 
-							<tr>
-								<td>Search reads:</td>
-								<td colspan="2">
-									<div id="readname_livesearch"></div>
-								</td>
-							</tr>
-							<tr>
-								<td>Match reference from region view </td>
-								<td><input id="ref_match_region_view" type="checkbox" checked></td>
-							<tr>
-								<td class="hide_for_coords">Minimum indel size to split: </td>
-								<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
-								<td><div class="slider" id="indel_size_slider"></td>
-							</tr>
-							<tr><th colspan="3">Filter alignments</td></tr>
-							<tr>
-								<td id="min_mq_title">Minimum mapping quality: </td>
-								<td><span id="mq_label">0</span></td>
-								<td><div class="slider" id="mq_slider"></td>
-							</tr>
-							<tr>
-								<td>Minimum alignment length: </td>
-								<td><span id="align_length_label">inf</span></td>
-								<td><div class="slider" id="align_length_slider"></td>
-								
-							</tr>
-							<!-- <tr><td class="hide_for_coords">Show only reference chromosome lengths from header</td>
-								<td><input id="only_header_refs_checkbox" type="checkbox"></td>
-							</tr>	 -->
+							<label class="radio-inline">
+								<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
+							</label>
+						</div>
 
-							<tr id="table_sep">
-								<td colspan="5">
+						<ul class="nav nav-tabs">
+							<li class="active"><a data-toggle="tab" href="#tab_select_read">Select read</a></li>
+							<li><a data-toggle="tab" href="#tab_filter_alignments">Filter alignments</a></li>
+							<li><a data-toggle="tab" href="#tab_singleread_settings">Settings</a></li>
+						</ul>
+
+						<div class="tab-content">
+							<div id="tab_select_read" class="tab-pane fade in active">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<th colspan="3">Selected read</th>
+									</tr>
+									<tr>
+										<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
+									</tr>
+									<tr>
+										<td>Search reads:</td>
+										<td colspan="2">
+											<div id="readname_livesearch"></div>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<div id="tab_filter_alignments" class="tab-pane fade">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<td id="min_mq_title">Minimum mapping quality: </td>
+										<td><span id="mq_label">0</span></td>
+										<td><div class="slider" id="mq_slider"></div></td>
+									</tr>
+									<tr>
+										<td>Minimum alignment length: </td>
+										<td><span id="align_length_label">inf</span></td>
+										<td><div class="slider" id="align_length_slider"></div></td>
+										
+									</tr>
+								</table>
+							</div>
+							<div id="tab_singleread_settings" class="tab-pane fade">
+								<table class="settings_table">
+									<col width="50%">
+									<col width="20%">
+									<col width="30%">
+									<tr>
+										<td>Match reference from region view </td>
+										<td><input id="ref_match_region_view" type="checkbox" checked></td>
+									</tr>
+									<tr>
+										<td>Highlight selected read</td>
+										<td><input id="highlight_selected_read" type="checkbox" checked></td>
+									</tr>
+									<tr>
+										<td class="hide_for_coords">Minimum indel size to split: </td>
+										<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
+										<td><div class="slider" id="indel_size_slider"></div></td>
+									</tr>
+									<tr class="ribbon_settings">
+										<td>Alignment outlines on ribbon plot: </td>
+										<td><input id="outline_checkbox" type="checkbox"/></td>
+									</tr>
+									<!-- <tr class="dotplot_settings"><th colspan="3">Dot plot settings</th></tr> -->
+									<tr class="dotplot_settings">
+										<td>Colors on dotplot: </td>
+										<td><input id="colors_checkbox" type="checkbox" checked/></td>
+									</tr>
+									<!-- <tr class="ribbon_settings"><th colspan="3">Ribbon plot settings</th></tr> -->
 									
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
-									</label>
-
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
-									</label>
-
-								</td>
-							</tr>
-
-							<tr class="dotplot_settings"><th colspan="5">Dot plot settings</td></tr>
-							<tr class="dotplot_settings">
-								<td>Colors on dotplot: </td><td><input id="colors_checkbox" type="checkbox" checked></td>
-							</tr>
-							<tr class="ribbon_settings"><th colspan="5">Ribbon plot settings</td></tr>
-							<tr class="ribbon_settings">
-								<td>Ribbon outline: </td><td><input id="outline_checkbox" type="checkbox"></td>
-							</tr>
-						</table>
-					<!-- </form> -->
+								</table>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -578,26 +592,6 @@
 			</div>
 		</div>
 	</div>
-	<div class="panel-group" id="feature_table_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h4 class="panel-title">
-					<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
-				</h4>
-			</div>
-			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
-				<div class="panel-body">
-					<div id="feature_table_box">
-						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
-						<div id="feature_table_landing">
-							<!-- superTable creates a table here out of _Features -->
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<div class="panel-group" id="variant_table_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -660,7 +654,29 @@
 		</div>
 	</div>
 
+	<div class="panel-group" id="feature_table_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
+				<div class="panel-body">
+					<div id="feature_table_box">
+						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
+						<div id="feature_table_landing">
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
 </div>
+
 
 <!-- <div id="image_capture_test_landing"></div> -->
 

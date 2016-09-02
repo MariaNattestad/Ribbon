@@ -1,7 +1,7 @@
 body {
 	padding-top: 70px;
 	padding-bottom: 30px;
-	font-family: 'Lato', sans-serif;
+	font-family: 'Lato', 'Helvetica', sans-serif;
 	background-color: #eeeeee; /*gray*/
 }
 
@@ -78,6 +78,7 @@ hr {
 
 svg {
 	background-color: #ffffff; /*white*/
+	font-family: 'Lato', 'Helvetica';
 }
 
 
@@ -110,7 +111,7 @@ input[type="file"] {
 	border: 1px solid #cccccc;
 }
 
-#svg2_panel .ref_block, #svg2_panel .alignment_groups, #click_info_link {
+.ref_block, #svg2_panel .alignment_groups, #click_info_link {
 	cursor: pointer;
 }
 
@@ -120,13 +121,13 @@ th {
 
 text {
 	font-size: 1vw;
-	font-family: 'Lato', sans-serif;
+	font-family: 'Lato', 'Helvetica', sans-serif;
 }
 
 .tip {
 	font-size: 2vmin;
 	font-weight: 900;
-	font-family: 'Lato', sans-serif; 
+	font-family: 'Lato', 'Helvetica', sans-serif;
 }
 #info_panel {
 	display: none;
@@ -157,17 +158,13 @@ div.input-group {
 	/*font-size: 2vmin;*/
 }
 
-#table_sep tr, #table_sep td {
+#ribbon_vs_dotplot_container, #ribbon_vs_dotplot_container label {
 	text-align: center;
-	padding: 1vmin 1vmin 1vmin 1vmin ;
+	padding: 1vh 1vw 1vh 1vw ;
 }
 
 .d3-livesearch-input {
 	width: 100%;
-}
-
-.variants_only {
-
 }
 
 #text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output {
