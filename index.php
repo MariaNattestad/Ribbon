@@ -328,7 +328,7 @@
 								<col width="30%">
 								<col width="50%">
 								<col width="20%">
-								<tr><th colspan="3">Indels</th></tr>
+								<tr><th colspan="3" class="hide_for_coords">Indels</th></tr>
 								<tr>
 									<td class="hide_for_coords">Show indels as:</td>
 									<td colspan="2"> 
@@ -337,7 +337,7 @@
 									 	</select>
 									</td>
 								</tr>
-								<tr><th colspan="3">Features</th></tr>
+								<tr><th class="when_features_only" colspan="3">Features</th></tr>
 								<tr>
 									<td class="when_features_only">Show features as:</td>
 									<td colspan="2"> 
@@ -346,7 +346,7 @@
 									 	</select>
 									</td>
 								</tr>
-								<tr><th colspan="3">Variants</th></tr>
+								<tr><th colspan="3" class="when_variants_only">Variants</th></tr>
 								<tr class="when_variants_only">
 									<td colspan="2">Show only the chosen variant when others are in view</td>
 									<td><input id="show_only_selected_variants" type="checkbox"></td>
