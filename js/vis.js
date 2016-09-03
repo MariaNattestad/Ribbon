@@ -648,7 +648,7 @@ function find_features_in_view(features, mapping_function, scale_function) {
 }
 
 function calculate_offsets_for_features_in_view(features_in_view) {
-	var padding = 10;
+	var padding = 20;
 	
 	var sweep_list = [];
 	for (var i in features_in_view) {
