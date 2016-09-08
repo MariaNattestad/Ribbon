@@ -7,6 +7,7 @@ Ribbon is available online at genomeribbon.com and can even read large bam files
 
 ## Local deployment
 If you need to deploy Ribbon locally, here are the steps:
+
 1. Install XAMPP on your computer (includes Apache and PHP)
 2. Go to the htdocs folder created during the install. On a Mac, the folder is located at /Applications/XAMPP/htdocs/
 
