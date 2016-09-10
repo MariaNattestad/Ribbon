@@ -2183,7 +2183,7 @@ function user_message(message_type,message) {
 
 function cigar_coords(cigar) {
 	// cigar must already be parsed using parse_cigar()
-	
+
 	var coords = {};
 	coords.read_alignment_length = 0;
 	coords.ref_alignment_length = 0;
@@ -2191,45 +2191,53 @@ function cigar_coords(cigar) {
 	coords.front_padding_length = 0; // captures S/H clipping at the beginning of the cigar string (what the ref considers the start location)
 	coords.end_padding_length = 0; // captures S/H clipping at the end of the cigar string (what the ref considers the end location)
 
+	var no_matches_yet = true;
 	for (var i = 0; i < cigar.length; i++) {
 		var num = cigar[i].num;
 		switch (cigar[i].type) {
 			case "H":
-				if (i < 2) {
+				if (no_matches_yet) {
 					coords.front_padding_length += num;
-				} else if (i > cigar.length - 3) {
+				} else {
 					coords.end_padding_length += num;
 				}
 				break;
 			case "S":
-				if (i < 2) {
+				if (no_matches_yet) {
 					coords.front_padding_length += num;
-				} else if (i > cigar.length - 3) {
+				} else {
 					coords.end_padding_length += num;
 				}
 				break;
 			case "M":
+				no_matches_yet = false;
 				coords.read_alignment_length += num;
 				coords.ref_alignment_length += num;
 				break;
 			case "=":
+				no_matches_yet = false;
 				coords.read_alignment_length += num;
 				coords.ref_alignment_length += num;
 				break;
 			case "X":
+				no_matches_yet = false;
 				coords.read_alignment_length += num;
 				coords.ref_alignment_length += num;
 				break;
 			case "I":
+				no_matches_yet = false;
 				coords.read_alignment_length += num;
 				break;
 			case "D":
+				no_matches_yet = false;
 				coords.ref_alignment_length += num;
 				break;
 			case "N": // "Skipped region from the reference" -- sam format specification
+				no_matches_yet = false;
 				coords.ref_alignment_length += num; 
 				break;
 			case "P": // "Padding: silent deletion from padded reference" -- sam format specification
+				no_matches_yet = false;
 				coords.ref_alignment_length += num;
 				break;
 			default:
@@ -2322,7 +2330,6 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 				ref_pos += num;
 		}
 	}
-
 	// alignment.max_indel
 	alignment.path.push({"R":alignment.re, "Q":alignment.qe});
 	return alignment;
@@ -2344,7 +2351,7 @@ function parse_sam_coordinates(line) {
 	if ((flag & 16) == 16) {
 		strand = "-";
 	}
-	
+
 	var alignments = [];
 	for (var i = 0; i < fields.length; i++) {
 		if (fields[i].substr(0,2) == "SA") {
