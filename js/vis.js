@@ -1479,7 +1479,6 @@ function coords_input_changed(coords_input_value) {
 
 	_Chunk_alignments = [];
 	for (var readname in alignments_by_query) {
-		// {"alignments": alignments, "raw":line, "raw_type":"sam", "readname":fields[0]};
 		_Chunk_alignments.push({
 			"alignments": alignments_by_query[readname],
 			"raw_type":"coords",
@@ -2336,40 +2335,23 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 }
 
 function parse_sam_coordinates(line) {
+
 	var fields = line.split(/\s+/);
+	var record = {};
+	record.segment = fields[2];
+	record.pos = parseInt(fields[3]);
+	record.flag = parseInt(fields[1]);
+	record.mq = parseInt(fields[4]);
+	record.cigar = fields[5];
+	record.readName = fields[0];
 
-	var chrom = fields[2];
-	var rstart = parseInt(fields[3]);
-	var flag = parseInt(fields[1]);
-	var mq = parseInt(fields[4]);
-	var raw_cigar = fields[5];
-	if (raw_cigar == "*") {
-		return undefined;
-	}
-	
-	var strand = "+";
-	if ((flag & 16) == 16) {
-		strand = "-";
-	}
-
-	var alignments = [];
 	for (var i = 0; i < fields.length; i++) {
 		if (fields[i].substr(0,2) == "SA") {
-			alignments = parse_SA_field(fields[i].split(":")[2]);
+			record.SA = fields[i].split(":")[2];
+			break;
 		}
 	}
-
-	alignments.push(read_cigar(raw_cigar,chrom,rstart,strand,mq));
-
-	var read_length = alignments[alignments.length-1].read_length;
-
-	for (var i = 0; i < alignments.length; i++) {
-		 if (alignments[i].read_length != read_length) {
-				user_message("Warning", "read length of primary and supplementary alignments do not match for this read (calculated using cigar strings)");
-		 }
-	}
-
-	return {"alignments": alignments, "raw":line, "raw_type":"sam", "readname":fields[0]};
+	return parse_bam_record(record);
 }
 
 function planesweep_consolidate_intervals(starts_and_stops) {
@@ -4284,7 +4266,7 @@ function parse_bam_record(record) {
 	if ((flag & 16) == 16) {
 		strand = "-";
 	}
-	if (raw_cigar == "*") {
+	if (raw_cigar == "*" || raw_cigar=="") {
 		return undefined;
 	}
 
@@ -4309,7 +4291,6 @@ function parse_bam_record(record) {
 				user_message("Warning", "read length of primary and supplementary alignments do not match for this read (calculated using cigar strings)");
 		 }
 	}
-
 
 	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName};
 
@@ -4346,6 +4327,7 @@ function parse_bam_text(bam_text) {
 
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
+
 	show_bam_is_ready();
 	var consolidated_records = [];
 	if (_settings.keep_duplicate_reads == false) {
