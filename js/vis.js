@@ -93,6 +93,7 @@ _settings.fetch_margin = 100;
 _settings.show_features_as = "arrows";
 _settings.feature_types_to_show = {"protein_coding":true};
 _settings.single_chrom_highlighted = false;
+_settings.second_read_shift = 200;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1328,15 +1329,74 @@ function chunk_changed() {
 
 }
 
+function parse_paired_end(record) {
+	// ??????????????????????????????
+	
+	var total_read_length = 300; 
+	var readname = "";
+	var new_alignments = [];
+	if (record.first != undefined) {
+		// total_read_length += record.first.alignments[0].read_length;
+		readname = record.first.readname;
+		for (var i in record.first.alignments) {
+			var alignment = {};
+			for (var j in record.first.alignments[i]) {
+				alignment[j] = record.first.alignments[i][j];
+			}
+			new_alignments.push(alignment);
+		}
+	}
+	if (record.second != undefined) {
+		readname = record.second.readname;
+		// total_read_length += record.second.alignments[0].read_length;
+		for (var i in record.second.alignments) {
+			var new_alignment = {};
+			for (key in record.second.alignments[i]) {
+				new_alignment[key] = record.second.alignments[i][key]; 
+			}
+			new_alignment.qs = record.second.alignments[i].qe + _settings.second_read_shift;
+			new_alignment.qe = record.second.alignments[i].qs + _settings.second_read_shift;
+			var new_path = [];
+			for (var j = 0; j < new_alignment.path.length; j++) {
+				new_path.push({"R":new_alignment.path[j].R, "Q":new_alignment.path[new_alignment.path.length-1-j].Q + _settings.second_read_shift});
+			}
+			new_alignment.path = new_path;
+			new_alignments.push(new_alignment);
+		}
+	}
+	for (var i in new_alignments) {
+		new_alignments[i].read_length = total_read_length;
+	}
+
+	return {"raw_type":"paired-end", "readname":readname, "raw":record, "alignments": new_alignments};
+}
+
 function consolidate_records(records) {
 	// Removing duplicates and pairing up records from paired-end reads
 
-	var paired_end_mode = false;
+	var paired_end_mode = true;
 	if (paired_end_mode) {
-		for (var i in records) {
-			console.log(records[i]);
 
+		var paired_end_reads = {};
+		for (var i in records) {
+			if (paired_end_reads[records[i].readname] == undefined) {
+				paired_end_reads[records[i].readname] = {};
+			}
+			if ((records[i].flag & 64) == 64) {
+				paired_end_reads[records[i].readname].first = records[i];
+			} else if ((records[i].flag & 128) == 128) {
+				paired_end_reads[records[i].readname].second = records[i];
+			} else {
+				console.log("Not first or second in pair");
+			}
 		}
+
+		var glued_together = [];
+		for (var readname in paired_end_reads) {
+			var new_record = parse_paired_end(paired_end_reads[readname]);
+			glued_together.push(new_record)
+		}
+		return glued_together;
 
 	} else {
 		var filtered_records = [];
@@ -2420,6 +2480,8 @@ function reparse_read(record_from_chunk) {
 		return parse_bam_record(record_from_chunk.raw);
 	} else if (record_from_chunk.raw_type == "coords") {
 		return record_from_chunk; // no indels
+	} else if (record_from_chunk.raw_type == "paired-end") {
+		return parse_paired_end(record_from_chunk.raw);
 	} else {
 		console.log("Don't recognize record_from_chunk.raw_type, must be sam or bam");
 	}
@@ -4293,7 +4355,7 @@ function parse_bam_record(record) {
 		 }
 	}
 
-	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName};
+	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName, "flag":record.flag};
 
 }
 
