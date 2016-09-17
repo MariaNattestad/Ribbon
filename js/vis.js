@@ -1328,6 +1328,31 @@ function chunk_changed() {
 
 }
 
+function consolidate_records(records) {
+	// Removing duplicates and pairing up records from paired-end reads
+
+	var paired_end_mode = false;
+	if (paired_end_mode) {
+		for (var i in records) {
+			console.log(records[i]);
+
+		}
+
+	} else {
+		var filtered_records = [];
+		var unique_readnames = {};
+		for (var i in records) {
+			if (unique_readnames[records[i].readname] == undefined) {
+				filtered_records.push(records[i]);
+				unique_readnames[records[i].readname] = true;
+			}	
+		}
+		
+		return filtered_records;
+	}
+	
+}
+
 function sam_input_changed(sam_input_value) {
 		_settings.current_input_type = "sam";
 		// Check match refs from region view checkbox by default
@@ -1344,9 +1369,7 @@ function sam_input_changed(sam_input_value) {
 		var input_text = sam_input_value.split("\n");
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
-		var unique_readnames = {};
-		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-
+		var records = [];
 		for (var i = 0; i < input_text.length; i++) {
 			var columns = input_text[i].split(/\s+/);
 			if (columns[0][0] == "@") {
@@ -1357,10 +1380,7 @@ function sam_input_changed(sam_input_value) {
 				if (columns.length >= 6) {
 					var parsed_line = parse_sam_coordinates(input_text[i]);
 					if (parsed_line != undefined) {
-						if (unique_readnames[parsed_line.readname] == undefined || _settings.keep_duplicate_reads) {
-							_Chunk_alignments.push(parsed_line);
-							unique_readnames[parsed_line.readname] = true;
-						}
+						records.push(parsed_line);
 					}
 				} else {
 					user_message("Error","Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments.");
@@ -1368,6 +1388,8 @@ function sam_input_changed(sam_input_value) {
 				}
 			}
 		}
+
+		_Chunk_alignments = consolidate_records(records);
 
 		_focal_region = undefined;
 		
@@ -4204,31 +4226,9 @@ function check_if_all_bam_records_loaded() {
 		// All bam records loaded, now consolidate to prevent duplicate reads:
 		console.log("Bam record finished loading");
 		show_bam_is_ready();
-		var consolidated_records = [];
-		if (_settings.keep_duplicate_reads == false) {
-			var used_readnames = {};
-			for (var i in _Bam_records_from_multiregions) {
-				if (used_readnames[_Bam_records_from_multiregions[i].readName] == undefined) {
-					consolidated_records.push(_Bam_records_from_multiregions[i]);
-					used_readnames[_Bam_records_from_multiregions[i].readName] = true;
-				}
-			}
-		} else {
-			consolidated_records = _Bam_records_from_multiregions;
-		}
-		_Bam_records_from_multiregions = []; // reset to empty
-
-		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-		_Chunk_alignments = [];
-		for (var i in consolidated_records) {
-			var parsed = parse_bam_record(consolidated_records[i]);
-			if (parsed != undefined) {
-				_Chunk_alignments.push(parsed);	
-			}
-		}
-		chunk_changed();
-		tell_user_how_many_records_loaded();
-
+		
+		use_fetched_data(_Bam_records_from_multiregions);
+		_Bam_records_from_multiregions = [];
 	}
 }
 
@@ -4262,10 +4262,6 @@ function parse_bam_record(record) {
 	var mq = record.mq;
 	var raw_cigar = record.cigar;
 	
-	var strand = "+";
-	if ((flag & 16) == 16) {
-		strand = "-";
-	}
 	if (raw_cigar == "*" || raw_cigar=="") {
 		return undefined;
 	}
@@ -4273,6 +4269,11 @@ function parse_bam_record(record) {
 	if (mq == undefined) {
 		console.log("record missing mq");
 		console.log(record);
+	}
+
+	var strand = "+";
+	if ((flag & 16) == 16) {
+		strand = "-";
 	}
 	
 	var alignments = [];
@@ -4329,27 +4330,18 @@ function use_fetched_data(records) {
 	console.log("Bam record finished loading");
 
 	show_bam_is_ready();
-	var consolidated_records = [];
-	if (_settings.keep_duplicate_reads == false) {
-		var used_readnames = {};
-		for (var i in records) {
-			if (used_readnames[records[i].readName] == undefined) {
-				consolidated_records.push(records[i]);
-				used_readnames[records[i].readName] = true;
-			}
+
+	var parsed_bam_records = [];
+	for (var i in records) {
+		var parsed = parse_bam_record(records[i]);
+		if (parsed != undefined) {
+			parsed_bam_records.push(parsed);	
 		}
-	} else {
-		consolidated_records = records;
 	}
 
-	// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-	_Chunk_alignments = [];
-	for (var i in consolidated_records) {
-		var parsed = parse_bam_record(consolidated_records[i]);
-		if (parsed != undefined) {
-			_Chunk_alignments.push(parsed);	
-		}
-	}
+	_Chunk_alignments = consolidate_records(parsed_bam_records);
+	parsed_bam_records = []; // reset to save memory
+
 	chunk_changed();
 	tell_user_how_many_records_loaded();
 	
