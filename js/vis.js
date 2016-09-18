@@ -1331,7 +1331,7 @@ function chunk_changed() {
 
 function parse_paired_end(record) {
 	// ??????????????????????????????
-	
+
 	var total_read_length = 300; 
 	var readname = "";
 	var new_alignments = [];
@@ -1374,9 +1374,19 @@ function parse_paired_end(record) {
 function consolidate_records(records) {
 	// Removing duplicates and pairing up records from paired-end reads
 
-	var paired_end_mode = true;
-	if (paired_end_mode) {
+	var paired_end_mode = false;
+	for (var i = 0; i < records.length; i++) {
+		if ((records[i].flag & 1) == 1) {
+			// read is paired
+			paired_end_mode = true;
+		}
+		if (i > 100) {
+			break;
+		}
+	}
 
+	if (paired_end_mode) {
+		console.log("Found flag indicating paired end reads");
 		var paired_end_reads = {};
 		for (var i in records) {
 			if (paired_end_reads[records[i].readname] == undefined) {
@@ -1399,6 +1409,7 @@ function consolidate_records(records) {
 		return glued_together;
 
 	} else {
+		console.log("No paired read flag, assuming single-end reads");
 		var filtered_records = [];
 		var unique_readnames = {};
 		for (var i in records) {
