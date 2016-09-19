@@ -93,7 +93,11 @@ _settings.fetch_margin = 100;
 _settings.show_features_as = "arrows";
 _settings.feature_types_to_show = {"protein_coding":true};
 _settings.single_chrom_highlighted = false;
-_settings.second_read_shift = 200;
+
+// For paired end reads:
+_settings.paired_end_mode = false;
+_settings.flip_second_read_in_pair = true; // allow user to change this
+_settings.read_pair_spacing = 100; // allow user to change this
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1002,6 +1006,15 @@ function draw_chunk_alignments() {
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
 		.on("click",function(d) { new_read_selected(d.index);});
 
+	if (_settings.paired_end_mode) {
+		alignment_groups.append("line").filter(function(d) {return d.pair_link.to[d.flip] != undefined && d.pair_link.from[d.flip] != undefined})
+			.attr("class","pair_link")
+			.attr("x1",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.pair_link.chrom[d.flip], d.pair_link.from[d.flip]))})
+			.attr("x2",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.pair_link.chrom[d.flip], d.pair_link.to[d.flip]))})
+			.style("stroke","black");
+	}
+	
+
 	////////////  Draw alignments  //////////////
 	if (_settings.show_indels_as == "none") {
 		// Draw simple lines
@@ -1332,66 +1345,124 @@ function chunk_changed() {
 function parse_paired_end(record) {
 	// ??????????????????????????????
 
-	var total_read_length = 300; 
+	var first_read_length = _settings.default_read_length;
+	var second_read_length = _settings.default_read_length;
 	var readname = "";
 	var new_alignments = [];
+	var pair_link_positions = {"from":{"true": undefined, "false": undefined}, "to":{"true": undefined, "false": undefined}, "chrom":{"true": undefined, "false": undefined}};
 	if (record.first != undefined) {
-		// total_read_length += record.first.alignments[0].read_length;
+		first_read_length = record.first.alignments[0].read_length;
 		readname = record.first.readname;
+
 		for (var i in record.first.alignments) {
 			var alignment = {};
 			for (var j in record.first.alignments[i]) {
 				alignment[j] = record.first.alignments[i][j];
 			}
+			if (pair_link_positions.from["false"] == undefined || record.first.alignments[i].re > pair_link_positions.from["false"]) {
+				pair_link_positions.from["false"] = record.first.alignments[i].re;
+				pair_link_positions.chrom["false"] = record.first.alignments[i].r;
+			}
+			if (record.first.alignments[i].rs > pair_link_positions.from["false"]) {
+				pair_link_positions.from["false"] = record.first.alignments[i].rs;
+				pair_link_positions.chrom["false"] = record.first.alignments[i].r;
+			}
+			if (pair_link_positions.to["true"] == undefined || record.first.alignments[i].re < pair_link_positions.to["true"]) {
+				pair_link_positions.to["true"] = record.first.alignments[i].re;
+				pair_link_positions.chrom["true"] = record.first.alignments[i].r;
+			}
+			if (record.first.alignments[i].rs < pair_link_positions.to["true"]) {
+				pair_link_positions.to["true"] = record.first.alignments[i].rs;
+				pair_link_positions.chrom["true"] = record.first.alignments[i].r;
+			}
 			new_alignments.push(alignment);
 		}
 	}
+	var second_read_shift = first_read_length + _settings.read_pair_spacing;
+	var total_read_length = first_read_length + _settings.read_pair_spacing + second_read_length;
 	if (record.second != undefined) {
 		readname = record.second.readname;
-		// total_read_length += record.second.alignments[0].read_length;
+		second_read_length = record.second.alignments[0].read_length;
+		total_read_length = first_read_length + _settings.read_pair_spacing + second_read_length;
+
 		for (var i in record.second.alignments) {
 			var new_alignment = {};
 			for (key in record.second.alignments[i]) {
-				new_alignment[key] = record.second.alignments[i][key]; 
+				new_alignment[key] = record.second.alignments[i][key];
 			}
-			new_alignment.qs = record.second.alignments[i].qe + _settings.second_read_shift;
-			new_alignment.qe = record.second.alignments[i].qs + _settings.second_read_shift;
+			if (_settings.flip_second_read_in_pair) {
+				new_alignment.qs = record.second.alignments[i].qe + second_read_shift;
+				new_alignment.qe = record.second.alignments[i].qs + second_read_shift;
+			} else {
+				new_alignment.qs = record.second.alignments[i].qs + second_read_shift;
+				new_alignment.qe = record.second.alignments[i].qe + second_read_shift;
+			}
 			var new_path = [];
 			for (var j = 0; j < new_alignment.path.length; j++) {
-				new_path.push({"R":new_alignment.path[j].R, "Q":new_alignment.path[new_alignment.path.length-1-j].Q + _settings.second_read_shift});
+				if (_settings.flip_second_read_in_pair) {
+					new_path.push({"R":new_alignment.path[j].R, "Q":total_read_length - new_alignment.path[j].Q});
+				} else {
+					new_path.push({"R":new_alignment.path[j].R, "Q":new_alignment.path[j].Q + second_read_shift});
+				}
 			}
 			new_alignment.path = new_path;
 			new_alignments.push(new_alignment);
+
+			if (pair_link_positions.chrom["false"] == new_alignment.r) {
+				if (pair_link_positions.to["false"] == undefined || new_alignment.rs < pair_link_positions.to["false"]) {
+					pair_link_positions.to["false"] = new_alignment.rs;
+				}
+				if (new_alignment.re < pair_link_positions.to["false"]) {
+					pair_link_positions.to["false"] = new_alignment.re;					
+				}
+			}
+			if (pair_link_positions.chrom["true"] == new_alignment.r) {
+				if (pair_link_positions.from["true"] == undefined || new_alignment.rs > pair_link_positions.from["true"]) {
+					pair_link_positions.from["true"] = new_alignment.rs;
+				}
+				if (new_alignment.re > pair_link_positions.to["true"]) {
+					pair_link_positions.from["true"] = new_alignment.re;					
+				}
+			}
 		}
 	}
+	
 	for (var i in new_alignments) {
 		new_alignments[i].read_length = total_read_length;
 	}
-
-	return {"raw_type":"paired-end", "readname":readname, "raw":record, "alignments": new_alignments};
+	
+	pair_link_positions.diff = parseInt(Math.abs(pair_link_positions.to["false"] - pair_link_positions.from["false"]));	
+	return {"raw_type":"paired-end", "readname":readname, "raw":record, "alignments": new_alignments, "read_lengths": [first_read_length, _settings.read_pair_spacing, second_read_length], "pair_link": pair_link_positions};
 }
 
 function consolidate_records(records) {
 	// Removing duplicates and pairing up records from paired-end reads
 
-	var paired_end_mode = false;
+	_settings.paired_end_mode = false;
 	for (var i = 0; i < records.length; i++) {
 		if ((records[i].flag & 1) == 1) {
 			// read is paired
-			paired_end_mode = true;
+			_settings.paired_end_mode = true;
 		}
 		if (i > 100) {
 			break;
 		}
 	}
 
-	if (paired_end_mode) {
+	if (_settings.paired_end_mode) {
 		console.log("Found flag indicating paired end reads");
 		var paired_end_reads = {};
+		var read_length_counts = {};
 		for (var i in records) {
 			if (paired_end_reads[records[i].readname] == undefined) {
 				paired_end_reads[records[i].readname] = {};
 			}
+			var read_length = records[i].alignments[0].read_length;
+			if (read_length_counts[read_length] == undefined) {
+				read_length_counts[read_length] = 0;
+			}
+			read_length_counts[read_length]++;
+
 			if ((records[i].flag & 64) == 64) {
 				paired_end_reads[records[i].readname].first = records[i];
 			} else if ((records[i].flag & 128) == 128) {
@@ -1400,6 +1471,16 @@ function consolidate_records(records) {
 				console.log("Not first or second in pair");
 			}
 		}
+
+		// console.log("Read length counts:", read_length_counts);
+		var most_common_length = null;
+		for (var length in read_length_counts) {
+			if (most_common_length == null || read_length_counts[length] > read_length_counts[most_common_length]) {
+				most_common_length = length;
+			}
+		}
+		// console.log("most_common_length:", most_common_length);
+		_settings.default_read_length = parseInt(most_common_length);
 
 		var glued_together = [];
 		for (var readname in paired_end_reads) {
@@ -3517,19 +3598,6 @@ function draw_ribbons() {
 
 	// Calculate layouts within the svg
 	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
-	
-	// Draw read
-	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
-		.on('mouseover', function() {
-			var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
-			var x = _positions.read.x+_positions.read.width/2;
-			var y = _positions.read.y+_positions.read.height*3.5;
-			show_tooltip(text,x,y,_svg);
-		})
-		.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
-	
-	
 
 	// Alignments
 	var flip = false;
@@ -3551,6 +3619,45 @@ function draw_ribbons() {
 	} else {
 		_scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]);
 	}
+
+	// Draw read
+	if (_settings.paired_end_mode) {
+		var read_bar = _svg.append("g").attr("class","read");
+		read_bar.on('mouseover', function() {
+				var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
+				var x = _positions.read.x+_positions.read.width/2;
+				var y = _positions.read.y+_positions.read.height*3.5;
+				show_tooltip(text,x,y,_svg);
+			}).on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+		var first_read_start = _scales.read_scale(0);
+		var first_read_end = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]);
+		var second_read_start = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]+_Chunk_alignments[_current_read_index].read_lengths[1]);
+		var second_read_end = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]+_Chunk_alignments[_current_read_index].read_lengths[1]+_Chunk_alignments[_current_read_index].read_lengths[2]);
+		if (first_read_start > first_read_end) {
+			var tmp = first_read_start;
+			first_read_start = first_read_end;
+			first_read_end = tmp;
+			tmp = second_read_start;
+			second_read_start = second_read_end;
+			second_read_end = tmp;
+		}
+
+		read_bar.append("rect").attr("x",first_read_start).attr("y",_positions.read.y).attr("width",first_read_end - first_read_start).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black");
+		read_bar.append("rect").attr("x",second_read_start).attr("y",_positions.read.y).attr("width",second_read_end - second_read_start).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black");
+	} else {
+		_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
+			.on('mouseover', function() {
+				var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
+				var x = _positions.read.x+_positions.read.width/2;
+				var y = _positions.read.y+_positions.read.height*3.5;
+				show_tooltip(text,x,y,_svg);
+			})
+			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+	}
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
+	
+	
+	// Draw alignments
 	_svg.selectAll("path.alignment").data(_Alignments).enter()
 		.append("path")
 			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
