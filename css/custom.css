@@ -6,13 +6,14 @@ body {
 }
 
 .navbar {
-	font-size: 1vmax;
+	font-size: 2vh;
 }
 .panel-group {
 	margin-bottom: 1vmin;
 }
 .navbar-brand { 
-	font-size: 1.2vmax;
+	font-size: 3vh;
+	color: #000000;
 }
 .slider {
 	margin: 1vmin;
@@ -29,6 +30,15 @@ body {
 
 #left_panel {
 	float:left;
+}
+
+#info_panel, #start_panel {
+	margin-left: 3vmin;
+	margin-right: 3vmin;
+}
+#info_panel .panel-body, #start_panel .panel-body  {
+	padding-left: 2vmin;
+	padding-right: 2vmin;
 }
 
 hr {
@@ -111,7 +121,7 @@ input[type="file"] {
 	border: 1px solid #cccccc;
 }
 
-.ref_block, #svg2_panel .alignment_groups, #click_info_link {
+.ref_block, #svg2_panel .alignment_groups, #click_info_link, #click_getting_started_link {
 	cursor: pointer;
 }
 
@@ -131,7 +141,6 @@ text {
 }
 #info_panel {
 	display: none;
-	margin: 3vmin;
 }
 #settings {
 	display: none;

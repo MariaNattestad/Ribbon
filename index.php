@@ -60,9 +60,8 @@
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav" id="navbar">
+                  <li><a id="click_getting_started_link">Getting started</a></li>
                   <li><a id="click_info_link">Info</a></li>
-
-
                   <?php
                       $my_datasets = array();
 
@@ -101,8 +100,6 @@
                         echo '</ul>';
                       } 
                   ?>
-
-
                   
                   <li class="dropdown" id="examples_navbar_item">
 
@@ -111,20 +108,41 @@
                     <!-- Examples added here from Ajax call within vis.js -->
                     </ul>
                   </li>
-
           </ul>
         </div><!--/.nav-collapse -->
       </div>
 </div>
-
-<!--            End of Navigation Bar                 -->
-
+<!--            End of Navigation Bar        -->
 
 <div id="left_panel">
+	<div id="start_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
+			<div class="panel-body">
+				<p>
+					<p><strong>Examples:</strong></p>
+					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+				</p>
+				<p>
+					<p><strong>Tutorial:</strong></p>
+					<p><a href="https://www.youtube.com/watch?v=Ih4Wf2U10-4" target="_blank">Latest Ribbon talk on YouTube</a></p>
+				</p>
+				<p>
+					<p><strong>Visualize your own alignment data:</strong></p>
+					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
+				</p>
+				<p>
+					<p><strong>Local installation:</strong></p>
+					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+				</p>
+			</div>
+		</div>
+	</div>
+
 	<div id="info_panel">
 		<!-- GITHUB LINK -->
 			<div class="panel panel-default">
-			  <div class="panel-heading"><h3 class="panel-title">Code</h3></div>
+			  <div class="panel-heading"><h3 class="panel-title">Information about Ribbon</h3></div>
 			  <div class="panel-body">
 			  	  <p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
 			      <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
@@ -146,7 +164,7 @@
 			<!-- PAPER LINK -->
 
 			<!-- <div class="panel panel-default">
-			    <div class="panel-heading"><h3 class="panel-title">How to cite SplitThreader</h3></div>
+			    <div class="panel-heading"><h3 class="panel-title">How to cite Ribbon</h3></div>
 			    <div class="panel-body">
 			        <p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
 			        Citation information goes here
@@ -624,7 +642,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
 				<div class="panel-body">
 					<div id="bedpe_table_box">
-						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<p> Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="bedpe_table_landing">
 							<!-- superTable creates a table here out of _Bedpe -->
 						</div>

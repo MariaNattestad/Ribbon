@@ -100,6 +100,11 @@ _settings.show_features_as = "arrows";
 _settings.feature_types_to_show = {"protein_coding":true};
 _settings.single_chrom_highlighted = false;
 
+// For paired end reads:
+_settings.paired_end_mode = false;
+_settings.flip_second_read_in_pair = true; // allow user to change this
+_settings.read_pair_spacing = 100; // allow user to change this
+
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
 _ui_properties.region_mq_slider_min = 0;
@@ -212,6 +217,11 @@ function responsive_sizing() {
 		.style("width",_layout.panel_width + "px")
 		.style("height",_layout.total_height + "px")
 		.style("visibility","visible");
+
+	d3.select("#info_panel")
+		.style("width",_layout.svg2_width + "px");
+	d3.select("#start_panel")
+		.style("width",_layout.svg2_width + "px");
 
 	if (_Chunk_alignments.length > 0 || _Whole_refs.length > 0) {
 		draw_region_view();
@@ -1007,6 +1017,15 @@ function draw_chunk_alignments() {
 		.append("g").attr("class","alignment_groups").attr("transform",function(d) {return "translate(" + 0 + "," + d.read_y + ")"})
 		.on("click",function(d) { new_read_selected(d.index);});
 
+	if (_settings.paired_end_mode) {
+		alignment_groups.append("line").filter(function(d) {return d.pair_link.to[d.flip] != undefined && d.pair_link.from[d.flip] != undefined})
+			.attr("class","pair_link")
+			.attr("x1",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.pair_link.chrom[d.flip], d.pair_link.from[d.flip]))})
+			.attr("x2",function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(d.pair_link.chrom[d.flip], d.pair_link.to[d.flip]))})
+			.style("stroke","black");
+	}
+	
+
 	////////////  Draw alignments  //////////////
 	if (_settings.show_indels_as == "none") {
 		// Draw simple lines
@@ -1327,11 +1346,175 @@ function chunk_changed() {
 		_Alignments = [];
 		_Chunk_ref_intervals = [];
 		draw_region_view();
-		user_message("","");
+		// user_message("","");
 	}
 	
 	refresh_visibility();
 
+}
+
+function parse_paired_end(record) {
+	// ??????????????????????????????
+
+	var first_read_length = _settings.default_read_length;
+	var second_read_length = _settings.default_read_length;
+	var readname = "";
+	var new_alignments = [];
+	var pair_link_positions = {"from":{"true": undefined, "false": undefined}, "to":{"true": undefined, "false": undefined}, "chrom":{"true": undefined, "false": undefined}};
+	if (record.first != undefined) {
+		first_read_length = record.first.alignments[0].read_length;
+		readname = record.first.readname;
+
+		for (var i in record.first.alignments) {
+			var alignment = {};
+			for (var j in record.first.alignments[i]) {
+				alignment[j] = record.first.alignments[i][j];
+			}
+			if (pair_link_positions.from["false"] == undefined || record.first.alignments[i].re > pair_link_positions.from["false"]) {
+				pair_link_positions.from["false"] = record.first.alignments[i].re;
+				pair_link_positions.chrom["false"] = record.first.alignments[i].r;
+			}
+			if (record.first.alignments[i].rs > pair_link_positions.from["false"]) {
+				pair_link_positions.from["false"] = record.first.alignments[i].rs;
+				pair_link_positions.chrom["false"] = record.first.alignments[i].r;
+			}
+			if (pair_link_positions.to["true"] == undefined || record.first.alignments[i].re < pair_link_positions.to["true"]) {
+				pair_link_positions.to["true"] = record.first.alignments[i].re;
+				pair_link_positions.chrom["true"] = record.first.alignments[i].r;
+			}
+			if (record.first.alignments[i].rs < pair_link_positions.to["true"]) {
+				pair_link_positions.to["true"] = record.first.alignments[i].rs;
+				pair_link_positions.chrom["true"] = record.first.alignments[i].r;
+			}
+			new_alignments.push(alignment);
+		}
+	}
+	var second_read_shift = first_read_length + _settings.read_pair_spacing;
+	var total_read_length = first_read_length + _settings.read_pair_spacing + second_read_length;
+	if (record.second != undefined) {
+		readname = record.second.readname;
+		second_read_length = record.second.alignments[0].read_length;
+		total_read_length = first_read_length + _settings.read_pair_spacing + second_read_length;
+
+		for (var i in record.second.alignments) {
+			var new_alignment = {};
+			for (key in record.second.alignments[i]) {
+				new_alignment[key] = record.second.alignments[i][key];
+			}
+			if (_settings.flip_second_read_in_pair) {
+				new_alignment.qs = record.second.alignments[i].qe + second_read_shift;
+				new_alignment.qe = record.second.alignments[i].qs + second_read_shift;
+			} else {
+				new_alignment.qs = record.second.alignments[i].qs + second_read_shift;
+				new_alignment.qe = record.second.alignments[i].qe + second_read_shift;
+			}
+			var new_path = [];
+			for (var j = 0; j < new_alignment.path.length; j++) {
+				if (_settings.flip_second_read_in_pair) {
+					new_path.push({"R":new_alignment.path[j].R, "Q":total_read_length - new_alignment.path[j].Q});
+				} else {
+					new_path.push({"R":new_alignment.path[j].R, "Q":new_alignment.path[j].Q + second_read_shift});
+				}
+			}
+			new_alignment.path = new_path;
+			new_alignments.push(new_alignment);
+
+			if (pair_link_positions.chrom["false"] == new_alignment.r) {
+				if (pair_link_positions.to["false"] == undefined || new_alignment.rs < pair_link_positions.to["false"]) {
+					pair_link_positions.to["false"] = new_alignment.rs;
+				}
+				if (new_alignment.re < pair_link_positions.to["false"]) {
+					pair_link_positions.to["false"] = new_alignment.re;					
+				}
+			}
+			if (pair_link_positions.chrom["true"] == new_alignment.r) {
+				if (pair_link_positions.from["true"] == undefined || new_alignment.rs > pair_link_positions.from["true"]) {
+					pair_link_positions.from["true"] = new_alignment.rs;
+				}
+				if (new_alignment.re > pair_link_positions.to["true"]) {
+					pair_link_positions.from["true"] = new_alignment.re;					
+				}
+			}
+		}
+	}
+	
+	for (var i in new_alignments) {
+		new_alignments[i].read_length = total_read_length;
+	}
+	
+	pair_link_positions.diff = parseInt(Math.abs(pair_link_positions.to["false"] - pair_link_positions.from["false"]));	
+	return {"raw_type":"paired-end", "readname":readname, "raw":record, "alignments": new_alignments, "read_lengths": [first_read_length, _settings.read_pair_spacing, second_read_length], "pair_link": pair_link_positions};
+}
+
+function consolidate_records(records) {
+	// Removing duplicates and pairing up records from paired-end reads
+
+	_settings.paired_end_mode = false;
+	for (var i = 0; i < records.length; i++) {
+		if ((records[i].flag & 1) == 1) {
+			// read is paired
+			_settings.paired_end_mode = true;
+		}
+		if (i > 100) {
+			break;
+		}
+	}
+
+	if (_settings.paired_end_mode) {
+		console.log("Found flag indicating paired end reads");
+		user_message("Info","Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
+		var paired_end_reads = {};
+		var read_length_counts = {};
+		for (var i in records) {
+			if (paired_end_reads[records[i].readname] == undefined) {
+				paired_end_reads[records[i].readname] = {};
+			}
+			var read_length = records[i].alignments[0].read_length;
+			if (read_length_counts[read_length] == undefined) {
+				read_length_counts[read_length] = 0;
+			}
+			read_length_counts[read_length]++;
+
+			if ((records[i].flag & 64) == 64) {
+				paired_end_reads[records[i].readname].first = records[i];
+			} else if ((records[i].flag & 128) == 128) {
+				paired_end_reads[records[i].readname].second = records[i];
+			} else {
+				console.log("Not first or second in pair");
+			}
+		}
+
+		// console.log("Read length counts:", read_length_counts);
+		var most_common_length = null;
+		for (var length in read_length_counts) {
+			if (most_common_length == null || read_length_counts[length] > read_length_counts[most_common_length]) {
+				most_common_length = length;
+			}
+		}
+		// console.log("most_common_length:", most_common_length);
+		_settings.default_read_length = parseInt(most_common_length);
+
+		var glued_together = [];
+		for (var readname in paired_end_reads) {
+			var new_record = parse_paired_end(paired_end_reads[readname]);
+			glued_together.push(new_record)
+		}
+		return glued_together;
+
+	} else {
+		console.log("No paired read flag, assuming single-end reads");
+		var filtered_records = [];
+		var unique_readnames = {};
+		for (var i in records) {
+			if (unique_readnames[records[i].readname] == undefined) {
+				filtered_records.push(records[i]);
+				unique_readnames[records[i].readname] = true;
+			}	
+		}
+		
+		return filtered_records;
+	}
+	
 }
 
 function sam_input_changed(sam_input_value) {
@@ -1350,9 +1533,7 @@ function sam_input_changed(sam_input_value) {
 		var input_text = sam_input_value.split("\n");
 		_Ref_sizes_from_header = {};
 		_Chunk_alignments = [];
-		var unique_readnames = {};
-		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-
+		var records = [];
 		for (var i = 0; i < input_text.length; i++) {
 			var columns = input_text[i].split(/\s+/);
 			if (columns[0][0] == "@") {
@@ -1363,10 +1544,7 @@ function sam_input_changed(sam_input_value) {
 				if (columns.length >= 6) {
 					var parsed_line = parse_sam_coordinates(input_text[i]);
 					if (parsed_line != undefined) {
-						if (unique_readnames[parsed_line.readname] == undefined || _settings.keep_duplicate_reads) {
-							_Chunk_alignments.push(parsed_line);
-							unique_readnames[parsed_line.readname] = true;
-						}
+						records.push(parsed_line);
 					}
 				} else {
 					user_message("Error","Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments.");
@@ -1374,6 +1552,8 @@ function sam_input_changed(sam_input_value) {
 				}
 			}
 		}
+
+		_Chunk_alignments = consolidate_records(records);
 
 		_focal_region = undefined;
 		
@@ -1486,7 +1666,6 @@ function coords_input_changed(coords_input_value) {
 
 	_Chunk_alignments = [];
 	for (var readname in alignments_by_query) {
-		// {"alignments": alignments, "raw":line, "raw_type":"sam", "readname":fields[0]};
 		_Chunk_alignments.push({
 			"alignments": alignments_by_query[readname],
 			"raw_type":"coords",
@@ -2170,6 +2349,7 @@ function parse_SA_field(sa) {
 }
 
 function user_message(message_type,message) {
+	console.log("USER MESSAGE:", message);
 	if (message_type == "") {
 		d3.select("#user_message").html("").style("display","none");
 	} else {
@@ -2355,40 +2535,23 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 }
 
 function parse_sam_coordinates(line) {
+
 	var fields = line.split(/\s+/);
+	var record = {};
+	record.segment = fields[2];
+	record.pos = parseInt(fields[3]);
+	record.flag = parseInt(fields[1]);
+	record.mq = parseInt(fields[4]);
+	record.cigar = fields[5];
+	record.readName = fields[0];
 
-	var chrom = fields[2];
-	var rstart = parseInt(fields[3]);
-	var flag = parseInt(fields[1]);
-	var mq = parseInt(fields[4]);
-	var raw_cigar = fields[5];
-	if (raw_cigar == "*") {
-		return undefined;
-	}
-	
-	var strand = "+";
-	if ((flag & 16) == 16) {
-		strand = "-";
-	}
-
-	var alignments = [];
 	for (var i = 0; i < fields.length; i++) {
 		if (fields[i].substr(0,2) == "SA") {
-			alignments = parse_SA_field(fields[i].split(":")[2]);
+			record.SA = fields[i].split(":")[2];
+			break;
 		}
 	}
-
-	alignments.push(read_cigar(raw_cigar,chrom,rstart,strand,mq));
-
-	var read_length = alignments[alignments.length-1].read_length;
-
-	for (var i = 0; i < alignments.length; i++) {
-		 if (alignments[i].read_length != read_length) {
-				user_message("Warning", "read length of primary and supplementary alignments do not match for this read (calculated using cigar strings)");
-		 }
-	}
-
-	return {"alignments": alignments, "raw":line, "raw_type":"sam", "readname":fields[0]};
+	return parse_bam_record(record);
 }
 
 function planesweep_consolidate_intervals(starts_and_stops) {
@@ -2435,6 +2598,8 @@ function reparse_read(record_from_chunk) {
 		return parse_bam_record(record_from_chunk.raw);
 	} else if (record_from_chunk.raw_type == "coords") {
 		return record_from_chunk; // no indels
+	} else if (record_from_chunk.raw_type == "paired-end") {
+		return parse_paired_end(record_from_chunk.raw);
 	} else {
 		console.log("Don't recognize record_from_chunk.raw_type, must be sam or bam");
 	}
@@ -2450,11 +2615,7 @@ function new_read_selected(index) {
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
 
-	user_message("","");
-
 	// Show read info
-	
-
 	d3.select("#text_read_output").html("Read name: " + _Chunk_alignments[_current_read_index].readname + "<br>Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length);
 	
 
@@ -2934,9 +3095,12 @@ function refresh_visibility() {
 
 	if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
 		d3.select("#svg2_panel").style('visibility','visible');
+		d3.select("#start_panel").style('display','none');
+		
 		// d3.select("#image_capture_test_landing").style("display","none");
 	} else {
 		d3.select("#svg2_panel").style('visibility','hidden');
+		d3.select("#start_panel").style('display','block');
 		// d3.select("#image_capture_test_landing").style("display","block");
 	}
 
@@ -3459,19 +3623,6 @@ function draw_ribbons() {
 
 	// Calculate layouts within the svg
 	_positions.read = {"y":_layout.svg_height*0.85, "x":_positions.multiread.ref_intervals.x, "width":_positions.multiread.ref_intervals.width, "height":_layout.svg_height*0.03};
-	
-	// Draw read
-	_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
-		.on('mouseover', function() {
-			var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
-			var x = _positions.read.x+_positions.read.width/2;
-			var y = _positions.read.y+_positions.read.height*3.5;
-			show_tooltip(text,x,y,_svg);
-		})
-		.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
-	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
-	
-	
 
 	// Alignments
 	var flip = false;
@@ -3493,6 +3644,45 @@ function draw_ribbons() {
 	} else {
 		_scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]);
 	}
+
+	// Draw read
+	if (_settings.paired_end_mode) {
+		var read_bar = _svg.append("g").attr("class","read");
+		read_bar.on('mouseover', function() {
+				var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
+				var x = _positions.read.x+_positions.read.width/2;
+				var y = _positions.read.y+_positions.read.height*3.5;
+				show_tooltip(text,x,y,_svg);
+			}).on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+		var first_read_start = _scales.read_scale(0);
+		var first_read_end = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]);
+		var second_read_start = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]+_Chunk_alignments[_current_read_index].read_lengths[1]);
+		var second_read_end = _scales.read_scale(_Chunk_alignments[_current_read_index].read_lengths[0]+_Chunk_alignments[_current_read_index].read_lengths[1]+_Chunk_alignments[_current_read_index].read_lengths[2]);
+		if (first_read_start > first_read_end) {
+			var tmp = first_read_start;
+			first_read_start = first_read_end;
+			first_read_end = tmp;
+			tmp = second_read_start;
+			second_read_start = second_read_end;
+			second_read_end = tmp;
+		}
+
+		read_bar.append("rect").attr("x",first_read_start).attr("y",_positions.read.y).attr("width",first_read_end - first_read_start).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black");
+		read_bar.append("rect").attr("x",second_read_start).attr("y",_positions.read.y).attr("width",second_read_end - second_read_start).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black");
+	} else {
+		_svg.append("rect").attr("class","read").attr("x",_positions.read.x).attr("y",_positions.read.y).attr("width",_positions.read.width).attr("height",_positions.read.height).style("stroke-width",1).style("stroke", "black").attr("fill","black")
+			.on('mouseover', function() {
+				var text = "read: " + _Alignments[_Alignments.length-1].read_length + " bp";
+				var x = _positions.read.x+_positions.read.width/2;
+				var y = _positions.read.y+_positions.read.height*3.5;
+				show_tooltip(text,x,y,_svg);
+			})
+			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
+	}
+	_svg.append("text").text("Read / Query").attr("x",_positions.read.x+_positions.read.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
+	
+	
+	// Draw alignments
 	_svg.selectAll("path.alignment").data(_Alignments).enter()
 		.append("path")
 			.filter(function(d) {return d.mq >= _settings.min_mapping_quality && d.aligned_length >= _settings.min_align_length})
@@ -3511,14 +3701,12 @@ function draw_ribbons() {
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 
-
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("bottom").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
 		.call(read_axis);
 	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
-
 }
 
 // ===========================================================================
@@ -3532,8 +3720,18 @@ function show_info_panel() {
 		d3.select("#info_panel").style("display","none");
 	}
 }
+function show_getting_started_panel() {
+	if (d3.select("#start_panel").style("display") == "none") {
+		d3.select("#start_panel").style("display","block");
+	} else {
+		d3.select("#start_panel").style("display","none");
+	}
+}
 
 d3.select("#click_info_link").on("click",show_info_panel)
+d3.select("#click_getting_started_link").on("click",show_getting_started_panel);
+
+
 
 function add_examples_to_navbar() {
 	var core_url = window.location.href.split("?")[0];
@@ -4256,31 +4454,9 @@ function check_if_all_bam_records_loaded() {
 		// All bam records loaded, now consolidate to prevent duplicate reads:
 		console.log("Bam record finished loading");
 		show_bam_is_ready();
-		var consolidated_records = [];
-		if (_settings.keep_duplicate_reads == false) {
-			var used_readnames = {};
-			for (var i in _Bam_records_from_multiregions) {
-				if (used_readnames[_Bam_records_from_multiregions[i].readName] == undefined) {
-					consolidated_records.push(_Bam_records_from_multiregions[i]);
-					used_readnames[_Bam_records_from_multiregions[i].readName] = true;
-				}
-			}
-		} else {
-			consolidated_records = _Bam_records_from_multiregions;
-		}
-		_Bam_records_from_multiregions = []; // reset to empty
-
-		// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-		_Chunk_alignments = [];
-		for (var i in consolidated_records) {
-			var parsed = parse_bam_record(consolidated_records[i]);
-			if (parsed != undefined) {
-				_Chunk_alignments.push(parsed);	
-			}
-		}
-		chunk_changed();
-		tell_user_how_many_records_loaded();
-
+		
+		use_fetched_data(_Bam_records_from_multiregions);
+		_Bam_records_from_multiregions = [];
 	}
 }
 
@@ -4314,17 +4490,18 @@ function parse_bam_record(record) {
 	var mq = record.mq;
 	var raw_cigar = record.cigar;
 	
-	var strand = "+";
-	if ((flag & 16) == 16) {
-		strand = "-";
-	}
-	if (raw_cigar == "*") {
+	if (raw_cigar == "*" || raw_cigar=="") {
 		return undefined;
 	}
 
 	if (mq == undefined) {
 		console.log("record missing mq");
 		console.log(record);
+	}
+
+	var strand = "+";
+	if ((flag & 16) == 16) {
+		strand = "-";
 	}
 	
 	var alignments = [];
@@ -4344,8 +4521,7 @@ function parse_bam_record(record) {
 		 }
 	}
 
-
-	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName};
+	return {"alignments": alignments, "raw":record, "raw_type":"bam", "readname":record.readName, "flag":record.flag};
 
 }
 
@@ -4380,31 +4556,22 @@ function parse_bam_text(bam_text) {
 
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
+
 	show_bam_is_ready();
-	var consolidated_records = [];
-	if (_settings.keep_duplicate_reads == false) {
-		var used_readnames = {};
-		for (var i in records) {
-			if (used_readnames[records[i].readName] == undefined) {
-				consolidated_records.push(records[i]);
-				used_readnames[records[i].readName] = true;
-			}
+
+	var parsed_bam_records = [];
+	for (var i in records) {
+		var parsed = parse_bam_record(records[i]);
+		if (parsed != undefined) {
+			parsed_bam_records.push(parsed);	
 		}
-	} else {
-		consolidated_records = records;
 	}
 
-	// _settings.min_indel_size = _static.min_indel_size_for_region_view;
-	_Chunk_alignments = [];
-	for (var i in consolidated_records) {
-		var parsed = parse_bam_record(consolidated_records[i]);
-		if (parsed != undefined) {
-			_Chunk_alignments.push(parsed);	
-		}
-	}
+	_Chunk_alignments = consolidate_records(parsed_bam_records);
+	parsed_bam_records = []; // reset to save memory
+
 	chunk_changed();
 	tell_user_how_many_records_loaded();
-	
 }
 
 function tell_user_how_many_records_loaded() {
@@ -4412,13 +4579,16 @@ function tell_user_how_many_records_loaded() {
 		_svg2.select("#no_alignments_message")
 			.attr("fill","red")
 			.text("No reads in the bam file at this location");
-			
 	} else {
 		_svg2.select("#no_alignments_message")
 			.attr("fill","white")
 			.text("");
 	}
-	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+	if (_settings.paired_end_mode) {
+		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length + ". Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
+	} else {
+		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+	}
 }
 
 function region_submitted(event) {
