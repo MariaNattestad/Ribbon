@@ -28,7 +28,10 @@ body {
 }
 
 #left_panel {
+	width: 60%;
 	float:left;
+	padding-left: 3vmin;
+	padding-right: 3vmin;
 }
 
 hr {
@@ -131,7 +134,6 @@ text {
 }
 #info_panel {
 	display: none;
-	margin: 3vmin;
 }
 #settings {
 	display: none;

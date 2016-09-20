@@ -1335,7 +1335,7 @@ function chunk_changed() {
 		_Alignments = [];
 		_Chunk_ref_intervals = [];
 		draw_region_view();
-		user_message("","");
+		// user_message("","");
 	}
 	
 	refresh_visibility();
@@ -1451,6 +1451,7 @@ function consolidate_records(records) {
 
 	if (_settings.paired_end_mode) {
 		console.log("Found flag indicating paired end reads");
+		user_message("Info","Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
 		var paired_end_reads = {};
 		var read_length_counts = {};
 		for (var i in records) {
@@ -2324,6 +2325,7 @@ function parse_SA_field(sa) {
 }
 
 function user_message(message_type,message) {
+	console.log("USER MESSAGE:", message);
 	if (message_type == "") {
 		d3.select("#user_message").html("").style("display","none");
 	} else {
@@ -2589,11 +2591,7 @@ function new_read_selected(index) {
 function select_read() {
 	var readname = _Chunk_alignments[_current_read_index].readname;
 
-	user_message("","");
-
 	// Show read info
-	
-
 	d3.select("#text_read_output").html("Read name: " + _Chunk_alignments[_current_read_index].readname + "<br>Number of alignments: " + _Chunk_alignments[_current_read_index].alignments.length);
 	
 
@@ -3676,14 +3674,12 @@ function draw_ribbons() {
 				})
 				.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();});
 
-
 	var read_axis = d3.svg.axis().scale(_scales.read_scale).orient("bottom").ticks(5).tickSize(5,0,0).tickFormat(d3.format("s"))
 	var read_axis_label = _svg.append("g")
 		.attr("class","axis")
 		.attr("transform","translate(" + 0 + "," + (_positions.read.y+_positions.read.height) + ")")
 		.call(read_axis);
 	read_axis_label.selectAll("text").style("font-size",_positions.fontsize);
-
 }
 
 // ===========================================================================
@@ -4524,7 +4520,6 @@ function use_fetched_data(records) {
 
 	chunk_changed();
 	tell_user_how_many_records_loaded();
-	
 }
 
 function tell_user_how_many_records_loaded() {
@@ -4532,13 +4527,16 @@ function tell_user_how_many_records_loaded() {
 		_svg2.select("#no_alignments_message")
 			.attr("fill","red")
 			.text("No reads in the bam file at this location");
-			
 	} else {
 		_svg2.select("#no_alignments_message")
 			.attr("fill","white")
 			.text("");
 	}
-	user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+	if (_settings.paired_end_mode) {
+		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length + ". Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
+	} else {
+		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
+	}
 }
 
 function region_submitted(event) {
