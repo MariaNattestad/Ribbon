@@ -57,9 +57,8 @@
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav" id="navbar">
+                  <li><a id="click_getting_started_link">Getting started</a></li>
                   <li><a id="click_info_link">Info</a></li>
-
-
                   <?php
                       $my_datasets = array();
 
