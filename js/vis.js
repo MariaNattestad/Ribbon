@@ -97,7 +97,7 @@ _settings.single_chrom_highlighted = false;
 // For paired end reads:
 _settings.paired_end_mode = false;
 _settings.flip_second_read_in_pair = true; // allow user to change this
-_settings.read_pair_spacing = 100; // allow user to change this
+_settings.read_pair_spacing = 20; // allow user to change this
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
