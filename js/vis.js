@@ -3221,7 +3221,7 @@ function draw_dotplot() {
 				show_tooltip(text,x,y,_svg);
 			})
 			.on('mouseout', function(d) {_svg.selectAll("g.tip").remove();})
-			.style("stroke-opacity",0.1)
+			.style("stroke-opacity",0.5)
 			.attr("fill-opacity",_static.dotplot_ref_opacity)
 
 	// Alignments
