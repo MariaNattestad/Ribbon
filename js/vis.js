@@ -3689,7 +3689,7 @@ function draw_ribbons() {
 				.attr("class","alignment")
 				.attr("d",ribbon_alignment_path_generator)
 				.style("stroke-width",function() { if (_settings.ribbon_outline) {return 1;} else {return 0;} })
-				.style("stroke","black")
+				.style("stroke",function(d) {return _scales.ref_color_scale(d.r);})
 				.style("stroke-opacity",1)
 				.attr("fill",function(d) {return _scales.ref_color_scale(d.r);})
 				.attr("fill-opacity",_static.alignment_alpha)
