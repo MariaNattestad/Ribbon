@@ -1734,7 +1734,15 @@ function variant_row_click(d) {
 	for (var i in _Variants) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
 	}
-	go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);
+	// Treat large variants like two separate breakpoints (same as for a BEDPE file)
+	if (d.end - d.start > 100) {
+		var regions = [];
+		regions.push({"chrom":d.chrom,"pos":d.start});
+		regions.push({"chrom":d.chrom,"pos":d.end});
+		fetch_regions(regions);
+	} else {
+		go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);	
+	}
 }
 
 function check_bam_done_fetching() {
