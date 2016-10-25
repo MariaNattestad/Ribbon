@@ -1823,19 +1823,21 @@ function bed_input_changed(bed_input) {
 	
 	_Variants = [];
 	for (var i in input_text) {
-		var columns = input_text[i].split(/\s+/);
-		if (columns.length>2) {
-			var start = parseInt(columns[1]);
-			var end = parseInt(columns[2]);
-			var score = parseFloat(columns[4]);
-			if (isNaN(score)) {
-				score = 0;
+		if (input_text[i][0] != "#") {
+			var columns = input_text[i].split(/\s+/);
+			if (columns.length>2) {
+				var start = parseInt(columns[1]);
+				var end = parseInt(columns[2]);
+				var score = parseFloat(columns[4]);
+				if (isNaN(score)) {
+					score = 0;
+				}
+				if (isNaN(start) || isNaN(end)) {
+					user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
+					return;
+				}
+				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
 			}
-			if (isNaN(start) || isNaN(end)) {
-				user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
-				return;
-			}
-			_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
 		}
 	}
 
