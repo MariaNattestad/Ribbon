@@ -1735,7 +1735,7 @@ function variant_row_click(d) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
 	}
 	// Treat large variants like two separate breakpoints (same as for a BEDPE file)
-	if (d.end - d.start > 100) {
+	if (Math.abs(d.end - d.start) > 100) {
 		var regions = [];
 		regions.push({"chrom":d.chrom,"pos":d.start});
 		regions.push({"chrom":d.chrom,"pos":d.end});
@@ -4000,6 +4000,8 @@ function open_bedpe_file(event) {
 		}
 		_settings.variant_info_text="Bedpe from file: " + this.files[0].name;
 		set_variant_info_text();
+	} else {
+		user_message("Error","File extension must be .bedpe");
 	}
 }
 function open_variant_file(event) {
