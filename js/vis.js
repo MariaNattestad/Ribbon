@@ -1839,19 +1839,21 @@ function bed_input_changed(bed_input) {
 	
 	_Variants = [];
 	for (var i in input_text) {
-		var columns = input_text[i].split(/\s+/);
-		if (columns.length>2) {
-			var start = parseInt(columns[1]);
-			var end = parseInt(columns[2]);
-			var score = parseFloat(columns[4]);
-			if (isNaN(score)) {
-				score = 0;
+		if (input_text[i][0] != "#") {
+			var columns = input_text[i].split(/\s+/);
+			if (columns.length>2) {
+				var start = parseInt(columns[1]);
+				var end = parseInt(columns[2]);
+				var score = parseFloat(columns[4]);
+				if (isNaN(score)) {
+					score = 0;
+				}
+				if (isNaN(start) || isNaN(end)) {
+					user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
+					return;
+				}
+				_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
 			}
-			if (isNaN(start) || isNaN(end)) {
-				user_message("Error","Bed file must contain numbers in columns 2 and 3. Found: <pre>" + columns[1] + " and " + columns[2] + "</pre>.");
-				return;
-			}
-			_Variants.push({"chrom":columns[0],"start":start, "end":end, "size": end - start, "name":columns[3] || "", "score":score ,"strand":columns[5],"type":columns[6] || ""});
 		}
 	}
 
@@ -1869,33 +1871,35 @@ function bedpe_input_changed(bedpe_input) {
 	
 	_Bedpe = [];
 	for (var i in input_text) {
-		var columns = input_text[i].split(/\s+/);
-		if (columns.length>2) {
-			var chrom1 = columns[0];
-			var start1 = parseInt(columns[1]);
-			var end1 = parseInt(columns[2]);
-			var chrom2 = columns[3];
-			var start2 = parseInt(columns[4]);
-			var end2 = parseInt(columns[5]);
-			var name = columns[6];
-			var score = parseFloat(columns[7]);
-			var strand1 = columns[8];
-			var strand2 = columns[9];
-			var type = columns[10];
-			// if (isNaN(score)) {
-			// 	score = 0;
-			// }
-			if (isNaN(start1) || isNaN(end1)) {
-				user_message("Error","Bedpe file must contain numbers in columns 2,3,5, and 6. Found: <pre>" + columns[1] + ", " + columns[2] + ", " +  columns[4] + ", and " + columns[5] + "</pre>.");
-				return;
+		if (input_text[i][0] != "#") {
+			var columns = input_text[i].split(/\s+/);
+			if (columns.length>2) {
+				var chrom1 = columns[0];
+				var start1 = parseInt(columns[1]);
+				var end1 = parseInt(columns[2]);
+				var chrom2 = columns[3];
+				var start2 = parseInt(columns[4]);
+				var end2 = parseInt(columns[5]);
+				var name = columns[6];
+				var score = parseFloat(columns[7]);
+				var strand1 = columns[8];
+				var strand2 = columns[9];
+				var type = columns[10];
+				// if (isNaN(score)) {
+				// 	score = 0;
+				// }
+				if (isNaN(start1) || isNaN(end1)) {
+					user_message("Error","Bedpe file must contain numbers in columns 2,3,5, and 6. Found: <pre>" + columns[1] + ", " + columns[2] + ", " +  columns[4] + ", and " + columns[5] + "</pre>.");
+					return;
+				}
+				var pos1 = parseInt((start1+end1)/2);
+				var pos2 = parseInt((start2+end2)/2);
+				var size = Infinity;
+				if (chrom1 == chrom2) {
+					size = Math.abs(pos1-pos2);
+				}
+				_Bedpe.push({"name": name, "score": score, "type": type, "size": size, "chrom1": chrom1, "pos1":pos1,"strand1": strand1,"chrom2": chrom2, "pos2":pos2, "strand2": strand2});
 			}
-			var pos1 = parseInt((start1+end1)/2);
-			var pos2 = parseInt((start2+end2)/2);
-			var size = Infinity;
-			if (chrom1 == chrom2) {
-				size = Math.abs(pos1-pos2);
-			}
-			_Bedpe.push({"name": name, "score": score, "type": type, "size": size, "chrom1": chrom1, "pos1":pos1,"strand1": strand1,"chrom2": chrom2, "pos2":pos2, "strand2": strand2});
 		}
 	}
 
