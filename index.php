@@ -120,12 +120,16 @@
 			<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
 			<div class="panel-body">
 				<p>
+					<p><strong>Please cite our paper on the bioRxiv:</strong></p>
+					<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
+				</p>
+				<p>
 					<p><strong>Examples:</strong></p>
 					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
 				</p>
 				<p>
 					<p><strong>Tutorial:</strong></p>
-					<p><a href="https://www.youtube.com/watch?v=Ih4Wf2U10-4" target="_blank">Latest Ribbon talk on YouTube</a></p>
+					<p><a href="https://www.youtube.com/watch?v=Ih4Wf2U10-4" target="_blank">Watch the latest Ribbon talk on YouTube</a></p>
 				</p>
 				<p>
 					<p><strong>Visualize your own alignment data:</strong></p>
