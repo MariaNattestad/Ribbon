@@ -1727,22 +1727,59 @@ function calculate_type_colors(variant_list) {
 // }
 
 
+function flexible_bam_fetch(region_list) {
+
+	_Additional_ref_intervals = [];
+
+	if (_Bam != undefined) {
+		console.log("Fetching bam records at position");
+		show_waiting_for_bam();
+
+		_num_bam_records_to_load = region_list.length;
+		_num_loaded_regions = 0;
+		_Bam_records_from_multiregions = [];
+
+
+		region_fetch_margin = -1; // -1 means use whole region (fetch from start to end)
+
+		// ???????????????????
+
+		if (region_fetch_margin == -1) {
+			for (var i in region_list) {
+				my_fetch(region_list[i].chrom,region_list[i].start,region_list[i].end, use_additional_fetched_data);
+				_Additional_ref_intervals.push({chrom: region_list[i].chrom, start:region_list[i].start, end:region_list[i].end});
+			}
+		} else {
+			for (var i in region_list) {
+				// If the margins cause these two breakpoints to overlap, consolidate the intervals
+				if (region_list[i].end - region_fetch_margin < region_list[i].start + region_fetch_margin) {
+					my_fetch(region_list[i].chrom,region_list[i].start - region_fetch_margin, region_list[i].end + region_fetch_margin, use_additional_fetched_data);
+					_Additional_ref_intervals.push({chrom: region_list[i].chrom, start:region_list[i].start-region_fetch_margin, end:region_list[i].end+region_fetch_margin});
+				} else {
+					my_fetch(region_list[i].chrom,region_list[i].start - region_fetch_margin, region_list[i].start + region_fetch_margin, use_additional_fetched_data);
+					my_fetch(region_list[i].chrom,region_list[i].end - region_fetch_margin, region_list[i].end + region_fetch_margin, use_additional_fetched_data);
+					_Additional_ref_intervals.push({chrom: region_list[i].chrom, start:region_list[i].start-region_fetch_margin, end:region_list[i].start+region_fetch_margin});
+					_Additional_ref_intervals.push({chrom: region_list[i].chrom, start:region_list[i].end-region_fetch_margin, end:region_list[i].end+region_fetch_margin});	
+				}
+			}
+		}
+
+	} else {
+		console.log("No bam file");
+		user_message("Error","No bam file");
+	}
+
+}
+
 function variant_row_click(d) {
-	_Additional_ref_intervals = [{"chrom":d.chrom,"start":d.start,"end":d.end}];
+	
 	d3.select("#text_region_output").html("Selected variant: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
 	// Mark variant as selected:
 	for (var i in _Variants) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
 	}
-	// Treat large variants like two separate breakpoints (same as for a BEDPE file)
-	if (Math.abs(d.end - d.start) > 100) {
-		var regions = [];
-		regions.push({"chrom":d.chrom,"pos":d.start});
-		regions.push({"chrom":d.chrom,"pos":d.end});
-		fetch_regions(regions);
-	} else {
-		go_to_region(d.chrom,(d.start+d.end)/2,(d.start+d.end)/2+1);	
-	}
+	
+	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
 }
 
 function check_bam_done_fetching() {
@@ -1784,14 +1821,17 @@ function show_variant_table() {
 }
 function bedpe_row_click(d) {
 	console.log("go to regions:", d.chrom1 , ":",  d.pos1, " and ",  d.chrom2, ":", d.pos2);
-	var regions = [];
-	regions.push({"chrom":d.chrom1,"pos":d.pos1});
-	regions.push({"chrom":d.chrom2,"pos":d.pos2});
-	fetch_regions(regions);
-	_Additional_ref_intervals = [
-		{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1},
-		{"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1}
-	];
+	
+	flexible_bam_fetch([	{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1}, {"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1} ]);
+
+	// var regions = [];
+	// regions.push({"chrom":d.chrom1,"pos":d.pos1});
+	// regions.push({"chrom":d.chrom2,"pos":d.pos2});
+	// fetch_regions(regions);
+	// _Additional_ref_intervals = [
+	// 	{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1},
+	// 	{"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1}
+	// ];
 
 	d3.select("#text_region_output").html("Selected bedpe variant: "  + d.name + " (" + d.type + ") at " + d.chrom1 + ":" + d.pos1 + " and " +  d.chrom2 + ":" + d.pos2);
 
@@ -4411,23 +4451,23 @@ function my_fetch(chrom, start, end, callback) {
 	}
 }
 
-function fetch_regions(regions) {
-	if (_Bam != undefined) {
-		console.log("Fetching bam records at position");
-		show_waiting_for_bam();
+// function fetch_regions(regions) {
+// 	if (_Bam != undefined) {
+// 		console.log("Fetching bam records at position");
+// 		show_waiting_for_bam();
 
-		_num_bam_records_to_load = regions.length;
-		_num_loaded_regions = 0;
-		_Bam_records_from_multiregions = [];
+// 		_num_bam_records_to_load = regions.length;
+// 		_num_loaded_regions = 0;
+// 		_Bam_records_from_multiregions = [];
 
-		for (var i in regions) {
-			my_fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
-		}
-	} else {
-		console.log("No bam file");
-		user_message("Error","No bam file");
-	}
-}
+// 		for (var i in regions) {
+// 			my_fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
+// 		}
+// 	} else {
+// 		console.log("No bam file");
+// 		user_message("Error","No bam file");
+// 	}
+// }
 
 function check_if_all_bam_records_loaded() {
 	if (_num_loaded_regions >= _num_bam_records_to_load) {
@@ -4447,19 +4487,19 @@ function use_additional_fetched_data(records) {
 	check_if_all_bam_records_loaded();
 }
 
-function go_to_region(chrom,start,end) {
-	_focal_region = {"chrom":chrom,"start":start,"end":end};
+// function go_to_region(chrom,start,end) {
+// 	_focal_region = {"chrom":chrom,"start":start,"end":end};
 
-	if (_Bam != undefined) {
-		console.log("Fetching bam records at position");
-		show_waiting_for_bam();
+// 	if (_Bam != undefined) {
+// 		console.log("Fetching bam records at position");
+// 		show_waiting_for_bam();
 
-		my_fetch(chrom,start,end,use_fetched_data);
-	} else {
-		console.log("No bam file");
-		user_message("Error","No bam file");
-	}
-}
+// 		my_fetch(chrom,start,end,use_fetched_data);
+// 	} else {
+// 		console.log("No bam file");
+// 		user_message("Error","No bam file");
+// 	}
+// }
 
 //////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
@@ -4617,9 +4657,10 @@ function region_submitted(event) {
 		d3.select("#region_start").property("value",start);
 		// d3.select("#region_end").property("value",end);
 
-		go_to_region(chrom,start,end);
+		flexible_bam_fetch([{"chrom":chrom,"start":start,"end":end}])
+		// go_to_region(chrom,start,end);
 
-		_Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":end}];
+		// _Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":end}];
 		d3.select("#text_region_output").html("Showing reads at position: " + chrom + ": " + start);
 	} else {
 		// console.log("Bad");
