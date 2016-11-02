@@ -32,11 +32,11 @@ body {
 	float:left;
 }
 
-#info_panel, #start_panel {
+#info_panel, #start_panel, #advanced_settings_panel {
 	margin-left: 3vmin;
 	margin-right: 3vmin;
 }
-#info_panel .panel-body, #start_panel .panel-body  {
+#info_panel .panel-body, #start_panel .panel-body, #advanced_settings_panel .panel-body {
 	padding-left: 2vmin;
 	padding-right: 2vmin;
 }
@@ -121,7 +121,7 @@ input[type="file"] {
 	border: 1px solid #cccccc;
 }
 
-.ref_block, #svg2_panel .alignment_groups, #click_info_link, #click_getting_started_link {
+.ref_block, #svg2_panel .alignment_groups, #click_info_link, #click_getting_started_link, #click_advanced_settings_link {
 	cursor: pointer;
 }
 
@@ -139,7 +139,7 @@ text {
 	font-weight: 900;
 	font-family: 'Lato', 'Helvetica', sans-serif;
 }
-#info_panel {
+#info_panel, #advanced_settings_panel {
 	display: none;
 }
 #settings {
@@ -176,7 +176,7 @@ div.input-group {
 	width: 100%;
 }
 
-#text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output {
+#text_read_output, #text_region_output, #text_alignment_file_output, #text_variant_file_output, #bam_fetch_info {
 	font-size: 1vw;
 	padding: 1vmin 1vmin 1vmin 1vmin ;
 	white-space: nowrap;

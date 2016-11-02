@@ -29,7 +29,7 @@
 	<!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap theme -->
-    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    <!-- <link href="css/bootstrap-theme.min.css" rel="stylesheet"> -->
 
     <!-- Special range slider -->
     <link href="css/jquery-ui.min.css" rel="stylesheet">
@@ -62,6 +62,7 @@
           <ul class="nav navbar-nav" id="navbar">
                   <li><a id="click_getting_started_link">Getting started</a></li>
                   <li><a id="click_info_link">Info</a></li>
+                  <li><a id="click_advanced_settings_link">Advanced settings</a></li>
                   <?php
                       $my_datasets = array();
 
@@ -114,6 +115,7 @@
 </div>
 <!--            End of Navigation Bar        -->
 
+
 <div id="left_panel">
 	<div id="start_panel">
 		<div class="panel panel-default">
@@ -142,6 +144,24 @@
 			</div>
 		</div>
 	</div>
+
+	<div id="advanced_settings_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Advanced settings</h3></div>
+			<div class="panel-body">
+				<table>
+					<tr><th colspan="3">Fetching from a bam file</th></tr>
+						<tr><td colspan="2">Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
+						<td>
+							<input type="number" style="width: 60%" id="bam_fetch_margin" value="100"> bp
+						</td>
+						<!-- ?????????????????? -->
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
 
 	<div id="info_panel">
 		<!-- GITHUB LINK -->
@@ -220,6 +240,10 @@
 					<div>
 						<label>Selected region</label>
 						<div id="text_region_output">(No region selected)</div>
+					</div>
+					<div class="when_bam_file_only">
+						<label>Bam file queried</label>
+						<div id="bam_fetch_info">(No bam file queried)</div>
 					</div>
 					<hr>
 					<div class="input-group">
