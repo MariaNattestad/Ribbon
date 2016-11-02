@@ -15,27 +15,34 @@ def is_digit(number):
 def run(args):
 
     is_vcf_file = False
+    is_csv_file = False
     is_a_lumpy_file = True
     contains_possible_numreads_column = True
 
     ID_names = set()
 
     line_counter = 0
-    
 
     is_gzipped = False
     
     f = open(args.input)
     header = f.readline()
     # If file is gzipped, close it and open using gzip
-    if header[0:4]=="\x1f\x8b\x08\x08":
+    # if header[0:4]=="\x1f\x8b\x08\x08":
+    if header[0:2]=="\x1f\x8b":
+        # print "Variant file is gzipped"
         f.close()
         is_gzipped = True
         f = gzip.open(args.input)
     else:
+        # print "Variant file is not gzipped"
+        if header == "chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split\n":
+            is_csv_file = True
         f.close()
         f = open(args.input)
     
+    if is_csv_file:
+        f.readline()
 
     for line in f:
         if line[0] == "#":
@@ -44,8 +51,8 @@ def run(args):
                 print "NOTE: Contains 'VCF' in a header row (starting with #), so treating it like a VCF file."
             continue
         fields = line.strip().split()
-        
-
+        if is_csv_file:
+            fields = line.strip().split(",")
 
         # For both VCF and bedpe files:
 
@@ -55,12 +62,10 @@ def run(args):
             print line
             return
 
-
         if is_vcf_file: # For VCF files only
             ID_names.add(fields[2])
-            
-
-        else: # For bedpe files only:
+        else:
+            # For bedpe files only:
             if len(fields) < 12:
                 print "ERROR: Variant file (except vcf) must have at least 12 columns. Use output from Lumpy or Sniffles"
                 return
@@ -119,11 +124,17 @@ def run(args):
         overwrite_ID_names = True
         print "NOTE: IDs are not unique, replacing with numbers"
 
-    if is_vcf_file:
+    if is_csv_file:
+        print "CSV file"
+        parse_csv_file(args,overwrite_ID_names=overwrite_ID_names,is_gzipped = is_gzipped)
+    elif is_vcf_file:
+        print "VCF file"
         clean_vcf(args,overwrite_ID_names=overwrite_ID_names,is_gzipped = is_gzipped)
     elif is_a_lumpy_file:
+        print "Lumpy bedpe file"
         clean_lumpy(args,overwrite_ID_names=overwrite_ID_names, is_gzipped = is_gzipped)
     elif contains_possible_numreads_column:
+        print "Sniffles bedpe file"
         clean_sniffles(args,overwrite_ID_names=overwrite_ID_names, is_gzipped = is_gzipped)
     else:
         print "ERROR: This file needs column 12 to have the number of split reads supporting each variant, or it can be a Lumpy output file with the STRANDS tag included within column 13. This file has neither."
@@ -133,6 +144,32 @@ def remove_chr(chromosome):
     if chromosome[0:3] in ["chr","Chr","CHR"]:
         chromosome = chromosome[3:]
     return chromosome
+
+def parse_csv_file(args,overwrite_ID_names,is_gzipped):
+    f = None
+    if is_gzipped == True:
+        f = gzip.open(args.input)
+    else:
+        f = open(args.input)
+
+    fout = open(args.out,"w")
+    fout.write("chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split\n")
+
+    f.readline()
+
+    ID_counter = 1
+    for line in f:
+        fields = line.strip().split(",")
+        fields[0] = remove_chr(fields[0])
+        fields[3] = remove_chr(fields[3])
+        if overwrite_ID_names:
+            fields[6] = ID_counter
+        ID_counter += 1
+        fields_to_output = fields[0:12]
+        fout.write(",".join(map(str,fields_to_output)) + "\n")
+    f.close()
+    fout.close()
+
 
 def clean_sniffles(args,overwrite_ID_names,is_gzipped = False):
     f = None
@@ -192,7 +229,8 @@ def clean_lumpy(args,overwrite_ID_names, is_gzipped = False):
                     for num in strand_info:
                         strand1 = num[0]
                         strand2 = num[1]
-                        num_reads = int(num[3:])
+                        if len(num) > 2:
+                            num_reads = int(num[3:])
                         fields[8] = strand1
                         fields[9] = strand2
                         fields[11] = num_reads
@@ -237,6 +275,15 @@ def clean_vcf(args,overwrite_ID_names, is_gzipped = False):
         start2 = stop2 = 0
         
         ID_field = fields[2]
+
+        # Lumpy VCF files end variant names in _1 and _2 to separate out the two breakpoints, so since we are using a bedpe style format, we consolidate the two breakpoints into a single entry
+        if ID_field[-2:] == "_2":
+            # print "Ignoring", ID_field
+            continue
+        elif ID_field[-2:] == "_1":
+            ID_field = ID_field[:-2]
+            # Cut off _1 suffix
+
         
         strand1 = ""
         strand2 = ""
@@ -331,12 +378,15 @@ def clean_vcf(args,overwrite_ID_names, is_gzipped = False):
                     pass
                 else:
                     print "strand2 not matching:", strand2, num[1]
-                numreads = int(num[3:])
+                if len(num) > 2:
+                    numreads = int(num[3:])
                 if overwrite_ID_names:
                     ID_field = ID_counter
-                elif len(strand_info_list) > 1:
-                    ID_field = ID_field + strand1 + strand2 # add strands to make the variants unique after splitting a variant into multiple lines with different strands
-                fields_to_output = [chrom1,start1,stop1,chrom2,start2,stop2,ID_field,0,strand1,strand2,variant_type,numreads]
+
+                new_ID = ID_field
+                if len(strand_info_list) > 1:
+                    new_ID = ID_field + strand1 + strand2 # add strands to make the variants unique after splitting a variant into multiple lines with different strands
+                fields_to_output = [chrom1,start1,stop1,chrom2,start2,stop2,new_ID,0,strand1,strand2,variant_type,numreads]
                 ID_counter += 1
                 fout.write(",".join(map(str,fields_to_output)) + "\n")
         else:
