@@ -10,19 +10,9 @@
         <meta name="description" content="">
         <meta name="author" content="">
 
-		<?php 
-			if (isset($_GET["perma"])) {
-				$code = $_GET["perma"];
-				// $file_prefix = 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"] . '/permalinks/' . $code; // . "_1.png";
-				$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/permalinks/" . $code;
-				echo '<meta property="og:image" content="' . $file_prefix . '_1.png">';
-        		echo '<meta property="og:image" content="' . $file_prefix . '_1.png">';
-			} else {
-				$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/images/";
-				echo '<meta property="og:image" content="' . $file_prefix . 'example_single_read.png">';
-        		echo '<meta property="og:image" content="' . $file_prefix . 'example_multi_read.png">';
-			}
-		?>
+        <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32">
+		<link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16">
+
     
     <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
