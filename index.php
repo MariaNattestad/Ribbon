@@ -18,8 +18,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="">
         <meta name="author" content="">
-        <meta property="og:image" content="<?php echo $file_prefix ?>_1.png">
-        <meta property="og:image" content="<?php echo $file_prefix ?>_2.png">
+        <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32">
+		<link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16">
     
     <!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
