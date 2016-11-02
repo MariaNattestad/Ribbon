@@ -2,15 +2,6 @@
 
 <html>
 
-<?php 
-	$image_url = "";
-	if (isset($_GET["perma"])) {
-		$code = $_GET["perma"];
-		// $file_prefix = 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"] . '/permalinks/' . $code; // . "_1.png";
-		$file_prefix = "http://" . $_SERVER['HTTP_HOST'] .  "/permalinks/" . $code;
-	}
-?>
-
 <head>
     <title>Ribbon</title>
     <meta charset="utf-8">
