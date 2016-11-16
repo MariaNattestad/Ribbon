@@ -641,7 +641,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
 				<div class="panel-body">
 					<div id="variant_table_box">
-						<p> Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<p> Showing only the first 30 variants. Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="variant_table_landing">
 							<!-- superTable creates a table here out of _Variants -->
 						</div>
@@ -660,7 +660,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
 				<div class="panel-body">
 					<div id="bedpe_table_box">
-						<p> Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<p> Showing only the first 30 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="bedpe_table_landing">
 							<!-- superTable creates a table here out of _Bedpe -->
 						</div>
@@ -703,7 +703,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
 				<div class="panel-body">
 					<div id="feature_table_box">
-						<p> Sort by clicking column names. Filter by typing queries into text input boxes. </p>
+						<p> Showing only the first 15 features. Sort by clicking column names. Filter by typing queries into text input boxes. </p>
 						<div id="feature_table_landing">
 							
 						</div>
