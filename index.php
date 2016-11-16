@@ -118,16 +118,16 @@
 					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
 				</p>
 				<p>
-					<p><strong>Tutorial:</strong></p>
-					<p><a href="https://www.youtube.com/watch?v=Ih4Wf2U10-4" target="_blank">Watch the latest Ribbon talk on YouTube</a></p>
-				</p>
-				<p>
 					<p><strong>Visualize your own alignment data:</strong></p>
 					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
 				</p>
 				<p>
 					<p><strong>Local installation:</strong></p>
 					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+				</p>
+				<p>
+					<p><strong>Introduction video:</strong></p>
+					<iframe width="560" height="315" src="https://www.youtube.com/embed/Ih4Wf2U10-4?rel=0" frameborder="0" allowfullscreen></iframe>
 				</p>
 			</div>
 		</div>
