@@ -138,12 +138,24 @@
 			<div class="panel-heading"><h3 class="panel-title">Advanced settings</h3></div>
 			<div class="panel-body">
 				<table>
-					<tr><th colspan="3">Fetching from a bam file</th></tr>
-						<tr><td colspan="2">Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
+					<tr><th colspan="2">Fetching from a bam file</th></tr>
+						<tr><td >Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
 						<td>
 							<input type="number" style="width: 60%" id="bam_fetch_margin" value="100"> bp
 						</td>
-						<!-- ?????????????????? -->
+					</tr>
+
+					<tr><th colspan="2">Automation</th></tr>
+					<tr>
+						<td>Prefix for image files</td>
+						<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td></tr>
+					<tr>
+						<td>Number of reads to take pictures of (randomly selected)</td>
+						<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td></tr>
+					<tr><td>Automatically go to each variant in a bedpe file and take pictures</td>
+						<td>
+							<button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button>
+						</td>
 					</tr>
 				</table>
 			</div>
