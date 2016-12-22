@@ -107,45 +107,39 @@
 
 
 <div id="left_panel">
-	<div id="start_panel">
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
-			<div class="panel-body">
-				<p>
-					<p><strong>Please cite our paper on the bioRxiv:</strong></p>
-					<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
-				</p>
-				<p>
-					<p><strong>Examples:</strong></p>
-					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
-				</p>
-				<p>
-					<p><strong>Visualize your own alignment data:</strong></p>
-					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
-				</p>
-				<p>
-					<p><strong>Local installation:</strong></p>
-					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-				</p>
-				<p>
-					<p><strong>Introduction video:</strong></p>
-					<iframe width="560" height="315" src="https://www.youtube.com/embed/Ih4Wf2U10-4?rel=0" frameborder="0" allowfullscreen></iframe>
-				</p>
-			</div>
-		</div>
-	</div>
 
 	<div id="advanced_settings_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Advanced settings</h3></div>
 			<div class="panel-body">
 				<table>
-					<tr><th colspan="3">Fetching from a bam file</th></tr>
-						<tr><td colspan="2">Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
+					<tr><th colspan="2">Fetching from a bam file</th></tr>
+						<tr><td >Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
 						<td>
 							<input type="number" style="width: 60%" id="bam_fetch_margin" value="100"> bp
 						</td>
-						<!-- ?????????????????? -->
+					</tr>
+
+					<tr><th colspan="2">Automation</th></tr>
+					<tr><td colspan="2">Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!  </td></tr>
+					<tr>
+						<td>Prefix for image files</td>
+						<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td>
+					</tr>
+					<tr>
+						<td>Number of reads to take pictures of (randomly selected)</td>
+						<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
+					</tr>
+					<tr>
+						<td>Only select reads with alignments that start or end near the bedpe variant</td>
+						<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
+					</tr>
+					<tr>
+						<td style="text-indent: 50px;" >Distance:</td>
+						<td><input type="number" id="automation_margin_for_split" value="1000"></td>
+					<tr>
+						<td></td>
+						<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>
 					</tr>
 				</table>
 			</div>
@@ -160,6 +154,10 @@
 			  <div class="panel-body">
 			  	  <p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
 			      <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+			      <p>
+					<p><strong>Please cite our paper on the bioRxiv:</strong></p>
+					<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
+				</p>
 			      <p>Ribbon stands on the shoulders of giants:</p>
 			      <ul>
 			      	<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
@@ -195,6 +193,33 @@
 			          <p>For questions contact Maria Nattestad at <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20Ribbon" target="_top">mnattest@cshl.edu</a></p>
 			    </div>
 			</div>		
+	</div>
+	<div id="start_panel">
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
+			<div class="panel-body">
+				<p>
+					<p><strong>Please cite our paper on the bioRxiv:</strong></p>
+					<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
+				</p>
+				<p>
+					<p><strong>Examples:</strong></p>
+					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+				</p>
+				<p>
+					<p><strong>Visualize your own alignment data:</strong></p>
+					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
+				</p>
+				<p>
+					<p><strong>Local installation:</strong></p>
+					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+				</p>
+				<p>
+					<p><strong>Introduction video:</strong></p>
+					<iframe width="560" height="315" src="https://www.youtube.com/embed/Ih4Wf2U10-4?rel=0" frameborder="0" allowfullscreen></iframe>
+				</p>
+			</div>
+		</div>
 	</div>
 
 	<div id="svg2_panel"></div>
@@ -308,6 +333,11 @@
 									<td>Collapse reference sequences within distance:</td>
 									<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
 								</tr>
+								<tr>
+									<td>Draw black border on selected region</td>
+									<td><input id="draw_focus_rectangle" type="checkbox" checked></td>
+								</tr>
+
 							</table>
 						</div>
 
@@ -479,7 +509,7 @@
 									</tr>
 									<tr class="ribbon_settings">
 										<td>Alignment outlines on ribbon plot: </td>
-										<td><input id="outline_checkbox" type="checkbox"/></td>
+										<td><input id="outline_checkbox" type="checkbox" checked/></td>
 									</tr>
 									<!-- <tr class="dotplot_settings"><th colspan="3">Dot plot settings</th></tr> -->
 									<tr class="dotplot_settings">
