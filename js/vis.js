@@ -103,7 +103,7 @@ _settings.read_pair_spacing = 20; // allow user to change this
 
 // Automation
 _settings.automation_mode = true;
-_settings.automation_reads_split_near_variant_only = false;
+_settings.automation_reads_split_near_variant_only = true;
 _settings.automation_margin_for_split = 1000;
 _settings.automation_max_reads_to_screenshot = 5;
 
@@ -1517,13 +1517,50 @@ function consolidate_records(records) {
 
 	} else {
 		// console.log("No paired read flag, assuming single-end reads");
-		var filtered_records = [];
+
+
+		// Check if any main alignments are not included in the SA tag of a previous entry for the same read, 
+		//		this happens for instance if SA tags are not set at all, so this section provides better support for BAM files like that.
+		// 		One of those BAM files without SA tags comes from the GMAP aligner with IsoSeq data
+		var unique_readname_pos_IDs = {};
 		var unique_readnames = {};
 		for (var i in records) {
 			if (unique_readnames[records[i].readname] == undefined) {
-				filtered_records.push(records[i]);
-				unique_readnames[records[i].readname] = true;
-			}	
+				
+				unique_readnames[records[i].readname] = records[i];
+				for (var j in records[i].alignments) {
+					unique_readname_pos_IDs[records[i].readname + records[i].alignments[j].r] = true;
+					// Add all alignments from main record
+				}
+			} else {
+				// Add only the main alignment: records[i].alignments[0] 
+				if (unique_readname_pos_IDs[records[i].readname + records[i].alignments[0].r] == undefined) {
+					unique_readnames[records[i].readname].alignments.push(records[i].alignments[0]);
+					unique_readname_pos_IDs[records[i].readname + records[i].alignments[0].r] = true;
+
+					// Remake the SA tag so when we recalculate later (like for indels) it will get parsed correctly
+					var strand = "+";
+					if ((records[i].raw.flag & 16) == 16) {
+						strand = "-";
+					}
+					new_SA_entry = records[i].raw.segment + "," + records[i].raw.pos + "," + strand + "," + records[i].raw.cigar + "," + records[i].raw.mq + ",0";
+					if (unique_readnames[records[i].readname].raw.SA == "") {
+						unique_readnames[records[i].readname].raw.SA = new_SA_entry;
+					} else {
+						unique_readnames[records[i].readname].raw.SA = unique_readnames[records[i].readname].raw.SA + ";" + new_SA_entry;
+					}
+
+					console.log("MERGE:");
+					console.log(unique_readnames[records[i].readname]);
+				}
+			
+				
+			}
+		}
+
+		var filtered_records = [];
+		for (var readname in unique_readnames) {
+			filtered_records.push(unique_readnames[readname]);
 		}
 		
 		return filtered_records;
