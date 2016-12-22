@@ -74,7 +74,7 @@ _settings.min_align_length = 0;
 
 _settings.color_index = 0;
 _settings.colorful = true;
-_settings.ribbon_outline = false;
+_settings.ribbon_outline = true;
 _settings.show_only_known_references = true;
 _settings.keep_duplicate_reads = false;
 _settings.feature_to_sort_reads = "original";
@@ -94,7 +94,7 @@ _settings.show_features_as = "arrows";
 _settings.feature_types_to_show = {"protein_coding":true};
 _settings.single_chrom_highlighted = false;
 _settings.bam_fetch_margin = 100;
-_settings.draw_focus_rectangle = false;
+_settings.draw_focus_rectangle = true;
 
 // For paired end reads:
 _settings.paired_end_mode = false;
@@ -103,7 +103,10 @@ _settings.read_pair_spacing = 20; // allow user to change this
 
 // Automation
 _settings.automation_mode = true;
-_settings.automation_reads_split_near_variant_only = true;
+_settings.automation_reads_split_near_variant_only = false;
+_settings.automation_margin_for_split = 1000;
+_settings.automation_max_reads_to_screenshot = 5;
+
 
 
 
@@ -509,26 +512,26 @@ $("#ref_match_region_view").change(function() {
 })
 
 $('#colors_checkbox').change(function() {
-	_settings.colorful = this.checked
+	_settings.colorful = this.checked;
 	draw();
 });
 
 
 $('#show_only_selected_variants').change(function() {
-	_settings.show_only_selected_variants = this.checked
+	_settings.show_only_selected_variants = this.checked;
 	draw_region_view();
 	draw();
 });
 
 $('#highlight_selected_read').change(function() {
-	_settings.highlight_selected_read = this.checked
+	_settings.highlight_selected_read = this.checked;
 	new_read_selected(_current_read_index);
 });
 
 
 
 $('#outline_checkbox').change(function() {
-	_settings.ribbon_outline = this.checked
+	_settings.ribbon_outline = this.checked;
 	draw();
 });
 
@@ -2611,6 +2614,10 @@ function read_cigar(unparsed_cigar,chrom,rstart,strand,mq) {
 				ref_pos += num;
 				break;
 			case "N": // "Skipped region from the reference" -- sam format specification
+				alignment.path.push({"R":ref_pos, "Q":read_pos});
+				alignment.path.push({"R":ref_pos + num, "Q":read_pos});
+				ref_pos += num;
+				break;
 			case "P": // "Padding: silent deletion from padded reference" -- sam format specification
 				ref_pos += num;
 				break;
@@ -4784,10 +4791,11 @@ var _variant_automation_counter = -1;
 var _prefix_for_automated_images = "Auto-Ribbon";
 var _read_index_list = [];
 var _index_within_read_index_list = 0;
-var _automation_max_reads_to_screenshot = 5;
-var _chosen_variant = undefined;
 
+var _chosen_variant = undefined;
+var audio = new Audio("resources/Ribbon_finished_automation.m4a");
 var log_number_reads_found = [];
+
 
 function run_automation() {
 	console.log("run_automation clicked");
@@ -4810,11 +4818,28 @@ d3.select("#automation_file_prefix").on("change", function() {
 });
 
 d3.select("#automation_max_reads_to_screenshot").on("change", function() {
-	_automation_max_reads_to_screenshot = parseInt(this.value);
-	if (isNaN(_automation_max_reads_to_screenshot)) {
-		_automation_max_reads_to_screenshot = 0;
+	_settings.automation_max_reads_to_screenshot = parseInt(this.value);
+	if (isNaN(_settings.automation_max_reads_to_screenshot)) {
+		_settings.automation_max_reads_to_screenshot = 0;
 	}
 });
+
+$('#automation_pick_split_reads').change(function() {
+	_settings.automation_reads_split_near_variant_only = this.checked;
+});
+
+d3.select("#automation_margin_for_split").on("change", function() {
+	_settings.automation_margin_for_split = parseInt(this.value);
+	if (isNaN(_settings.automation_margin_for_split)) {
+		_settings.automation_margin_for_split = 0;
+	}
+});
+
+$('#draw_focus_rectangle').change(function() {
+	_settings.draw_focus_rectangle = this.checked;
+	draw_region_view();
+});
+
 
 function load_next_variant() {
 	_variant_automation_counter += 1;
@@ -4827,6 +4852,7 @@ function load_next_variant() {
 		wait_save_and_repeat(0);
 	} else {
 		user_message("Success","DONE with automation!")
+		audio.play();
 		console.log("Finished: Number of split reads found by variant:");
 		console.log(log_number_reads_found);
 	}
@@ -4846,10 +4872,7 @@ function load_next_read() {
 	}
 }
 
-function annotate_reads_by_split_near_variant(distance) {
-	if (distance == undefined) {
-		distance = 1000;
-	}
+function annotate_reads_by_split_near_variant() {
 
 	for (var i in _Chunk_alignments) {
 		_Chunk_alignments[i].split_near_focus = false;
@@ -4857,9 +4880,9 @@ function annotate_reads_by_split_near_variant(distance) {
 		var split_1 = false;
 		var split_2 = false;
 		for (var j in _Chunk_alignments[i].alignments) {
-			if (_Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom1 && ((Math.abs(_Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos1) < distance) || (Math.abs(_Chunk_alignments[i].alignments[j].re - _chosen_variant.pos1) < distance))) {
+			if (_Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom1 && ((Math.abs(_Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos1) < _settings.automation_margin_for_split) || (Math.abs(_Chunk_alignments[i].alignments[j].re - _chosen_variant.pos1) < _settings.automation_margin_for_split))) {
 				split_1 = true;
-			} else if (  _Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom2 && ((Math.abs(_Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos2) < distance) || (Math.abs(_Chunk_alignments[i].alignments[j].re - _chosen_variant.pos2) < distance)   )  ) {
+			} else if (  _Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom2 && ((Math.abs(_Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos2) < _settings.automation_margin_for_split) || (Math.abs(_Chunk_alignments[i].alignments[j].re - _chosen_variant.pos2) < _settings.automation_margin_for_split)   )  ) {
 				split_2 = true;
 			}
 			
@@ -4891,7 +4914,7 @@ function screenshot_individual_reads() {
 	_read_index_list = [];
 	if (_eligible_read_list.length > 0) {
 		var extra_tries = 0;
-		while (_read_index_list.length < _automation_max_reads_to_screenshot) {
+		while (_read_index_list.length < _settings.automation_max_reads_to_screenshot) {
 			var tmp = _eligible_read_list[Math.floor(Math.random()*_eligible_read_list.length)];
 			if (_read_index_list.indexOf(tmp) == -1) {
 				_read_index_list.push(tmp);
@@ -4915,7 +4938,7 @@ function wait_save_and_repeat(counter) {
 		// console.log("BAM done loading");
 		// console.log(_Chunk_alignments);
 		// Wait long enough for all the visuals to render on the screen:
-		window.setTimeout(screenshot_top, 3000);
+		window.setTimeout(screenshot_top, 5000);
 		
 		// Take pictures of individual reads
 		screenshot_individual_reads();
