@@ -4868,7 +4868,7 @@ var _read_index_list = [];
 var _index_within_read_index_list = 0;
 
 var _chosen_variant = undefined;
-var audio = new Audio("resources/Ribbon_finished_automation.m4a");
+var audio = new Audio("Ribbon_finished_automation.m4a");
 var log_number_reads_found = [];
 
 
