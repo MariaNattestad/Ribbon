@@ -129,6 +129,14 @@
 						<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
 					</tr>
 					<tr>
+						<td>Print variant coordinates onto multi-read view</td>
+						<td><input type="checkbox" id="add_coordinates_to_figures"></td>
+					</tr>
+					<tr>
+						<td>Download a file with info and coordinates for each variant alongside the images</td>
+						<td><input type="checkbox" id="automation_download_info"></td>
+					</tr>
+					<tr>
 						<td>Only select reads with alignments that start or end near the bedpe variant</td>
 						<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
 					</tr>

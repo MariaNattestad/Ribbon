@@ -107,8 +107,9 @@ _settings.automation_reads_split_near_variant_only = true;
 _settings.automation_margin_for_split = 1000;
 _settings.automation_max_reads_to_screenshot = 5;
 
+_settings.add_coordinates_to_figures = false;
 
-
+_settings.automation_download_info = true;
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -827,7 +828,6 @@ function draw_chunk_variants() {
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
 		}
 
-
 		if (_Bedpe.length > 0) {
 
 			var variants_in_view = [];
@@ -841,6 +841,14 @@ function draw_chunk_variants() {
 						var results2 = closest_map_chunk_ref_interval(variant.chrom2,variant.pos2); 
 						variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
 						variants_in_view.push(variant);
+						if (_Bedpe[i].highlight == true && _settings.add_coordinates_to_figures == true) {
+							_svg2.append("text")
+								.text(_Bedpe[i].chrom1 + ":" + _Bedpe[i].pos1 + ":" + _Bedpe[i].strand1 + " to " + _Bedpe[i].chrom2 + ":" + _Bedpe[i].pos2 + ":" + _Bedpe[i].strand2)
+								.attr("x",_layout.svg2_width/2)
+								.attr("y",_layout.svg2_height)
+								.style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
+							//_svg.append("text").text("Reference").attr("x",_positions.dotplot.canvas.x + _positions.dotplot.canvas.width/2).attr("y",_layout.svg_height).style('text-anchor',"middle").attr("dominant-baseline","ideographic").style("font-size",_positions.fontsize);
+						}
 					}
 				}
 			}
@@ -899,6 +907,8 @@ function draw_chunk_variants() {
 						show_tooltip(text,x,y,_svg2);
 					})
 					.on('mouseout', function(d) {_svg2.selectAll("g.tip").remove();});
+
+
 		}
 	}
 }
@@ -4865,6 +4875,15 @@ $('#automation_pick_split_reads').change(function() {
 	_settings.automation_reads_split_near_variant_only = this.checked;
 });
 
+$('#add_coordinates_to_figures').change(function() {
+	_settings.add_coordinates_to_figures = this.checked;
+	draw_region_view();
+});
+
+$('#automation_download_info').change(function() {
+	_settings.automation_download_info = this.checked;
+});
+
 d3.select("#automation_margin_for_split").on("change", function() {
 	_settings.automation_margin_for_split = parseInt(this.value);
 	if (isNaN(_settings.automation_margin_for_split)) {
@@ -4968,6 +4987,38 @@ function screenshot_individual_reads() {
 	_index_within_read_index_list = 0;
 	load_next_read();
 }
+// Thanks to http://stackoverflow.com/questions/2897619/using-html5-javascript-to-generate-and-save-a-file
+function download(filename, text) {
+    var pom = document.createElement('a');
+    pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    pom.setAttribute('download', filename);
+
+    if (document.createEvent) {
+        var event = document.createEvent('MouseEvents');
+        event.initEvent('click', true, true);
+        pom.dispatchEvent(event);
+    }
+    else {
+        pom.click();
+    }
+}
+
+function create_and_download_info() {
+	console.log(_settings.alignment_info_text);
+	console.log(_settings.variant_info_text);
+	console.log(d3.select("#bam_fetch_info").html());
+	console.log(d3.select("#text_region_output").html());
+	
+	var all_info_for_download = [];
+	all_info_for_download.push(d3.select("#text_region_output").html());
+	all_info_for_download.push(_settings.alignment_info_text);
+	all_info_for_download.push(_settings.variant_info_text);
+	all_info_for_download.push(d3.select("#bam_fetch_info").html());
+
+	var filename = get_name()  + "_info.txt";
+	download(filename, all_info_for_download.join("\n"));
+
+}
 
 function wait_save_and_repeat(counter) {
 	// console.log("in wait_save_and_repeat");
@@ -4975,7 +5026,12 @@ function wait_save_and_repeat(counter) {
 		// console.log("BAM done loading");
 		// console.log(_Chunk_alignments);
 		// Wait long enough for all the visuals to render on the screen:
-		window.setTimeout(screenshot_top, 5000);
+		window.setTimeout(function() {
+			screenshot_top();
+			if (_settings.automation_download_info == true) {
+				create_and_download_info();
+			}
+		}, 5000);
 		
 		// Take pictures of individual reads
 		screenshot_individual_reads();
