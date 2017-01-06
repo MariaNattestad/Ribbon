@@ -1958,6 +1958,7 @@ function show_bedpe_table() {
 			.num_rows_to_show(30)
 			.show_advanced_filters(true)
 			.click_function(bedpe_row_click)
+			.table_header(["name","type","size","chrom1","pos1","strand1","chrom2","pos2","strand2"])
 			.check_ready_function(check_bam_done_fetching)
 	);
 	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
