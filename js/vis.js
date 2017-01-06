@@ -110,6 +110,7 @@ _settings.automation_max_reads_to_screenshot = 5;
 _settings.add_coordinates_to_figures = false;
 
 _settings.automation_download_info = true;
+_settings.selected_bedpe_text = "";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -1996,6 +1997,7 @@ function bed_input_changed(bed_input) {
 }
 
 function bedpe_input_changed(bedpe_input) {
+	
 	var input_text = bedpe_input.split("\n");
 	// chrom1, start1, stop1, chrom2, start2, stop2, name, score, strand1, strand2, type
 	
@@ -2028,7 +2030,7 @@ function bedpe_input_changed(bedpe_input) {
 				if (chrom1 == chrom2) {
 					size = Math.abs(pos1-pos2);
 				}
-				_Bedpe.push({"name": name, "score": score, "type": type, "size": size, "chrom1": chrom1, "pos1":pos1,"strand1": strand1,"chrom2": chrom2, "pos2":pos2, "strand2": strand2});
+				_Bedpe.push({"name": name, "score": score, "type": type, "size": size, "chrom1": chrom1, "pos1":pos1,"strand1": strand1,"chrom2": chrom2, "pos2":pos2, "strand2": strand2, "raw":input_text[i]});
 			}
 		}
 	}
@@ -4903,6 +4905,8 @@ function load_next_variant() {
 	// console.log("_variant_automation_counter: ", _variant_automation_counter);
 	if (_variant_automation_counter < _Bedpe.length) {
 		_chosen_variant = _Bedpe[_variant_automation_counter];
+		_settings.selected_bedpe_text = _chosen_variant.raw;
+		console.log("CHOSEN VARIANT:", _settings.selected_bedpe_text);
 		bedpe_row_click(_chosen_variant);
 		d3.select("#permalink_name").property("value", _prefix_for_automated_images + "_" + _Bedpe[_variant_automation_counter].name);
 		wait_save_and_repeat(0);
@@ -4967,6 +4971,10 @@ function screenshot_individual_reads() {
 	console.log("_eligible_read_list:", _eligible_read_list);
 	log_number_reads_found.push(_eligible_read_list.length);
 
+	if (_settings.automation_download_info == true) {
+		create_and_download_info(_eligible_read_list.length);
+	}
+
 	_read_index_list = [];
 	if (_eligible_read_list.length > 0) {
 		var extra_tries = 0;
@@ -5003,17 +5011,15 @@ function download(filename, text) {
     }
 }
 
-function create_and_download_info() {
-	console.log(_settings.alignment_info_text);
-	console.log(_settings.variant_info_text);
-	console.log(d3.select("#bam_fetch_info").html());
-	console.log(d3.select("#text_region_output").html());
-	
+function create_and_download_info(num_split) {
 	var all_info_for_download = [];
 	all_info_for_download.push(d3.select("#text_region_output").html());
 	all_info_for_download.push(_settings.alignment_info_text);
 	all_info_for_download.push(_settings.variant_info_text);
 	all_info_for_download.push(d3.select("#bam_fetch_info").html());
+	all_info_for_download.push("BEDPE: " + _settings.selected_bedpe_text);
+	all_info_for_download.push("Number of split reads: " + num_split.toString());
+
 
 	var filename = get_name()  + "_info.txt";
 	download(filename, all_info_for_download.join("\n"));
@@ -5026,12 +5032,7 @@ function wait_save_and_repeat(counter) {
 		// console.log("BAM done loading");
 		// console.log(_Chunk_alignments);
 		// Wait long enough for all the visuals to render on the screen:
-		window.setTimeout(function() {
-			screenshot_top();
-			if (_settings.automation_download_info == true) {
-				create_and_download_info();
-			}
-		}, 5000);
+		window.setTimeout(screenshot_top(), 5000);
 		
 		// Take pictures of individual reads
 		screenshot_individual_reads();
