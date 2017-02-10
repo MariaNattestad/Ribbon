@@ -385,7 +385,10 @@ BamFile.prototype.readBamRecords = function(ba, offset, sink, min, max, chrId) {
                 type = "i";
                 p += 5;
             } else if (type == 'f') {
-                throw 'FIXME need floats';
+                value = 0;
+                type = "i";
+                // throw 'FIXME need floats';
+                p += 7;
             } else if (type == 'Z') {
                 p += 3;
                 value = '';
