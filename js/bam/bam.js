@@ -9,6 +9,7 @@
 
 var BAM_MAGIC = 21840194;
 var BAI_MAGIC = 21578050;
+var CSI_MAGIC = 21582659;
 
 function BamFile() {
 }
@@ -26,14 +27,16 @@ function Chunk(minv, maxv) {
     this.minv = minv; this.maxv = maxv;
 }
 
-function makeBam(data, bai, callback) {
+function makeBam(data, index, callback) {
     var bam = new BamFile();
     bam.data = data;
-    bam.bai = bai;
+    bam.index = index;
+    bam.min_shift = 14;
+    bam.depth = 5;
 
     bam.data.slice(0, 65536).fetch(function(r) {
         if (!r) {
-            return dlog("Couldn't access BAM");
+            return alert("Couldn't access BAM");
         }
 
         var unc = unbgzf(r);
@@ -75,36 +78,84 @@ function makeBam(data, bai, callback) {
         }
     });
 
-    bam.bai.fetch(function(header) {   // Do we really need to fetch the whole thing? :-(
+    bam.index.fetch(function(header) {   // Do we really need to fetch the whole thing? :-(
         if (!header) {
-            return dlog("Couldn't access BAI");
+            return alert("Couldn't access index file");
         }
 
-        var uncba = new Uint8Array(header);
-        var baiMagic = readInt(uncba, 0);
-        if (baiMagic != BAI_MAGIC) {
-            return dlog('Not a BAI file');
-        }
+	var uncba = new Uint8Array(header);
+	var indexMagic = readInt(uncba, 0);
+	if (indexMagic == BAI_MAGIC) {
+		bam.index_type = 'bai';
+	        var nref = readInt(uncba, 4);
 
-        var nref = readInt(uncba, 4);
+		bam.indices = [];
 
-        bam.indices = [];
+	        var p = 8;
+		for (var ref = 0; ref < nref; ++ref) {
+			//console.log('ref_index=' + ref);
+			var blockStart = p;
+			var nbin = readInt(uncba, p); p += 4;
+			//console.log('  nbin=' + nbin);
+			//nbin = 5;
+			for (var b = 0; b < nbin; ++b) {
+				var bin = readInt(uncba, p);
+				var nchnk = readInt(uncba, p+4);
+				//console.log('    bin=' + bin);
+				//console.log('    nchnk=' + nchnk);
+				p += 8 + (nchnk * 16);
+			}
+			var nintv = readInt(uncba, p); p += 4;
+			p += (nintv * 8);
+			var blockLength = p - blockStart
+			//console.log('blockStart=' + blockStart);
+			//console.log('blockLength=' + blockLength);
+			if (nbin > 0) {
+				bam.indices[ref] = new Uint8Array(header, blockStart, blockLength);
+			}
+		}
+	} else if(indexMagic == CSI_MAGIC) {
+		bam.index_type = csi'';
+		var min_shift = readInt(uncba, 4);
+		var depth = readInt(uncba, 8);
+		//console.log('min_shift=' + min_shift);
+		//console.log('depth=' + depth);
+		bam.min_shift = min_shift;
+		bam.depth = depth;
+		var l_aux = readInt(uncba, 12);
+		var nref = readInt(uncba, 16);
+		//console.log('l_aux=' + l_aux);
+		//console.log('nref=' + nref);
 
-        var p = 8;
-        for (var ref = 0; ref < nref; ++ref) {
-            var blockStart = p;
-            var nbin = readInt(uncba, p); p += 4;
-            for (var b = 0; b < nbin; ++b) {
-                var bin = readInt(uncba, p);
-                var nchnk = readInt(uncba, p+4);
-                p += 8 + (nchnk * 16);
-            }
-            var nintv = readInt(uncba, p); p += 4;
-            p += (nintv * 8);
-            if (nbin > 0) {
-                bam.indices[ref] = new Uint8Array(header, blockStart, p - blockStart);
-            }                     
-        }
+		bam.indices = [];
+
+		var p = 20;
+		for (var ref = 0; ref < nref; ++ref) {
+			//console.log('ref_index=' + ref);
+			var blockStart = p;
+			var nbin = readInt(uncba, p); p += 4;
+			console.log('ref_idx=' + ref + ' nbin=' + nbin);
+			//nbin = 5;
+			for (var b = 0; b < nbin; ++b) {
+				//console.log('  b=' + b);
+				var bin = readInt(uncba, p);
+				var loffset = readInt(uncba, p+4);
+				var nchnk = readInt(uncba, p+12);
+				//console.log('    bin=' + bin);
+				//console.log('    loffset=' + loffset);
+				//console.log('    nchnk=' + nchnk);
+				p += 16 + (nchnk * 16);
+			}
+			var blockLength = p - blockStart
+			//console.log('blockStart=' + blockStart,);
+			//console.log('blockLength=' + blockLength);
+			if (nbin > 0) {
+				bam.indices[ref] = new Uint8Array(header, blockStart, blockLength);
+			}
+		}
+	} else {
+		return alert(indexMagic + 'Not a valid index (BAI or CSI) file');
+	}
         if (bam.chrToIndex) {
             return callback(bam);
         }
@@ -113,54 +164,89 @@ function makeBam(data, bai, callback) {
 
 
 
-BamFile.prototype.blocksForRange = function(refId, min, max) {
+BamFile.prototype.blocksForRange = function(refId, min, max, min_shift, depth) {
     var index = this.indices[refId];
     if (!index) {
         return [];
     }
 
-    var intBinsL = reg2bins(min, max);
-    var intBins = [];
-    for (var i = 0; i < intBinsL.length; ++i) {
-        intBins[intBinsL[i]] = true;
-    }
+    var intBinsL = reg2bins(min, max, min_shift, depth);
+
+    // We will store chunk_beg and chunk_end of leaf bins separately from other bins
+    // leaf nodes start at idx t
+    var t = ((1<<depth*3) - 1) / 7;
     var leafChunks = [], otherChunks = [];
 
-    var nbin = readInt(index, 0);
-    var p = 4;
-    for (var b = 0; b < nbin; ++b) {
-        var bin = readInt(index, p);
-        var nchnk = readInt(index, p+4);
-//        dlog('bin=' + bin + '; nchnk=' + nchnk);
-        p += 8;
-        if (intBins[bin]) {
-            for (var c = 0; c < nchnk; ++c) {
-                var cs = readVob(index, p);
-                var ce = readVob(index, p + 8);
-                (bin < 4681 ? otherChunks : leafChunks).push(new Chunk(cs, ce));
-                p += 16;
-            }
-        } else {
-            p +=  (nchnk * 16);
-        }
-    }
-//    dlog('leafChunks = ' + miniJSONify(leafChunks));
-//    dlog('otherChunks = ' + miniJSONify(otherChunks));
+    var p = 0;
+    var n_bin = readInt(index, 0);
 
-    var nintv = readInt(index, p);
-    var lowest = null;
-    var minLin = Math.min(min>>14, nintv - 1), maxLin = Math.min(max>>14, nintv - 1);
-    for (var i = minLin; i <= maxLin; ++i) {
-        var lb =  readVob(index, p + 4 + (i * 8));
-        if (!lb) {
-            continue;
-        }
-        if (!lowest || lb.block < lowest.block || lb.offset < lowest.offset) {
-            lowest = lb;
-        }
+    // Get chunk_beg and chunk_end, from the index, for the bins covering the region
+    if (this.index_type == 'bai') {
+	    for (var b = 0, p = p+4; b < n_bin; ++b) {
+		    var bin = readInt(index, p);
+		    //var l
+		    var n_chunk = readInt(index, p+4);
+
+		    // Is this bin one covering our region?
+		    if (intBinsL.indexOf(bin) == -1) {
+			    // No, so skip over the bin
+			    p += (n_chunk * 16) + 8;
+			    continue;
+		    }
+
+		    // Get chunk_beg and chunk_end for each chunk in the bin
+		    for (var c = 0, p = p+8; c < n_chunk; ++c, p=p+16) {
+			    var cs = readVob(index, p);
+			    var ce = readVob(index, p+8);
+			    // seperate leaf bins from intermediary bins
+			    (bin < t ? otherChunks : leafChunks).push(new Chunk(cs, ce));
+		    }
+	    }
+
+	    //dlog('leafChunks = ' + miniJSONify(leafChunks));
+	    //dlog('otherChunks = ' + miniJSONify(otherChunks));
+
+	    // parse the linear index for the leaf bins pruning away chunks from non-leaf bins which
+	    // finish before our region starts
+	    var nintv = readInt(index, p);
+	    var lowest;
+	    var minLin = Math.min(min>>min_shift, nintv - 1), maxLin = Math.min(max>>min_shift, nintv - 1);
+	    for (var i = minLin; i <= maxLin; ++i) {
+		    var lb =  readVob(index, p + 4 + (i * 8));
+		    if (!lb) {
+			    continue;
+		    }
+		    if (!lowest || lb.block < lowest.block || lb.offset < lowest.offset) {
+			    lowest = lb;
+		    }
+	    }
+	    // dlog('Lowest LB = ' + lowest);
+    } else if(this.index_type =='csi') {
+	    var lowest = 0;
+	    for (var b = 0, p = p+4; b < n_bin; ++b) {
+		    var bin = readInt(index, p);
+		    var loffset = readInt(index, p+4);
+		    var n_chunk = readInt(index, p+12);
+
+		    // Is this bin one covering our region?
+		    if (intBinsL.indexOf(bin) == -1) {
+			    // No, so skip over the bin
+			    p += (n_chunk * 16) + 16;
+			    continue;
+		    }
+
+		    // remember the smallest loffset found in the bins covering the range
+		    lowest = loffset > lowest ? loffset : lowest;
+
+		    // Get chunk_beg and chunk_end for each chunk in the bin
+		    for (var c = 0, p = p+16; c < n_chunk; ++c, p=p+16) {
+			    var cs = readVob(index, p);
+			    var ce = readVob(index, p+8);
+			    // seperate leaf bins from intermediary bins
+			    (bin < t ? otherChunks : leafChunks).push(new Chunk(cs, ce));
+		    }
+	    }
     }
-    // dlog('Lowest LB = ' + lowest);
-    
     var prunedOtherChunks = [];
     if (lowest != null) {
         for (var i = 0; i < otherChunks.length; ++i) {
@@ -173,14 +259,10 @@ BamFile.prototype.blocksForRange = function(refId, min, max) {
     // dlog('prunedOtherChunks = ' + miniJSONify(prunedOtherChunks));
     otherChunks = prunedOtherChunks;
 
-    var intChunks = [];
-    for (var i = 0; i < otherChunks.length; ++i) {
-        intChunks.push(otherChunks[i]);
-    }
-    for (var i = 0; i < leafChunks.length; ++i) {
-        intChunks.push(leafChunks[i]);
-    }
+    // combine leaf chuncks with pruned internal chunks
+    var intChunks = otherChunks.concat(leafChunks);
 
+    // sort intChunks by block ID and then offset
     intChunks.sort(function(c0, c1) {
         var dif = c0.minv.block - c1.minv.block;
         if (dif != 0) {
@@ -189,12 +271,15 @@ BamFile.prototype.blocksForRange = function(refId, min, max) {
             return c0.minv.offset - c1.minv.offset;
         }
     });
+
+    // merge neighbouring chunks into a single chunk range
     var mergedChunks = [];
     if (intChunks.length > 0) {
         var cur = intChunks[0];
         for (var i = 1; i < intChunks.length; ++i) {
             var nc = intChunks[i];
             if (nc.minv.block == cur.maxv.block /* && nc.minv.offset == cur.maxv.offset */) { // no point splitting mid-block
+		// chunks are neighbors, create a new one with redefined minv and maxv
                 cur = new Chunk(cur.minv, nc.maxv);
             } else {
                 mergedChunks.push(cur);
@@ -216,10 +301,13 @@ BamFile.prototype.fetch = function(chr, min, max, callback, options) {
     if (chrId === undefined) {
         chunks = [];
     } else {
-        chunks = this.blocksForRange(chrId, min, max);
+	//console.log('min_shift=' + thisB.min_shift);
+	//console.log('depth=' + thisB.depth);
+        chunks = this.blocksForRange(chrId, min, max, thisB.min_shift, thisB.depth);
         if (!chunks) {
             callback(null, 'Error in index fetch');
         }
+	//console.log('chunks:' + chunks);
     }
     
     var records = [];
@@ -476,28 +564,22 @@ function unbgzf(data, lim) {
 //
 
 /* calculate bin given an alignment covering [beg,end) (zero-based, half-close-half-open) */
-function reg2bin(beg, end)
+function reg2bin(beg, end, min_shift, depth)
 {
-    --end;
-    if (beg>>14 == end>>14) return ((1<<15)-1)/7 + (beg>>14);
-    if (beg>>17 == end>>17) return ((1<<12)-1)/7 + (beg>>17);
-    if (beg>>20 == end>>20) return ((1<<9)-1)/7 + (beg>>20);
-    if (beg>>23 == end>>23) return ((1<<6)-1)/7 + (beg>>23);
-    if (beg>>26 == end>>26) return ((1<<3)-1)/7 + (beg>>26);
-    return 0;
+	var l, s = min_shift, t = ((1<<depth*3) - 1) / 7;
+	for (--end, l = depth; l > 0; --l, s += 3, t -= 1<<l*3)
+		if (beg>>s == end>>s) return t + (beg>>s);
+	return 0;
 }
 
 /* calculate the list of bins that may overlap with region [beg,end) (zero-based) */
-var MAX_BIN = (((1<<18)-1)/7);
-function reg2bins(beg, end) 
+//var MAX_BIN = (((1<<18)-1)/7);
+function reg2bins(beg, end, min_shift, depth)
 {
-    var i = 0, k, list = [];
-    --end;
-    list.push(0);
-    for (k = 1 + (beg>>26); k <= 1 + (end>>26); ++k) list.push(k);
-    for (k = 9 + (beg>>23); k <= 9 + (end>>23); ++k) list.push(k);
-    for (k = 73 + (beg>>20); k <= 73 + (end>>20); ++k) list.push(k);
-    for (k = 585 + (beg>>17); k <= 585 + (end>>17); ++k) list.push(k);
-    for (k = 4681 + (beg>>14); k <= 4681 + (end>>14); ++k) list.push(k);
-    return list;
+	var l, t, n, s = min_shift + depth*3, list = [];
+	for (--end, l = n = t = 0; l <= depth; s -= 3, t += 1<<l*3, ++l) {
+		var b = t + (beg>>s), e = t + (end>>s), i;
+		for (i = b; i <= e; ++i) list.push(i);
+	}
+	return list;
 }
