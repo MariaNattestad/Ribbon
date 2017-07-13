@@ -83,7 +83,12 @@ function makeBam(data, index, callback) {
             return alert("Couldn't access index file");
         }
 
-	var uncba = new Uint8Array(header);
+	var unc = header;
+	if (/[^.]+$/.exec(bam.index.blob.name)[0] == 'csi') {
+		// csi extensions need decompression
+		unc = unbgzf(header);
+	}
+	var uncba = new Uint8Array(unc);
 	var indexMagic = readInt(uncba, 0);
 	if (indexMagic == BAI_MAGIC) {
 		bam.index_type = 'bai';
@@ -111,11 +116,11 @@ function makeBam(data, index, callback) {
 			//console.log('blockStart=' + blockStart);
 			//console.log('blockLength=' + blockLength);
 			if (nbin > 0) {
-				bam.indices[ref] = new Uint8Array(header, blockStart, blockLength);
+				bam.indices[ref] = new Uint8Array(unc, blockStart, blockLength);
 			}
 		}
 	} else if(indexMagic == CSI_MAGIC) {
-		bam.index_type = csi'';
+		bam.index_type = 'csi';
 		var min_shift = readInt(uncba, 4);
 		var depth = readInt(uncba, 8);
 		//console.log('min_shift=' + min_shift);
@@ -150,7 +155,7 @@ function makeBam(data, index, callback) {
 			//console.log('blockStart=' + blockStart,);
 			//console.log('blockLength=' + blockLength);
 			if (nbin > 0) {
-				bam.indices[ref] = new Uint8Array(header, blockStart, blockLength);
+				bam.indices[ref] = new Uint8Array(unc, blockStart, blockLength);
 			}
 		}
 	} else {
