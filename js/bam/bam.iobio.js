@@ -10,11 +10,11 @@ var Bam = Class.extend({
       if (typeof(this.bamUri) == "object") {
          this.sourceType = "file";
          this.bamBlob = new BlobFetchable(bamUri);
-         this.baiBlob = new BlobFetchable(this.options.bai); // *** add if statement if here ***
+         this.indexBlob = new BlobFetchable(this.options.index); // *** add if statement if here ***
          this.promises = [];
          this.bam = undefined;
          var me = this;
-         makeBam(this.bamBlob, this.baiBlob, function(bam) {
+         makeBam(this.bamBlob, this.indexBlob, function(bam) {
             me.setHeader(bam.header);
             me.provide(bam);
          });
@@ -354,7 +354,7 @@ var Bam = Class.extend({
           cmd.run();
 
       } else if (me.sourceType == 'file') {
-          me.baiBlob.fetch(function(header){
+          me.indexBlob.fetch(function(header){
              if (!header) {
                   return dlog("Couldn't access BAI");
               }

@@ -4382,23 +4382,40 @@ function create_bam(files) {
 
 	// From bam.iobio, thanks Marth lab!
 	if (files.length != 2) {
-		 alert('must select both a .bam and .bai file');
+		 alert('must select both a .bam and index (.bai or .csi) file');
 		 return;
 	}
 
 	var fileType0 = /[^.]+$/.exec(files[0].name)[0];
 	var fileType1 = /[^.]+$/.exec(files[1].name)[0];
 
-	if (fileType0 == 'bam' && fileType1 == 'bai') {
-		bamFile = files[0];
-		baiFile = files[1];
-	 } else if (fileType1 == 'bam' && fileType0 == 'bai') {
+	switch(fileType0) {
+		case "bam":
+			bamFile = files[0];
+			break;
+		case "bai":
+			indexFile = files[0];
+			break;
+		case "csi":
+			indexFile = files[0];
+			break;
+	}
+	switch(fileType1) {
+		case "bam":
 			bamFile = files[1];
-			baiFile = files[0];
-	 } else {
-			alert('must select both a .bam and .bai file');
-	 }
-	_Bam = new Bam( bamFile, { bai: baiFile });
+			break;
+		case "bai":
+			indexFile = files[1];
+			break;
+		case "csi":
+			indexFile = files[1];
+			break;
+	}
+	if (typeof bamFile == 'undefined' || typeof indexFile == 'undefined') {
+		alert('must select both a .bam and index (.bai or .csi) file');
+	}
+
+	_Bam = new Bam( bamFile, { index: indexFile });
 
 	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
 	set_alignment_info_text();
@@ -4409,13 +4426,13 @@ function create_bam(files) {
 
 
 function wait_then_run_when_bam_file_loaded(counter) {
-	if (counter == undefined) {
+	if (typeof counter == 'undefined') {
 		counter = 0;
 	} else if (counter > 30) {
 		user_message("Error","File taking too long to load")
 		return;
 	}
-	if (_Bam.header != undefined) {
+	if (typeof _Bam.header != 'undefined') {
 		console.log("ready");
 		bam_loaded();
 	} else {
