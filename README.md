@@ -1,4 +1,7 @@
 # Ribbon
+
+Please cite our preprint on the BioRxiv: [https://www.biorxiv.org/content/early/2016/10/20/082123](https://www.biorxiv.org/content/early/2016/10/20/082123)
+
 ![Ribbon gallery](/images/gallery.png)
 
 Ribbon is an interactive web visualization tool for viewing genomic alignments of short/long reads or assembled contigs to any reference genome. 
