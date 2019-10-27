@@ -18,10 +18,11 @@ If you need to deploy Ribbon locally, here are the steps:
    cd /Applications/XAMPP/htdocs/
    ```
 
-3. Clone this repository into the htdocs folder
+3. Clone this repository into the htdocs folder and install dependencies
 
    ```
    git clone https://github.com/marianattestad/ribbon
+   npm install
    ```
 
 4. Then go to a web browser such as Chrome, Firefox, or Safari (Not tested on IE) and type into the url box:

@@ -14,7 +14,7 @@
 	<!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
 	<!-- Bootstrap core CSS -->
-	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
 	<!-- Special range slider -->
 	<link href="css/jquery-ui.min.css" rel="stylesheet">
 	<!-- My d3-livesearch plugin -->
@@ -759,12 +759,15 @@
 </script>
 
 <!-- Libraries -->
-<script src="js/d3.v3.min.js"></script>
-<script src="js/jquery.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
+<script src="node_modules/d3/d3.min.js"></script>
+<script src="node_modules/jquery/dist/jquery.min.js"></script>
+<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
 <!-- Special range slider -->
-<script src="js/jquery-ui.min.js"></script>
+<script src="node_modules/jquery-ui/ui/widget.js"></script>
+<script src="node_modules/jquery-ui/ui/keycode.js"></script>
+<script src="node_modules/jquery-ui/ui/widgets/mouse.js"></script>
+<script src="node_modules/jquery-ui/ui/widgets/slider.js"></script>
 
 <!-- Library from bam.iobio for reading a bam file -->
 <script src="js/bam/binary.js"></script>
