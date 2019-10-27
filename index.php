@@ -764,10 +764,7 @@
 <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
 <!-- Special range slider -->
-<script src="node_modules/jquery-ui/ui/widget.js"></script>
-<script src="node_modules/jquery-ui/ui/keycode.js"></script>
-<script src="node_modules/jquery-ui/ui/widgets/mouse.js"></script>
-<script src="node_modules/jquery-ui/ui/widgets/slider.js"></script>
+<script src="js/jquery-ui.min.js"></script>
 
 <!-- Library from bam.iobio for reading a bam file -->
 <script src="js/bam/binary.js"></script>
