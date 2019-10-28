@@ -1,3 +1,4 @@
-examples/*
-permalinks/*
+examples/
+permalinks/
 !permalinks/E_*.json
+node_modules/

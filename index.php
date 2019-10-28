@@ -1,107 +1,98 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-    <title>Ribbon</title>
-    <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="">
-        <meta name="author" content="">
+	<title>Ribbon</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<meta name="author" content="">
 
-        <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32">
-		<link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16">
+	<link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32">
+	<link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16">
 
-    
-    <!-- CSS: -->
+	<!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
 	<!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap theme -->
-    <!-- <link href="css/bootstrap-theme.min.css" rel="stylesheet"> -->
-
-    <!-- Special range slider -->
-    <link href="css/jquery-ui.min.css" rel="stylesheet">
-
-  <!-- My d3-livesearch plugin -->
-<link href="css/d3-livesearch.css" rel="stylesheet">
-<link href="css/d3-superTable.css" rel="stylesheet">
-
+	<link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<!-- Special range slider -->
+	<link href="css/jquery-ui.min.css" rel="stylesheet">
+	<!-- My d3-livesearch plugin -->
+	<link href="css/d3-livesearch.css" rel="stylesheet">
+	<link href="css/d3-superTable.css" rel="stylesheet">
 	<!-- My own styles -->
 	<link href="css/custom.css" rel="stylesheet">
-
 </head>
 
 <!--    NAVIGATION BAR-->
 
 <body role="document">
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href=".">        Ribbon</a>
-        </div>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav" id="navbar">
-                  <li><a id="click_getting_started_link">Getting started</a></li>
-                  <li><a id="click_info_link">Info</a></li>
-                  <li><a id="click_advanced_settings_link">Advanced settings</a></li>
-                  <?php
-                      $my_datasets = array();
+	<div class="container">
+		
+		<div class="navbar-header">
+		  <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		  </button>
+		  <a class="navbar-brand" href=".">        Ribbon</a>
+		</div>
+		<div class="navbar-collapse collapse">
+		  <ul class="nav navbar-nav" id="navbar">
+				  <li><a id="click_getting_started_link">Getting started</a></li>
+				  <li><a id="click_info_link">Info</a></li>
+				  <li><a id="click_advanced_settings_link">Advanced settings</a></li>
+				  <?php
+					  $my_datasets = array();
 
-                      if(isset($_COOKIE["ribbon"])) {
-                        echo '<li class="dropdown">
-                        <a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
-                        <ul class="dropdown-menu" role="menu">';
+					  if(isset($_COOKIE["ribbon"])) {
+						echo '<li class="dropdown">
+						<a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
+						<ul class="dropdown-menu" role="menu">';
 
-                        $my_datasets = json_decode($_COOKIE["ribbon"], true);
+						$my_datasets = json_decode($_COOKIE["ribbon"], true);
 
-                        $arrlength = count($my_datasets);
-                        for($x = 0; $x < $arrlength; $x++) {
-                          $seconds_ago = time() - $my_datasets[$x]["date"];
-                          
-                          $time_ago = $seconds_ago;
-                          if ($seconds_ago > 60) {
-                            $minutes_ago = $seconds_ago/60;
-                            if ($minutes_ago > 60) {
-                              $hours_ago = $minutes_ago/60;
-                              if ($hours_ago > 24) {
-                                $days_ago = $hours_ago/24;
-                                $time_ago = "" . floor($days_ago) . " days";
-                              } else {
-                                $time_ago = "" . floor($hours_ago) . " hours";
-                              }
-                            } else {
-                              $time_ago = "" . floor($minutes_ago) . " minutes";
-                            }
-                          } else {
-                            $time_ago = "" . floor($seconds_ago) . " seconds";
-                          }
-                          
-                          echo "<li><a target='_blank' href='?perma=" . $my_datasets[$x]["codename"] . "'>" . $my_datasets[$x]["description"] . " (" . $time_ago . " ago) </a></li>";
-                        }
+						$arrlength = count($my_datasets);
+						for($x = 0; $x < $arrlength; $x++) {
+						  $seconds_ago = time() - $my_datasets[$x]["date"];
+						  
+						  $time_ago = $seconds_ago;
+						  if ($seconds_ago > 60) {
+							$minutes_ago = $seconds_ago/60;
+							if ($minutes_ago > 60) {
+							  $hours_ago = $minutes_ago/60;
+							  if ($hours_ago > 24) {
+								$days_ago = $hours_ago/24;
+								$time_ago = "" . floor($days_ago) . " days";
+							  } else {
+								$time_ago = "" . floor($hours_ago) . " hours";
+							  }
+							} else {
+							  $time_ago = "" . floor($minutes_ago) . " minutes";
+							}
+						  } else {
+							$time_ago = "" . floor($seconds_ago) . " seconds";
+						  }
+						  
+						  echo "<li><a target='_blank' href='?perma=" . $my_datasets[$x]["codename"] . "'>" . $my_datasets[$x]["description"] . " (" . $time_ago . " ago) </a></li>";
+						}
 
-                        echo '</ul>';
-                      } 
-                  ?>
-                  
-                  <li class="dropdown" id="examples_navbar_item">
+						echo '</ul>';
+					  } 
+				  ?>
+				  
+				  <li class="dropdown" id="examples_navbar_item">
 
-                    <a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu" id="examples_list">
-                    <!-- Examples added here from Ajax call within vis.js -->
-                    </ul>
-                  </li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
+					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
+					<ul class="dropdown-menu" role="menu" id="examples_list">
+					<!-- Examples added here from Ajax call within vis.js -->
+					</ul>
+				  </li>
+		  </ul>
+		</div><!--/.nav-collapse -->
+	</div>
 </div>
 <!--            End of Navigation Bar        -->
 
@@ -160,23 +151,23 @@
 			<div class="panel panel-default">
 			  <div class="panel-heading"><h3 class="panel-title">Information about Ribbon</h3></div>
 			  <div class="panel-body">
-			  	  <p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
-			      <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-			      <p>
+					<p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
+				  <p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+				  <p>
 					<p><strong>Please cite our paper on the bioRxiv:</strong></p>
 					<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
 				</p>
-			      <p>Ribbon stands on the shoulders of giants:</p>
-			      <ul>
-			      	<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
-			      	<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
-			      	<li>Bam files read using code from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab, including code originally from Thomas Down's Dalliance Genome Explorer </li>
-			      </ul>
-			      <p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
-			      <ul>
-			      	<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
-			      	<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
-			      </ul>
+				  <p>Ribbon stands on the shoulders of giants:</p>
+				  <ul>
+					  <li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
+					  <li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
+					  <li>Bam files read using code from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab, including code originally from Thomas Down's Dalliance Genome Explorer </li>
+				  </ul>
+				  <p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
+				  <ul>
+					  <li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
+					  <li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
+				  </ul>
 			  </div>
 			</div>
 
@@ -184,22 +175,22 @@
 			<!-- PAPER LINK -->
 
 			<!-- <div class="panel panel-default">
-			    <div class="panel-heading"><h3 class="panel-title">How to cite Ribbon</h3></div>
-			    <div class="panel-body">
-			        <p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
-			        Citation information goes here
-			    </div>
+				<div class="panel-heading"><h3 class="panel-title">How to cite Ribbon</h3></div>
+				<div class="panel-body">
+					<p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
+					Citation information goes here
+				</div>
 			</div>
 
 			 -->
 			<div class="panel panel-default">
-			    <div class="panel-heading"> <h3 class="panel-title">Contact information</h3></div>
-			    <div class="panel-body">
-			          <!-- <p>Science and web application by <a href="http://marianattestad.com" target="_blank">Maria Nattestad</a></p> -->
-			          <!-- <p>Principal investigator / The Boss: <a href="http://schatzlab.cshl.edu" target="_blank">Mike Schatz</a></p> -->
-			          <!-- <br> -->
-			          <p>For questions contact Maria Nattestad at <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20Ribbon" target="_top">mnattest@cshl.edu</a></p>
-			    </div>
+				<div class="panel-heading"> <h3 class="panel-title">Contact information</h3></div>
+				<div class="panel-body">
+					  <!-- <p>Science and web application by <a href="http://marianattestad.com" target="_blank">Maria Nattestad</a></p> -->
+					  <!-- <p>Principal investigator / The Boss: <a href="http://schatzlab.cshl.edu" target="_blank">Mike Schatz</a></p> -->
+					  <!-- <br> -->
+					  <p>For questions contact Maria Nattestad at <a href="mailto:mnattest@cshl.edu?Subject=Question%20About%20Ribbon" target="_top">mnattest@cshl.edu</a></p>
+				</div>
 			</div>		
 	</div>
 	<div id="start_panel">
@@ -270,12 +261,12 @@
 					</div>
 					<hr>
 					<div class="input-group">
-				      <input type="text" class="form-control" id="permalink_name" placeholder="Type permalink name...">
-				      <span class="input-group-btn">
-				        <button class="btn btn-secondary" id="generate_permalink_button" type="button">Share permalink</button>
-				      </span>
-				    </div>
-				    <hr>
+					  <input type="text" class="form-control" id="permalink_name" placeholder="Type permalink name...">
+					  <span class="input-group-btn">
+						<button class="btn btn-secondary" id="generate_permalink_button" type="button">Share permalink</button>
+					  </span>
+					</div>
+					<hr>
 					  <button id="screenshot_top">Download top view as png</button>
 					  <button id="screenshot_bottom">Download bottom view as png</button>
 				</div>
@@ -334,7 +325,7 @@
 									<td colspan="2">
 										<select class="form-control" id="color_scheme_dropdown">
 											
-									 	</select>
+										 </select>
 									</td>
 								</tr>
 								<tr>
@@ -408,7 +399,7 @@
 									<td colspan="2"> 
 										<select class="form-control" id="show_indels_as_dropdown">
 											
-									 	</select>
+										 </select>
 									</td>
 								</tr>
 								<tr><th class="when_features_only" colspan="3">Features</th></tr>
@@ -417,7 +408,7 @@
 									<td colspan="2"> 
 										<select class="form-control" id="show_features_as_dropdown">
 											
-									 	</select>
+										 </select>
 									</td>
 								</tr>
 								<tr><th colspan="3" class="when_variants_only">Variants</th></tr>
@@ -755,7 +746,6 @@
 </div>
 
 
-<!-- <div id="image_capture_test_landing"></div> -->
 <script>
 	var splitthreader_data = undefined;
 	splitthreader_data = <?php 
@@ -769,10 +759,9 @@
 </script>
 
 <!-- Libraries -->
-<script src="js/d3.v3.min.js"></script>
-<script src="js/jquery.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-
+<script src="node_modules/d3/d3.min.js"></script>
+<script src="node_modules/jquery/dist/jquery.min.js"></script>
+<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
 <!-- Special range slider -->
 <script src="js/jquery-ui.min.js"></script>
@@ -787,7 +776,6 @@
 <script src="js/bam/iobio.js"></script>
 <script src="js/bam/bam.iobio.js"></script>
 
-
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>
 <script src="js/d3-superTable.js"></script>
@@ -797,8 +785,5 @@
 <!-- Main -->
 <script src="js/vis.js"></script>
 
-
 </body>
 </html>
-
-
