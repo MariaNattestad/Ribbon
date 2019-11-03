@@ -4599,26 +4599,7 @@ var _num_bam_records_to_load = 0;
 
 function my_fetch(chrom, start, end, callback) {
 	_num_bam_records_to_load += 1;
-
-	if (_Bam.sourceType == "url") {
-		// var records = [];
-		var rawRecords = "";
-		var region = chrom + ":" + start + "-" + end;
-		var cmd = new iobio.cmd(_Bam.iobio.samtools,['view', _Bam.bamUri, region], {ssl:_Bam.ssl,})
-		cmd.on('error', function(error) {
-			// console.log(error);
-		})
-		cmd.on('data', function(data, options) {
-			rawRecords += data;
-		});
-		cmd.on('end', function() {
-			callback(parse_bam_text(rawRecords));
-		});
-
-		cmd.run();
-	} else {
-		_Bam.fetch(chrom, start, end, callback);
-	}
+	_Bam.fetch(chrom, start, end, callback);
 }
 
 // function fetch_regions(regions) {
