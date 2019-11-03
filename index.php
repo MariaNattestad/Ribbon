@@ -766,15 +766,8 @@
 <!-- Special range slider -->
 <script src="js/jquery-ui.min.js"></script>
 
-<!-- Library from bam.iobio for reading a bam file -->
-<script src="js/bam/binary.js"></script>
-<script src="js/bam/bin.js"></script>
-<script src="js/bam/class.js"></script>
-
-<script src="js/bam/inflate.js"></script>
-<script src="js/bam/bam.js"></script>
-<script src="js/bam/iobio.js"></script>
-<script src="js/bam/bam.iobio.js"></script>
+<!-- Aioli for running samtools.wasm -->
+<script src="node_modules/@robertaboukhalil/aioli/aioli.js"></script>
 
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>
