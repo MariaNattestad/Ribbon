@@ -5101,6 +5101,8 @@ function resizeWindow() {
 
 var debug = {}, debug2 = {};
 var app = null;
+
+var URL_PROXY = "https://genomeribbon.robert.workers.dev/proxy/?url=";
 var DIR_IMPORTS = [ "samtools.worker.js" ];
 class App
 {
@@ -5150,7 +5152,11 @@ class App
 
 	mountBam(bamFile, indexFile)
 	{
-		var config = { files: [bamFile, indexFile] };
+		var bamFile = `${URL_PROXY}${bamFile}`,
+			baiFile = `${URL_PROXY}${baiFile}`,
+			config = {
+				files: [bamFile, indexFile]
+			};
 
 		// Support URLs
 		if(this.isURL(bamFile)) {
