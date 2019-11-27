@@ -3955,14 +3955,16 @@ function set_variant_info_text() {
 }
 
 function load_bam_url_in_background(url) {
-	app.mountBam(url);
+	_Bam = new Bam(url);
+	_Bam.getHeader(function() {console.log("got header from url bam")});
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
 }
 
 function read_bam_url(url) {
-	app.mountBam(url);
+	_Bam = new Bam(url);
 	ga('send', 'event', "BAM_URL","load",url);
+	_Bam.getHeader(function() {console.log("got header")});
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
@@ -5118,7 +5120,6 @@ function resizeWindow() {
 // == WebAssembly
 // ===========================================================================
 
-var debug = {}, debug2 = {};
 var app = null;
 var DIR_IMPORTS = [ "samtools.worker.js" ];
 class App
@@ -5245,9 +5246,6 @@ class App
 										reads.push(lastRead);
 								}
 		
-								debug = reads;
-								debug2 = d.stdout;
-
 								callback(reads);
 							});
 						}
