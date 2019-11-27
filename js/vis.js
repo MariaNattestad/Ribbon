@@ -5163,25 +5163,9 @@ class App
 		});
 	}
 
-	isURL(obj)
-	{
-		return typeof(obj) == "string" && (obj.startsWith('http://') || obj.startsWith('https://'));
-	}
-
 	mountBam(bamFile, indexFile)
 	{
 		var config = { files: [bamFile, indexFile] };
-
-		// Support URLs
-		if(this.isURL(bamFile)) {
-			// If no bam index URL provided, assume it's .bai
-			indexFile = indexFile || `${bamFile}.bai`;
-			if(this.isURL(indexFile))
-				config = { urls: [bamFile, indexFile] };
-			// Convert string to object so the code below still works
-			bamFile = { name: bamFile.split('/').reverse()[0] };
-		}
-
 		this.aioli
 			// Mount .bam and .bai
 			.mount(config)
@@ -5202,7 +5186,7 @@ class App
 									end: +info[1] + 1
 								}
 							});
-		
+
 					// Define bam object
 					_Bam = {
 						sourceType: "file",
@@ -5227,7 +5211,7 @@ class App
 											mq: +readInfo[4],
 											cigar: readInfo[5]
 										}
-			
+
 										// Parse SA tag
 										for (var i = 0; i < readInfo.length; i++) {
 											if (readInfo[i].substr(0, 2) == "SA") {
@@ -5235,7 +5219,7 @@ class App
 												break;
 											}
 										}
-			
+
 										return record;
 									});
 
@@ -5245,7 +5229,6 @@ class App
 									if(lastRead.segment != null)
 										reads.push(lastRead);
 								}
-		
 								callback(reads);
 							});
 						}
