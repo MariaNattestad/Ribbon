@@ -5174,6 +5174,11 @@ class App
 				console.log("Mounted: ", mountInfo);
 				this.exec(`samtools view -H ${mountInfo[bamFile.name].path}`).then(d =>
 				{
+					if(d.stdout == null) {
+						user_message("Error", "Could not parse the BAM file header.");
+						return;
+					}
+
 					// Parse SQ fields from header
 					var sq = d.stdout
 							.filter(d => d.startsWith("@SQ"))
