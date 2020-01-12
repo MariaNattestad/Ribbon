@@ -159,9 +159,10 @@
 				</p>
 				  <p>Ribbon stands on the shoulders of giants:</p>
 				  <ul>
-					  <li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
-					  <li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
-					  <li>Bam files read using code from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab, including code originally from Thomas Down's Dalliance Genome Explorer </li>
+					<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
+					<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
+					<li>Remote bam files are read from any publicly accessible URL using a library from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab.</li>
+					<li>Local bam files are read using Samtools compiled into WebAssembly.</li>
 				  </ul>
 				  <p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
 				  <ul>
