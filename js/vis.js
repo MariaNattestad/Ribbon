@@ -4415,13 +4415,12 @@ function create_bam(files) {
 		alert('must select both a .bam and index (.bai or .csi) file');
 	}
 
-	_Bam = new Bam( bamFile, { index: indexFile });
+	// Initialize bam file in the variable _Bam
+	app.mountBam(bamFile, indexFile);
 
 	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
 	set_alignment_info_text();
 	ga('send', 'event', "BAM_file","load",bamFile.name);
-
-	wait_then_run_when_bam_file_loaded();
 }
 
 
@@ -4432,7 +4431,7 @@ function wait_then_run_when_bam_file_loaded(counter) {
 		user_message("Error","File taking too long to load")
 		return;
 	}
-	if (typeof _Bam.header != 'undefined') {
+	if (_Bam != null && typeof _Bam.header != 'undefined') {
 		console.log("ready");
 		bam_loaded();
 	} else {
@@ -5116,6 +5115,146 @@ function resizeWindow() {
 	responsive_sizing();
 }
 
+
+// ===========================================================================
+// == WebAssembly
+// ===========================================================================
+
+var app = null;
+var DIR_IMPORTS = [ "samtools.worker.js" ];
+class App
+{
+	constructor()
+	{
+		// Internal state
+		this.aioli = null;
+		this.files = [];
+		// Where output is saved
+		this.output = 0;
+	}
+
+	init()
+	{
+		// Create Aioli (and the WebWorker in which WASM code will run)
+		this.aioli = new Aioli({
+			imports: DIR_IMPORTS
+		});
+
+		// Initialize WASM within WebWorker
+		return this.aioli
+				   .init()
+				   .then(() => {
+						// Once module is initialized, get samtools version
+						return app.aioli.exec({
+							raw: true,
+							args: ["--version"]
+						});
+				   }).then(d => {
+					   console.log(d.stdout.join("\n"));
+				   });
+	}
+
+	exec(cmdStr)
+	{
+		var cmd = cmdStr.split(' ').slice(1);  // remove 1st command (i.e. samtools)
+		return this.aioli.exec({
+			raw: true,
+			args: cmd,
+		});
+	}
+
+	mountBam(bamFile, indexFile)
+	{
+		var config = { files: [bamFile, indexFile] };
+		this.aioli
+			// Mount .bam and .bai
+			.mount(config)
+			// Then get bam header
+			.then(mountInfo => {
+				console.log("Mounted: ", mountInfo);
+				this.exec(`samtools view -H ${mountInfo[bamFile.name].path}`).then(d =>
+				{
+					if(d.stdout == null) {
+						user_message("Error", "Could not parse the BAM file header.");
+						return;
+					}
+
+					// Parse SQ fields from header
+					var sq = d.stdout
+							.filter(d => d.startsWith("@SQ"))
+							.map(d => {
+								var info = d.split("\t")
+											.filter(d => d.startsWith("SN:") || d.startsWith("LN:"))
+											.map(d => d.replace("SN:", "").replace("LN:", ""))				
+								return {
+									name: info[0],
+									end: +info[1] + 1
+								}
+							});
+
+					// Define bam object
+					_Bam = {
+						sourceType: "file",
+						header: {
+							sq: sq,
+							toStr: d.stdout.join("\n")
+						},
+						fetch: function(chrom, start, end, callback) {
+							app.exec(`samtools view ${mountInfo[bamFile.name].path} ${chrom}:${start}-${end}`).then(d =>
+							{
+								// Turn read string into object
+								var reads = [];
+								if(d.stdout != null)
+								{
+									reads = d.stdout.map(r => {
+										var readInfo = r.split("\t");
+										var record = {
+											readName: readInfo[0],
+											flag: +readInfo[1],
+											segment: readInfo[2],
+											pos: +readInfo[3],
+											mq: +readInfo[4],
+											cigar: readInfo[5]
+										}
+
+										// Parse SA tag
+										for (var i = 0; i < readInfo.length; i++) {
+											if (readInfo[i].substr(0, 2) == "SA") {
+												record.SA = readInfo[i].split(":")[2];
+												break;
+											}
+										}
+
+										return record;
+									});
+
+									// Last read should be an empty line
+									var lastRead = reads.pop();
+									// ... but in case it isn't...
+									if(lastRead.segment != null)
+										reads.push(lastRead);
+								}
+								callback(reads);
+							});
+						}
+					};
+					bam_loaded();
+				});
+			});
+	}
+}
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", function() {
+	// Setup app
+	app = new App();
+	app.init();
+});
+
+
+// ===========================================================================
+// == Main
+// ===========================================================================
 
 run();
 open_any_url_files();
