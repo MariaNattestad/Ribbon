@@ -141,6 +141,11 @@ _scales.ref_color_scale = d3.scale.ordinal().range(_static.color_collections[_se
 _scales.variant_color_scale = d3.scale.ordinal();
 _scales.feature_color_scale = d3.scale.ordinal();
 
+// Show each warning only the first time it comes up in a session
+var _warnings = {};
+_warnings.pe_mode= false;
+_warnings.large_features = false;
+
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
 	parent_object.selectAll("g.tip").remove();
@@ -1378,7 +1383,6 @@ function chunk_changed() {
 		_Alignments = [];
 		_Chunk_ref_intervals = [];
 		draw_region_view();
-		// user_message("","");
 	}
 	
 	refresh_visibility();
@@ -1493,7 +1497,10 @@ function consolidate_records(records) {
 
 	if (_settings.paired_end_mode) {
 		console.log("Found flag indicating paired end reads");
-		user_message("Info","Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
+		if (!_warnings.pe_mode) {
+			user_message("Info","Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
+			_warnings.pe_mode = true;
+		}
 		var paired_end_reads = {};
 		var read_length_counts = {};
 		for (var i in records) {
@@ -1793,37 +1800,11 @@ function calculate_type_colors(variant_list) {
 	return {"names":variant_names, "colors":colors_for_variants};
 }
 
-// function feature_row_click(d) {
-// 	d3.select("#text_region_output").html("Selected variant: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
-// 	// Mark variant as selected:
-// 	for (var i in _Features) {
-// 		_Features[i].highlight = (_Features[i].name == d.name);
-// 	}
-// 	var query_start = (d.start+d.end)/2;
-// 	var query_end = (d.start+d.end)/2+1;
-// 	_Additional_ref_intervals = [{"chrom":d.chrom,"start":query_start,"end":query_end}];
-// 	go_to_region(d.chrom,query_start,query_end);
-// }
-
 function batch_bam_fetching(chrom,start,end,callback) {
 	my_fetch(chrom,start, end, callback);
-
-	// The following code queries the bam file in batches, but for test cases tried so far it is slower
-	// var size = end - start;
-	// var num_pieces = 10;
-	// var piece_size = parseInt(size/num_pieces);
-	// console.log("size:", size);
-	// for (var i = 0; i < num_pieces-1; i += 1) {
-	// 	console.log('i = ', i);
-	// 	console.log("edge:", piece_size*(i+1));
-	// 	my_fetch(chrom,start + piece_size*i, start + piece_size*(i+1), callback);	
-	// }
-	// console.log("starting edge of last piece:", piece_size*(num_pieces-1));
-	// my_fetch(chrom,start + piece_size*(num_pieces-1), end, callback);
 }
 
 function flexible_bam_fetch(region_list) {
-	console.log("RUNNING flexible_bam_fetch");
 	_Additional_ref_intervals = [];
 
 	if (_Bam != undefined) {
@@ -1889,12 +1870,27 @@ function flexible_bam_fetch(region_list) {
 	}
 }
 
+function feature_row_click(d) {
+	d3.select("#text_region_output").html("Selected feature: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
+	// Mark feature as selected:
+	for (var i in _Features) {
+		_Features[i].highlight = (_Features[i].name == d.name);
+	}
+	if (!_warnings.large_features && d.end - d.start > 1000) {
+		user_message("Warning", "Be careful with long features as loading too many reads can cause out-of-memory errors.")
+	}
+	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
+}
+
 function variant_row_click(d) {
 	
 	d3.select("#text_region_output").html("Selected variant: "  + d.name + " (" + d.type + ") at " + d.chrom + ":" + d.start + "-" + d.end);
 	// Mark variant as selected:
 	for (var i in _Variants) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
+	}
+	if (!_warnings.large_features && d.end - d.start > 1000) {
+		user_message("Warning", "Be careful with large regions as loading too many reads can cause out-of-memory errors.")
 	}
 	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
 
@@ -1916,11 +1912,9 @@ function show_feature_table() {
 		d3.superTable()
 			.table_data(_Features)
 			.num_rows_to_show(15)
+			.click_function(feature_row_click)
 			.show_advanced_filters(true)
 	);
-	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
-		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. You can also apply multiple filters in the same column, just separate them with spaces.");
-	});
 }
 function show_variant_table() {
 	d3.select("#variant_table_panel").style("display","block");
@@ -1933,9 +1927,6 @@ function show_variant_table() {
 			.click_function(variant_row_click)
 			.check_ready_function(check_bam_done_fetching)
 	);
-	d3.select(".d3-superTable-table").selectAll("input").on("focus",function() {
-		user_message("Instructions","Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. You can also apply multiple filters in the same column, just separate them with spaces.");
-	});
 
 }
 function bedpe_row_click(d) {
@@ -1943,15 +1934,6 @@ function bedpe_row_click(d) {
 	console.log("go to regions:", d.chrom1 , ":",  d.pos1, " and ",  d.chrom2, ":", d.pos2);
 	
 	flexible_bam_fetch([	{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1}, {"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1} ]);
-
-	// var regions = [];
-	// regions.push({"chrom":d.chrom1,"pos":d.pos1});
-	// regions.push({"chrom":d.chrom2,"pos":d.pos2});
-	// fetch_regions(regions);
-	// _Additional_ref_intervals = [
-	// 	{"chrom":d.chrom1,"start":d.pos1,"end":d.pos1+1},
-	// 	{"chrom":d.chrom2,"start":d.pos2,"end":d.pos2+1}
-	// ];
 
 	d3.select("#text_region_output").html("Selected bedpe variant: "  + d.name + " (" + d.type + ") at " + d.chrom1 + ":" + d.pos1 + " and " +  d.chrom2 + ":" + d.pos2);
 
@@ -2512,35 +2494,43 @@ function parse_SA_field(sa) {
 }
 
 function user_message(message_type,message) {
-	// console.log("USER MESSAGE:", message);
-	if (message_type == "") {
-		d3.select("#user_message").html("").style("display","none");
-	} else {
-		d3.select("#user_message").style("display","block");
-
-		if (message_type == "Permalink") {
-			d3.select("#user_message").html('<strong>'+ message_type + ': </strong><a href="' + message + '" target="_blank">' + message + '</a> <p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>').attr("class","alert alert-success");
-		} else {
-			var message_style = "default";
-			switch (message_type) {
-				case "error":
-					message_style="danger";
-					break;
-				case "Error":
-					message_style="danger";
-					break;
-				case "warning","Warning":
-					message_style="warning";
-					break;
-				case "Instructions":
-					message_style="success";
-					break;
-				default:
-					message_style="info";
-			}
-			d3.select("#user_message").html("<strong>"+ message_type + ": </strong>" + message).attr("class","alert alert-" + message_style);
-		}
+	var message_style = "default";
+	switch (message_type) {
+		case "Permalink":
+			html = '<strong>'+ message_type + ': </strong><a href="' + message + '" target="_blank">' + message + '</a> <p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>';
+			message_style = "success";
+			break;
+		case "error":
+			message_style="danger";
+			break;
+		case "Error":
+			message_style="danger";
+			break;
+		case "warning","Warning":
+			message_style="warning";
+			break;
+		case "Instructions":
+			message_style="info";
+			break;
+		case "Success":
+			message_style="success";
+			break;
+		default:
+			message_style="info";
 	}
+	html = "<strong>"+ message_type + ": </strong>" + message
+
+	var alert = d3.select("#user-message").append("div")
+		.attr("class","alert alert-" + message_style +" alert-dismissable")
+		.attr("role","alert");
+	alert.append("a")
+		.attr("href","#")
+		.attr("class","close")
+		.attr("data-dismiss","alert")
+		.attr("aria-label","close")
+		.html("&times;");
+	alert.append("p")
+		.html(html);
 }
 
 function cigar_coords(cigar) {
@@ -4253,6 +4243,9 @@ function read_feature_bed(raw_data) {
 	
 	_Features = [];
 	for (var i in input_text) {
+		if (input_text[i][0] == "#") {
+			continue
+		}
 		var columns = input_text[i].split(/\s+/);
 		if (columns.length>2) {
 			var start = parseInt(columns[1]);
@@ -4495,17 +4488,12 @@ function bam_loaded() {
 	}
 
 	if (PG_count == 0) {
-		user_message("Warning", "No header found. Are you sure this is a bam file?");
+		user_message("Error", "No header found. Are you sure this is a bam file?");
+		return
 	}
-	else if (PG_count == 1) {
-		if (_Bedpe.length > 0 || _Variants.length > 0) {
-			d3.select("#collapsible_variant_upload_box").attr("class","panel-collapse collapse");
-			user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Click on rows in the table to fetch reads in those regions.");
-		} else {
-			user_message("Info", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Select a region to fetch reads or upload variants to inspect. ");	
-		}	
-	} else {
-		user_message("Warning", "Bam files with multiple @PG header lines have been found to have issues fetching records. This bam file has " + PG_count + " lines starting with @PG. If you experience issues when fetching reads from this bam file, remove all @PG lines except one. Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes).");
+	user_message("Success", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on.");	
+	if (PG_count > 1) {
+		user_message("Warning", "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one.");
 	}
 	
 	refresh_visibility();
@@ -4574,7 +4562,6 @@ function get_chrom_index(chrom) {
 
 var _loading_bam_right_now = false;
 function show_waiting_for_bam() {
-	user_message("Info","Fetching bam records at position");
 	d3.select("#region_go").property("disabled",true);
 	d3.select("#region_go").html("Fetching...");
 	d3.select("#region_go").style("color","gray");
@@ -4623,29 +4610,11 @@ function my_fetch(chrom, start, end, callback) {
 	}
 }
 
-// function fetch_regions(regions) {
-// 	if (_Bam != undefined) {
-// 		console.log("Fetching bam records at position");
-// 		show_waiting_for_bam();
-
-// 		_num_bam_records_to_load = regions.length;
-// 		_num_loaded_regions = 0;
-// 		_Bam_records_from_multiregions = [];
-
-// 		for (var i in regions) {
-// 			my_fetch(regions[i].chrom,regions[i].pos,regions[i].pos+1,use_additional_fetched_data);
-// 		}
-// 	} else {
-// 		console.log("No bam file");
-// 		user_message("Error","No bam file");
-// 	}
-// }
-
 function check_if_all_bam_records_loaded() {
 	console.log("_num_bam_records_to_load:", _num_bam_records_to_load);
 	if (_num_loaded_regions >= _num_bam_records_to_load) {
 		// All bam records loaded, now consolidate to prevent duplicate reads:
-		console.log("Bam record finished loading");
+		console.log("Bam records finished loading");
 		show_bam_is_ready();
 		
 		use_fetched_data(_Bam_records_from_multiregions);
@@ -4655,26 +4624,10 @@ function check_if_all_bam_records_loaded() {
 
 
 function use_additional_fetched_data(records) {
-	// console.log("received dataset");
-	// console.log("_num_loaded_regions:", _num_loaded_regions);
 	_Bam_records_from_multiregions = _Bam_records_from_multiregions.concat(records);
 	_num_loaded_regions++;
 	check_if_all_bam_records_loaded();
 }
-
-// function go_to_region(chrom,start,end) {
-// 	_focal_region = {"chrom":chrom,"start":start,"end":end};
-
-// 	if (_Bam != undefined) {
-// 		console.log("Fetching bam records at position");
-// 		show_waiting_for_bam();
-
-// 		my_fetch(chrom,start,end,use_fetched_data);
-// 	} else {
-// 		console.log("No bam file");
-// 		user_message("Error","No bam file");
-// 	}
-// }
 
 //////////////////////////////    Fetch bam data from a specific region  //////////////////////////////
 
@@ -4741,7 +4694,6 @@ function parse_bam_text(bam_text) {
 			}
 		}
 	}
-	// console.log("done parsing bam text");
 
 	// create list of BamRecords:
 	// {"segment": "chr1","pos":48492988, "flag": 2048, "mq": 60, "cigar":"83984M382H", "tags": "NMskdjfkdjf SAsdkjfskdf etc"}
@@ -4779,11 +4731,8 @@ function tell_user_how_many_records_loaded() {
 			.attr("fill","white")
 			.text("");
 	}
-	if (_settings.paired_end_mode) {
-		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length + ". Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
-	} else {
-		user_message("Info","Total reads mapped in region: " + _Chunk_alignments.length);
-	}
+
+	console.log("Total reads mapped in region: " + _Chunk_alignments.length);
 }
 
 function region_submitted(event) {
@@ -4801,12 +4750,8 @@ function region_submitted(event) {
 	if (isNaN(start) == true) {
 		user_message("Error", "start value:" + d3.select("#region_start").property("value") + " could not be made into a number");
 		return;
-	} //else if (isNaN(end) == true) {
-	// 	user_message("Error", "end value:" + d3.select("#region_end").property("value") + " could not be made into a number");
-	// }
-
-	var end = start + 1; //parseInt(d3.select("#region_end").property("value").replace(/,/g,""));
-
+	}
+	var end = start + 1;
 
 	var chrom_index = get_chrom_index(chrom);
 	if (chrom_index != undefined) {
@@ -4835,12 +4780,10 @@ function region_submitted(event) {
 		// d3.select("#region_end").property("value",end);
 
 		flexible_bam_fetch([{"chrom":chrom,"start":start,"end":end}])
-		// go_to_region(chrom,start,end);
 
 		// _Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":end}];
 		d3.select("#text_region_output").html("Showing reads at position: " + chrom + ": " + start);
 	} else {
-		// console.log("Bad");
 		user_message("Error","Chromosome does not exist in reference");
 	}
 }
@@ -5052,18 +4995,18 @@ function screenshot_individual_reads() {
 }
 // Thanks to http://stackoverflow.com/questions/2897619/using-html5-javascript-to-generate-and-save-a-file
 function download(filename, text) {
-    var pom = document.createElement('a');
-    pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    pom.setAttribute('download', filename);
+	var pom = document.createElement('a');
+	pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	pom.setAttribute('download', filename);
 
-    if (document.createEvent) {
-        var event = document.createEvent('MouseEvents');
-        event.initEvent('click', true, true);
-        pom.dispatchEvent(event);
-    }
-    else {
-        pom.click();
-    }
+	if (document.createEvent) {
+		var event = document.createEvent('MouseEvents');
+		event.initEvent('click', true, true);
+		pom.dispatchEvent(event);
+	}
+	else {
+		pom.click();
+	}
 }
 
 function create_and_download_info(num_split) {
@@ -5171,7 +5114,6 @@ class App
 			.mount(config)
 			// Then get bam header
 			.then(mountInfo => {
-				console.log("Mounted: ", mountInfo);
 				this.exec(`samtools view -H ${mountInfo[bamFile.name].path}`).then(d =>
 				{
 					if(d.stdout == null) {
