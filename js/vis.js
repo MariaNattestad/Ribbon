@@ -141,7 +141,10 @@ _scales.ref_color_scale = d3.scale.ordinal().range(_static.color_collections[_se
 _scales.variant_color_scale = d3.scale.ordinal();
 _scales.feature_color_scale = d3.scale.ordinal();
 
-_pe_mode_explained = false;
+// Show each warning only the first time it comes up in a session
+var _warnings = {};
+_warnings.pe_mode= false;
+_warnings.large_features = false;
 
 var _tooltip = {};
 function show_tooltip(text,x,y,parent_object) {
@@ -1494,9 +1497,9 @@ function consolidate_records(records) {
 
 	if (_settings.paired_end_mode) {
 		console.log("Found flag indicating paired end reads");
-		if (!_pe_mode_explained) {
+		if (!_warnings.pe_mode) {
 			user_message("Info","Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair");
-			_pe_mode_explained = true;
+			_warnings.pe_mode = true;
 		}
 		var paired_end_reads = {};
 		var read_length_counts = {};
@@ -1873,7 +1876,7 @@ function feature_row_click(d) {
 	for (var i in _Features) {
 		_Features[i].highlight = (_Features[i].name == d.name);
 	}
-	if (d.end - d.start > 1000) {
+	if (!_warnings.large_features && d.end - d.start > 1000) {
 		user_message("Warning", "Be careful with long features as loading too many reads can cause out-of-memory errors.")
 	}
 	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
@@ -1885,6 +1888,9 @@ function variant_row_click(d) {
 	// Mark variant as selected:
 	for (var i in _Variants) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
+	}
+	if (!_warnings.large_features && d.end - d.start > 1000) {
+		user_message("Warning", "Be careful with large regions as loading too many reads can cause out-of-memory errors.")
 	}
 	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
 
