@@ -1877,9 +1877,11 @@ function feature_row_click(d) {
 		_Features[i].highlight = (_Features[i].name == d.name);
 	}
 	if (!_warnings.large_features && d.end - d.start > 1000) {
-		user_message("Warning", "Be careful with long features as loading too many reads can cause out-of-memory errors.")
+		user_message("Warning", "Be careful with long features as loading too many reads can cause out-of-memory errors.");
+		_warnings.large_features = true;
 	}
 	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
+	ga('send', 'event', "feature_table", "select");
 }
 
 function variant_row_click(d) {
@@ -1890,7 +1892,8 @@ function variant_row_click(d) {
 		_Variants[i].highlight = (_Variants[i].name == d.name);
 	}
 	if (!_warnings.large_features && d.end - d.start > 1000) {
-		user_message("Warning", "Be careful with large regions as loading too many reads can cause out-of-memory errors.")
+		user_message("Warning", "Be careful with large regions as loading too many reads can cause out-of-memory errors.");
+		_warnings.large_features = true;
 	}
 	flexible_bam_fetch([{"chrom":d.chrom,"start":d.start,"end":d.end}]);
 
