@@ -230,7 +230,7 @@
 
 <div id="right_panel">
 
-
+	<div id='user-message'></div>
 	<div class="panel-group" id="data_description_panel">
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -274,8 +274,6 @@
 			</div>
 		</div>
 	</div>
-
-	<div id="user_message" class="alert alert-default" role="alert"></div>
 
 	<div class="panel-group" id="region_settings_panel">
 		<div class="panel panel-default">
@@ -671,7 +669,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
 				<div class="panel-body">
 					<div id="variant_table_box">
-						<p> Showing only the first 30 variants. Sort by clicking column names. For bam files, click on a row in the table to fetch reads around that feature. </p>
+						<p> Showing only the first 30 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
 						<div id="variant_table_landing">
 							<!-- superTable creates a table here out of _Variants -->
 						</div>
@@ -733,7 +731,7 @@
 			<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
 				<div class="panel-body">
 					<div id="feature_table_box">
-						<p> Showing only the first 15 features. Sort by clicking column names. Filter by typing queries into text input boxes. </p>
+						<p>Showing only the first 15 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
 						<div id="feature_table_landing">
 							
 						</div>
