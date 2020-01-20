@@ -9,7 +9,7 @@
   "author": "Maria Nattestad",
   "license": "MIT",
   "dependencies": {
-    "bootstrap": "3.2.0",
+    "bootstrap": "3.4.1",
     "d3": "3.5.6",
     "jquery": "1.11.1",
     "@robertaboukhalil/aioli": "0.1.9"
