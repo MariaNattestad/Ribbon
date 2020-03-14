@@ -5,6 +5,9 @@ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 ga('create', 'UA-82379658-1', 'auto');
 ga('send', 'pageview');
 
+// URLs
+var URL_SANDBOX = "https://sandboxbio.robert.workers.dev/api/v0",
+	URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
 
 // Calculations for drawing and spacing out elements on the screen
 var _padding = {};
@@ -4015,19 +4018,30 @@ function write_permalink() {
 		"features":_Features, 
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
-		"permalink_name": permalink_name//,
+		"permalink_name": permalink_name,
 		// "images": image_URIs
 	}};
 	if (_Chunk_alignments.length > 800) {
 		user_message("Warning", "A large dataset may fail to create a permalink. Reduce upload file size if this occurs.");	
 	}
 	
+	// Compress & convert to base 64 so we can POST it to the server
+	var data = btoa(
+		// Compress
+		pako.deflate(
+			JSON.stringify({
+				ribbon: post_data,
+				name: permalink_name
+			}),
+			{ to: 'string' }
+		)
+	);
 	jQuery.ajax({
 		type: "POST",
-		url: "permalink_creator.php",
-		data: {ribbon: JSON.stringify(post_data), name: permalink_name},
+		url: URL_SANDBOX_STORE,
+		data: JSON.stringify(data),
 		success: function(data) {
-			user_message("Permalink", data);
+			user_message("Permalink", `<a href="?perma=${data.data}">${data.data}</a>`);
 			d3.select("#generate_permalink_button").property("disabled",false);
 			d3.select("#generate_permalink_button").html("Share permalink");
 		},
@@ -4046,8 +4060,19 @@ function read_permalink(id) {
 	user_message("Info","Loading data from permalink");
 
 	jQuery.ajax({
-		url: "permalinks/" + id + ".json", 
-		success: function(file_content) {
+		url: URL_SANDBOX_STORE + id,
+		success: function(data) {
+			// Decompress
+			file_content = JSON.parse(
+				// Decompress
+				pako.inflate(
+					// Convert base-64 encoding (needed for data transfer) to binary
+					atob(data.data),
+					// Decompress to string
+					{ to: 'string' }
+				)
+			).ribbon;
+
 			// Data type
 			var json_data = null; 
 			if (typeof(file_content) === "object") {

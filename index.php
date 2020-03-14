@@ -773,6 +773,9 @@
 <script src="js/bam/iobio.js"></script>
 <script src="js/bam/bam.iobio.js"></script>
 
+<!-- Pako (zlib port) -->
+<script src="node_modules/pako/dist/pako.min.js"></script>
+
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>
 <script src="js/d3-superTable.js"></script>
