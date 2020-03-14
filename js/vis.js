@@ -4006,6 +4006,17 @@ function load_json_bam(header) {
 }
 
 
+// Compress data before sending it
+function generate_permalink_data(post_data) {
+	return btoa(  						// 3/3: convert resulting binary to base 64 so we can send it to the server
+		pako.deflate(					// 2/3: compress string with zlib
+			JSON.stringify(post_data),	// 1/3: stringify object so we can compress it
+			{ to: 'string' }
+		)
+	);
+}
+
+// Create new permalink
 function write_permalink() {
 
 	d3.select("#generate_permalink_button").html("Creating permalink...");
@@ -4028,27 +4039,18 @@ function write_permalink() {
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
 		"permalink_name": permalink_name,
-		// "images": image_URIs
 	}};
 	if (_Chunk_alignments.length > 800) {
 		user_message("Warning", "A large dataset may fail to create a permalink. Reduce upload file size if this occurs.");	
 	}
 
-	// Compress & convert to base 64 so we can POST it to the server
-	var data = btoa(
-		// Compress
-		pako.deflate(
-			JSON.stringify({
-				ribbon: post_data,
-				name: permalink_name
-			}),
-			{ to: 'string' }
-		)
-	);
 	jQuery.ajax({
 		type: "POST",
 		url: URL_SANDBOX_STORE,
-		data: JSON.stringify(data),
+		data: JSON.stringify({
+			name: permalink_name,
+			ribbon: generate_permalink_data(post_data)
+		}),
 		success: function(data) {
 			user_message("Permalink", `<a href="?perma=${data.data}">${permalink_name}</a>`);
 			d3.select("#generate_permalink_button").property("disabled",false);
@@ -4073,7 +4075,7 @@ function write_permalink() {
 	});
 }
 
-
+// Read existing permalink
 function read_permalink(id) {
 	ga('send', 'event', "Permalink","read",id);
 
@@ -4087,11 +4089,11 @@ function read_permalink(id) {
 				// Decompress
 				pako.inflate(
 					// Convert base-64 encoding (needed for data transfer) to binary
-					atob(data.data),
+					atob(data.data.ribbon),
 					// Decompress to string
 					{ to: 'string' }
 				)
-			).ribbon;
+			);
 
 			// Data type
 			var json_data = null; 
