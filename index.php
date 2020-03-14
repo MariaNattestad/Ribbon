@@ -44,50 +44,20 @@
 				  <li><a id="click_getting_started_link">Getting started</a></li>
 				  <li><a id="click_info_link">Info</a></li>
 				  <li><a id="click_advanced_settings_link">Advanced settings</a></li>
-				  <?php
-					  $my_datasets = array();
-
-					  if(isset($_COOKIE["ribbon"])) {
-						echo '<li class="dropdown">
-						<a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
-						<ul class="dropdown-menu" role="menu">';
-
-						$my_datasets = json_decode($_COOKIE["ribbon"], true);
-
-						$arrlength = count($my_datasets);
-						for($x = 0; $x < $arrlength; $x++) {
-						  $seconds_ago = time() - $my_datasets[$x]["date"];
-						  
-						  $time_ago = $seconds_ago;
-						  if ($seconds_ago > 60) {
-							$minutes_ago = $seconds_ago/60;
-							if ($minutes_ago > 60) {
-							  $hours_ago = $minutes_ago/60;
-							  if ($hours_ago > 24) {
-								$days_ago = $hours_ago/24;
-								$time_ago = "" . floor($days_ago) . " days";
-							  } else {
-								$time_ago = "" . floor($hours_ago) . " hours";
-							  }
-							} else {
-							  $time_ago = "" . floor($minutes_ago) . " minutes";
-							}
-						  } else {
-							$time_ago = "" . floor($seconds_ago) . " seconds";
-						  }
-						  
-						  echo "<li><a target='_blank' href='?perma=" . $my_datasets[$x]["codename"] . "'>" . $my_datasets[$x]["description"] . " (" . $time_ago . " ago) </a></li>";
-						}
-
-						echo '</ul>';
-					  } 
-				  ?>
-				  
 				  <li class="dropdown" id="examples_navbar_item">
-
 					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu" id="examples_list">
-					<!-- Examples added here from Ajax call within vis.js -->
+						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+					</ul>
+				  </li>
+				  <li class="dropdown" id="user_data_navbar_item">
+					<a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
+					<ul class="dropdown-menu" role="menu" id="user_data_list">
+						<!-- Populated by add_user_links_to_navbar() in vis.js -->						
 					</ul>
 				  </li>
 		  </ul>
@@ -775,6 +745,9 @@
 
 <!-- Pako (zlib port) -->
 <script src="node_modules/pako/dist/pako.min.js"></script>
+
+<!-- Moment.js (to display human-readable date strings e.g. "x hours ago") -->
+<script src="node_modules/moment/min/moment.min.js"></script>
 
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>

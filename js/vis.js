@@ -3909,32 +3909,41 @@ d3.select("#click_info_link").on("click",show_info_panel)
 d3.select("#click_getting_started_link").on("click",show_getting_started_panel);
 d3.select("#click_advanced_settings_link").on("click",show_advanced_settings_panel)
 
-function add_examples_to_navbar() {
-	var core_url = window.location.href.split("?")[0];
-	d3.select("#examples_navbar_item").style("visibility","visible");
-	navbar_examples = d3.select("ul#examples_list");
+// Cookie Management (documentation: https://www.w3schools.com/js/js_cookies.asp)
+// ¯\_(ツ)_/¯
+function get_cookie() {
+	// document.cookie looks like "myvar1=myvalue1; myvar2=myvalue2; ..."
+	return JSON.parse(
+		document.cookie.split(";")
+					   .map(d => d.trim().split("="))
+					   .filter(d => d[0] == "ribbon")[0][1]);
+}
 
-	jQuery.ajax({
-		url: "permalinks",
-		cache: false,
-		error: function() {
-			navbar_examples.append("li").html("Create examples using permalinks and then rename the .json file in the permalinks folder to E_*.json where * is a quick dataset description with underscores instead of spaces, and they will automatically appear here.");
-		},
-		success: function (data) {
-			$(data).find("a").each(function() {
-				// will loop through
-				var example_file = $(this).attr("href");
-				if (example_file.substr(0,2) == "E_" && example_file.substr(example_file.length-5,example_file.length) == ".json") {
-					
-					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
-					navbar_examples.append("li").append("a")
-						.attr("target","_blank")
-						.attr("href", (core_url+"?perma=" + example_file.substr(0, example_file.length-5)))
-						.text(name);
-				}
-			})
-		}
-	});
+function set_cookie(data) {
+	var date = new Date();
+	var expires = date.setTime(date.getTime() + (300*24*60*60*1000));
+	document.cookie = `ribbon=${JSON.stringify(data)}; expires=${expires}`;
+}
+
+// Show user links saved in cookies
+function add_user_links_to_navbar() {
+	var data = get_cookie(),
+		user_links = data.links;
+
+	d3.select("#user_data_navbar_item").style("visibility", user_links == null ? "hidden" : "visible");
+	if(user_links == null)
+		return;
+
+	// Each user_link = { name: ..., perma: ..., date: ... }
+	d3.select("ul#user_data_list").html("");
+	$.each(user_links, function(k, v) {
+		d3.select("ul#user_data_list")
+		  .append("li")
+		  .append("a")
+		  .attr("target","_blank")
+		  .attr("href", `?perma=${v.perma}`)
+		  .html(`${v.name} &nbsp;&nbsp;&nbsp;<small><small>${moment(v.date).fromNow()}</small></small>`);
+	})
 }
 
 function variants_just_loaded() {
@@ -4024,7 +4033,7 @@ function write_permalink() {
 	if (_Chunk_alignments.length > 800) {
 		user_message("Warning", "A large dataset may fail to create a permalink. Reduce upload file size if this occurs.");	
 	}
-	
+
 	// Compress & convert to base 64 so we can POST it to the server
 	var data = btoa(
 		// Compress
@@ -4041,9 +4050,20 @@ function write_permalink() {
 		url: URL_SANDBOX_STORE,
 		data: JSON.stringify(data),
 		success: function(data) {
-			user_message("Permalink", `<a href="?perma=${data.data}">${data.data}</a>`);
+			user_message("Permalink", `<a href="?perma=${data.data}">${permalink_name}</a>`);
 			d3.select("#generate_permalink_button").property("disabled",false);
 			d3.select("#generate_permalink_button").html("Share permalink");
+
+			var cookie = get_cookie();
+			if(cookie.links == null)
+				cookie.links = [];
+			cookie.links.push({
+				name: permalink_name,
+				perma: data.data,
+				date: moment().format()
+			});
+			set_cookie(cookie);
+			add_user_links_to_navbar();
 		},
 		error: function(e) {
 			alert("Error:" + e.message);
@@ -4192,7 +4212,8 @@ function read_permalink(id) {
 	});
 }
 
-add_examples_to_navbar();
+add_user_links_to_navbar();
+
 
 // ===========================================================================
 // == Load bed file
