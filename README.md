@@ -11,24 +11,24 @@ Ribbon is available online at genomeribbon.com and can even read large bam files
 ## Local deployment
 If you need to deploy Ribbon locally, here are the steps:
 
-1. Install XAMPP on your computer (includes Apache and PHP)
-2. Go to the htdocs folder created during the install. On a Mac, the folder is located at /Applications/XAMPP/htdocs/
-
-   ```
-   cd /Applications/XAMPP/htdocs/
-   ```
-
-3. Clone this repository into the htdocs folder and install dependencies
+1. Clone this repository
 
    ```
    git clone https://github.com/marianattestad/ribbon
+   cd ribbon
    npm install
    ```
 
-4. Then go to a web browser such as Chrome, Firefox, or Safari (Not tested on IE) and type into the url box:
+2. Launch a web server
 
    ```
-   localhost/ribbon
+   python2 -m SimpleHTTPServer 9000
+   ```
+
+3. Then go to a web browser such as Chrome, Firefox, or Safari (Not tested on IE) and type into the url box:
+
+   ```
+   localhost:9000
    ```
 
 That is the entire installation process for Ribbon. Don't you love web applications?
