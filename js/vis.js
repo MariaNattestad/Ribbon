@@ -4855,23 +4855,6 @@ function submit_bam_url() {
 }
 d3.select("#submit_bam_url").on("click",submit_bam_url);
 
-
-if (splitthreader_data != "") {
-	console.log("Found SplitThreader data");
-	_Bedpe = [];
-	for (var i in splitthreader_data) {
-		_Bedpe.push({"chrom1":splitthreader_data[i].chrom1, "pos1":parseInt(splitthreader_data[i].pos1),"strand1": splitthreader_data[i].strand1,"chrom2":splitthreader_data[i].chrom2, "pos2":parseInt(splitthreader_data[i].pos2), "strand2": splitthreader_data[i].strand2,"name": splitthreader_data[i].variant_name, "score": splitthreader_data[i].score, "type":splitthreader_data[i].variant_type});
-	}
-	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
-	$('.nav-tabs a[href="#bam"]').tab('show');
-
-
-	update_bedpe();
-	draw_region_view();
-	refresh_ui_elements();
-
-}
-
 window.addEventListener("beforeunload", function (e) {
 	var confirmationMessage = 'Leave Ribbon?';
 
