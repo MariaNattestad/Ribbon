@@ -6,8 +6,8 @@ ga('create', 'UA-82379658-1', 'auto');
 ga('send', 'pageview');
 
 // URLs
-var URL_SANDBOX = "https://sandboxbio.robert.workers.dev/api/v0",
-	URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
+var URL_SANDBOX = "https://sandboxbio.robert.workers.dev/api/v0";
+var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
 
 // Calculations for drawing and spacing out elements on the screen
 var _padding = {};
@@ -3914,9 +3914,10 @@ d3.select("#click_advanced_settings_link").on("click",show_advanced_settings_pan
 function get_cookie() {
 	// document.cookie looks like "myvar1=myvalue1; myvar2=myvalue2; ..."
 	return JSON.parse(
-		document.cookie.split(";")
-					   .map(d => d.trim().split("="))
-					   .filter(d => d[0] == "ribbon")[0][1]);
+		document.cookie
+			.split(";")
+			.map(d => d.trim().split("="))
+			.filter(d => d[0] == "ribbon")[0][1]);
 }
 
 function set_cookie(data) {
@@ -3928,7 +3929,7 @@ function set_cookie(data) {
 // Show user links saved in cookies
 function add_user_links_to_navbar() {
 	var data = get_cookie(),
-		user_links = data.links;
+	    user_links = data.links;
 
 	d3.select("#user_data_navbar_item").style("visibility", user_links == null ? "hidden" : "visible");
 	if(user_links == null)
@@ -4008,8 +4009,8 @@ function load_json_bam(header) {
 
 // Compress data before sending it
 function generate_permalink_data(post_data) {
-	return btoa(  						// 3/3: convert resulting binary to base 64 so we can send it to the server
-		pako.deflate(					// 2/3: compress string with zlib
+	return btoa(  					// 3/3: convert resulting binary to base 64 so we can send it to the server
+		pako.deflate(				// 2/3: compress string with zlib
 			JSON.stringify(post_data),	// 1/3: stringify object so we can compress it
 			{ to: 'string' }
 		)
