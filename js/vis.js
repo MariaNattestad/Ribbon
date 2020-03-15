@@ -6,7 +6,7 @@ ga('create', 'UA-82379658-1', 'auto');
 ga('send', 'pageview');
 
 // URLs
-var URL_SANDBOX = "https://sandboxbio.robert.workers.dev/api/v0";
+var URL_SANDBOX = "https://api.sandbox.bio/api/v0";
 var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
 
 // Calculations for drawing and spacing out elements on the screen
