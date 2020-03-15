@@ -715,18 +715,6 @@
 </div>
 
 
-<script>
-	var splitthreader_data = undefined;
-	splitthreader_data = <?php 
-		if (isset($_POST['splitthreader'])) {
-			echo $_POST['splitthreader'];
-		} else {
-			echo "''";
-		}
-		?>;
-
-</script>
-
 <!-- Libraries -->
 <script src="node_modules/d3/d3.min.js"></script>
 <script src="node_modules/jquery/dist/jquery.min.js"></script>
