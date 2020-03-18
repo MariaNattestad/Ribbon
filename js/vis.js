@@ -3948,16 +3948,19 @@ function set_variant_info_text() {
 }
 
 function load_bam_url_in_background(url) {
-	_Bam = new Bam(url);
-	_Bam.getHeader(function() {console.log("got header from url bam")});
+	_Bam = new Bam(url, url + ".bai");
+	_Bam.mount().then(() => console.log("got header from url bam"));
+
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
 }
 
 function read_bam_url(url) {
-	_Bam = new Bam(url);
 	ga('send', 'event', "BAM_URL","load",url);
-	_Bam.getHeader(function() {console.log("got header")});
+
+	_Bam = new Bam(url, url + ".bai");
+	_Bam.mount().then(() => console.log("got header"));
+
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
@@ -4412,7 +4415,8 @@ function create_bam(files) {
 	}
 
 	// Initialize bam file in the variable _Bam
-	app.mountBam(bamFile, indexFile);
+	_Bam = new Bam(bamFile, indexFile);
+	_Bam.mount().then(bam_loaded);
 
 	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
 	set_alignment_info_text();
@@ -4427,7 +4431,7 @@ function wait_then_run_when_bam_file_loaded(counter) {
 		user_message("Error","File taking too long to load")
 		return;
 	}
-	if (_Bam != null && typeof _Bam.header != 'undefined') {
+	if (_Bam != null && _Bam.ready) {
 		console.log("ready");
 		bam_loaded();
 	} else {
@@ -4591,26 +4595,7 @@ var _num_bam_records_to_load = 0;
 
 function my_fetch(chrom, start, end, callback) {
 	_num_bam_records_to_load += 1;
-
-	if (_Bam.sourceType == "url") {
-		// var records = [];
-		var rawRecords = "";
-		var region = chrom + ":" + start + "-" + end;
-		var cmd = new iobio.cmd(_Bam.iobio.samtools,['view', _Bam.bamUri, region], {ssl:_Bam.ssl,})
-		cmd.on('error', function(error) {
-			// console.log(error);
-		})
-		cmd.on('data', function(data, options) {
-			rawRecords += data;
-		});
-		cmd.on('end', function() {
-			callback(parse_bam_text(rawRecords));
-		});
-
-		cmd.run();
-	} else {
-		_Bam.fetch(chrom, start, end, callback);
-	}
+	_Bam.getReads(chrom, start, end).then(callback);
 }
 
 function check_if_all_bam_records_loaded() {
