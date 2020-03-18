@@ -768,11 +768,6 @@
 <!-- Aioli for running samtools.wasm -->
 <script src="node_modules/@robertaboukhalil/aioli/aioli.js"></script>
 
-<!-- Library from bam.iobio for reading a bam file -->
-<script src="js/bam/class.js"></script>
-<script src="js/bam/iobio.js"></script>
-<script src="js/bam/bam.iobio.js"></script>
-
 <!-- My own d3-livesearch plugin -->
 <script src="js/d3-livesearch.js"></script>
 <script src="js/d3-superTable.js"></script>
