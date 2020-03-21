@@ -17,6 +17,7 @@ If you need to deploy Ribbon locally, here are the steps:
    git clone https://github.com/marianattestad/ribbon
    cd ribbon
    npm install
+   npm run build
    ```
 
 2. Launch a web server

@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/MariaNattestad/Ribbon.git"
   },
+  "scripts": {
+    "build": "./build.sh"
+  },
   "author": "Maria Nattestad",
   "license": "MIT",
   "dependencies": {
