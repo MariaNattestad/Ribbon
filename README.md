@@ -20,16 +20,6 @@ If you need to deploy Ribbon locally, here are the steps:
    npm run build
    ```
 
-2. Launch a web server
-
-   ```bash
-   python -m SimpleHTTPServer 9000  # If you have Python 3, try `python3 -m http.server`
-   ```
-
-3. Then open a web browser and go to:
-
-   ```
-   localhost:9000
-   ```
+2. Double click on `index.html`
 
 That is the entire installation process for Ribbon. Don't you love web applications?
