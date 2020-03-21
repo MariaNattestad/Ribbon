@@ -1,4 +1,4 @@
-// Script to manually create permalinks
+// Node.js script to manually create permalinks
 
 const fs = require('fs');
 const pako = require('pako');

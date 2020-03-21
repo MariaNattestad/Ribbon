@@ -41,6 +41,7 @@ var _Features = [];
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
 // Reading bam file
+var _samtools = null;
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
 
@@ -3913,11 +3914,14 @@ d3.select("#click_advanced_settings_link").on("click",show_advanced_settings_pan
 // ¯\_(ツ)_/¯
 function get_cookie() {
 	// document.cookie looks like "myvar1=myvalue1; myvar2=myvalue2; ..."
-	return JSON.parse(
-		document.cookie
-			.split(";")
-			.map(d => d.trim().split("="))
-			.filter(d => d[0] == "ribbon")[0][1]);
+	var ribbon = document.cookie
+		.split(";")
+		.map(d => d.trim().split("="))
+		.filter(d => d[0] == "ribbon");
+
+	if(ribbon.length == 0 || ribbon[0].length < 2)
+		return { links: [] };
+	return JSON.parse(ribbon[0][1]);
 }
 
 function set_cookie(data) {
@@ -5088,16 +5092,14 @@ class Bam
 	bamFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
 	baiFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
 	source = null;                   // "url" or "file"
-	aioli = null;                    // Aioli object
 	header = { sq: null, toStr: ""}  // BAM header
 	ready = false;                   // True once .bam file + header is loaded
 
-	constructor(bamFile, baiFile, aioli=window.aioli)
+	constructor(bamFile, baiFile)
 	{
 		// Support File objects
 		if(bamFile instanceof File && baiFile instanceof File)
 		{
-			this.aioli = aioli;
 			this.source = "file";
 			this.bamFile.file = bamFile;
 			this.baiFile.file = baiFile;
@@ -5123,17 +5125,12 @@ class Bam
 	{
 		if(this.source == "file")
 		{
-			// Mount files and fetch header
-			return this.aioli
-				.mount({ files: [this.bamFile.file, this.baiFile.file] })
-				.then(mountInfo => {
-					// Save path in virtual file system where bam/bai files are located
-					this.bamFile.path = mountInfo[this.bamFile.file.name].path;
-					this.baiFile.path = mountInfo[this.baiFile.file.name].path;
-
-					// Get the BAM header
-					return this.getHeader();
-				});
+			return Promise.all([
+				// Mount .bam file
+				Aioli.mount(this.bamFile.file).then(f => this.bamFile = f),
+				// Mount .bai file
+				Aioli.mount(this.baiFile.file).then(f => this.baiFile = f)				
+			]).then(() => this.getHeader());
 		}
 
 		if(this.source == "url")
@@ -5148,16 +5145,15 @@ class Bam
 	{
 		// Get header from file in the browser
 		if(this.source == "file") {
-			return this.aioli.exec({
-				raw: true,
-				args: `view -H ${this.bamFile.path}`.split(" ")
-			}).then(d => this.parseHeader(d.stdout));
+			console.warn(this.bamFile)
+			return _samtools.exec(`view -H ${this.bamFile.path}`)
+							.then(d => this.parseHeader(d.stdout));
 		}
 
 		// Get header from URL using iobio
 		if(this.source == "url") {
 			return Bam.iobio("alignmentHeader", { url: this.bamFile.path })
-					  .then(d => this.parseHeader(d.split("\n")));
+					  .then(d => this.parseHeader(d));
 		}
 	}
 
@@ -5165,10 +5161,8 @@ class Bam
 	{
 		// Get reads from file in the browser
 		if(this.source == "file") {
-			return this.aioli.exec({
-				raw: true,
-				args: `view ${this.bamFile.path} ${chrom}:${start}-${end}`.split(" ")
-			}).then(d => this.parseReads(d.stdout));
+			return _samtools.exec(`view ${this.bamFile.path} ${chrom}:${start}-${end}`)
+							.then(d => this.parseReads(d.stdout));
 		}
 
 		// Get reads from URL using iobio
@@ -5180,7 +5174,7 @@ class Bam
 					start: start,
 					end: end
 				}]
-			}).then(d => this.parseReads(d.split("\n")));
+			}).then(d => this.parseReads(d));
 		}
 	}
 
@@ -5190,6 +5184,7 @@ class Bam
 
 	parseHeader(stdout)
 	{
+		stdout = stdout.split("\n");
 		return new Promise((resolve, reject) =>
 		{
 			if(stdout == null) {
@@ -5220,6 +5215,7 @@ class Bam
 
 	parseReads(stdout)
 	{
+		stdout = stdout.split("\n");
 		return new Promise((resolve, reject) =>
 		{
 			if(stdout == null) {
@@ -5285,19 +5281,17 @@ class Bam
 // == BAM Parsing
 // ===========================================================================
 
-var aioli = null;
-
 // Initialize app on page load
 document.addEventListener("DOMContentLoaded", () =>
 {
 	// Create Aioli (and the WebWorker in which WASM code will run)
-	aioli = new Aioli({ imports: ["samtools.worker.js"] });
+	_samtools = new Aioli("samtools/1.10");
 
 	// Get samtools version once initialized
-	aioli
+	_samtools
 		.init()
-		.then(() => aioli.exec({ raw: true, args: ["--version"] }))
-		.then(d => console.log(d.stdout.join("\n")));
+		.then(() => _samtools.exec("--version"))
+		.then(d => console.log(d.stdout));
 });
 
 

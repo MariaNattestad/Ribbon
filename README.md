@@ -13,7 +13,7 @@ If you need to deploy Ribbon locally, here are the steps:
 
 1. Clone this repository
 
-   ```
+   ```bash
    git clone https://github.com/marianattestad/ribbon
    cd ribbon
    npm install
@@ -21,11 +21,11 @@ If you need to deploy Ribbon locally, here are the steps:
 
 2. Launch a web server
 
-   ```
-   python2 -m SimpleHTTPServer 9000
+   ```bash
+   python -m SimpleHTTPServer 9000  # If you have Python 3, try `python3 -m http.server`
    ```
 
-3. Then go to a web browser such as Chrome, Firefox, or Safari (Not tested on IE) and type into the url box:
+3. Then open a web browser and go to:
 
    ```
    localhost:9000
