@@ -3961,16 +3961,19 @@ function set_variant_info_text() {
 }
 
 function load_bam_url_in_background(url) {
-	_Bam = new Bam(url);
-	_Bam.getHeader(function() {console.log("got header from url bam")});
+	_Bam = new Bam(url, url + ".bai");
+	_Bam.mount().then(() => console.log("got header from url bam"));
+
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
 }
 
 function read_bam_url(url) {
-	_Bam = new Bam(url);
 	ga('send', 'event', "BAM_URL","load",url);
-	_Bam.getHeader(function() {console.log("got header")});
+
+	_Bam = new Bam(url, url + ".bai");
+	_Bam.mount().then(() => console.log("got header"));
+
 	wait_then_run_when_bam_file_loaded();
 	_settings.alignment_info_text = "Bam from url: " + url;
 	_settings.bam_url = url;
@@ -4461,7 +4464,8 @@ function create_bam(files) {
 	}
 
 	// Initialize bam file in the variable _Bam
-	app.mountBam(bamFile, indexFile);
+	_Bam = new Bam(bamFile, indexFile);
+	_Bam.mount().then(bam_loaded);
 
 	_settings.alignment_info_text = "Bam from file: " + bamFile.name;
 	set_alignment_info_text();
@@ -4476,7 +4480,7 @@ function wait_then_run_when_bam_file_loaded(counter) {
 		user_message("Error","File taking too long to load")
 		return;
 	}
-	if (_Bam != null && typeof _Bam.header != 'undefined') {
+	if (_Bam != null && _Bam.ready) {
 		console.log("ready");
 		bam_loaded();
 	} else {
@@ -4640,26 +4644,7 @@ var _num_bam_records_to_load = 0;
 
 function my_fetch(chrom, start, end, callback) {
 	_num_bam_records_to_load += 1;
-
-	if (_Bam.sourceType == "url") {
-		// var records = [];
-		var rawRecords = "";
-		var region = chrom + ":" + start + "-" + end;
-		var cmd = new iobio.cmd(_Bam.iobio.samtools,['view', _Bam.bamUri, region], {ssl:_Bam.ssl,})
-		cmd.on('error', function(error) {
-			// console.log(error);
-		})
-		cmd.on('data', function(data, options) {
-			rawRecords += data;
-		});
-		cmd.on('end', function() {
-			callback(parse_bam_text(rawRecords));
-		});
-
-		cmd.run();
-	} else {
-		_Bam.fetch(chrom, start, end, callback);
-	}
+	_Bam.getReads(chrom, start, end).then(callback);
 }
 
 function check_if_all_bam_records_loaded() {
@@ -5095,137 +5080,224 @@ function resizeWindow() {
 
 
 // ===========================================================================
-// == WebAssembly
+// == BAM Parsing for local and remote URLs
 // ===========================================================================
 
-var app = null;
-var DIR_IMPORTS = [ "samtools.worker.js" ];
-class App
+class Bam
 {
-	constructor()
+	bamFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
+	baiFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
+	source = null;                   // "url" or "file"
+	aioli = null;                    // Aioli object
+	header = { sq: null, toStr: ""}  // BAM header
+	ready = false;                   // True once .bam file + header is loaded
+
+	constructor(bamFile, baiFile, aioli=window.aioli)
 	{
-		// Internal state
-		this.aioli = null;
-		this.files = [];
-		// Where output is saved
-		this.output = 0;
+		// Support File objects
+		if(bamFile instanceof File && baiFile instanceof File)
+		{
+			this.aioli = aioli;
+			this.source = "file";
+			this.bamFile.file = bamFile;
+			this.baiFile.file = baiFile;
+		}
+
+		// Support URLs
+		else if(typeof bamFile === "string" && typeof baiFile === "string")
+		{
+			this.source = "url";
+			this.bamFile.path = bamFile;
+			this.baiFile.path = baiFile;
+		}
+
+		// Otherwise, input error
+		else throw "Can only mount URLs or File objects";
 	}
 
-	init()
+	// -------------------------------------------------------------------------
+	// Mount URLs and File objects
+	// -------------------------------------------------------------------------
+
+	mount()
 	{
-		// Create Aioli (and the WebWorker in which WASM code will run)
-		this.aioli = new Aioli({
-			imports: DIR_IMPORTS
-		});
+		if(this.source == "file")
+		{
+			// Mount files and fetch header
+			return this.aioli
+				.mount({ files: [this.bamFile.file, this.baiFile.file] })
+				.then(mountInfo => {
+					// Save path in virtual file system where bam/bai files are located
+					this.bamFile.path = mountInfo[this.bamFile.file.name].path;
+					this.baiFile.path = mountInfo[this.baiFile.file.name].path;
 
-		// Initialize WASM within WebWorker
-		return this.aioli
-				   .init()
-				   .then(() => {
-						// Once module is initialized, get samtools version
-						return app.aioli.exec({
-							raw: true,
-							args: ["--version"]
-						});
-				   }).then(d => {
-					   console.log(d.stdout.join("\n"));
-				   });
-	}
-
-	exec(cmdStr)
-	{
-		var cmd = cmdStr.split(' ').slice(1);  // remove 1st command (i.e. samtools)
-		return this.aioli.exec({
-			raw: true,
-			args: cmd,
-		});
-	}
-
-	mountBam(bamFile, indexFile)
-	{
-		var config = { files: [bamFile, indexFile] };
-		this.aioli
-			// Mount .bam and .bai
-			.mount(config)
-			// Then get bam header
-			.then(mountInfo => {
-				this.exec(`samtools view -H ${mountInfo[bamFile.name].path}`).then(d =>
-				{
-					if(d.stdout == null) {
-						user_message("Error", "Could not parse the BAM file header.");
-						return;
-					}
-
-					// Parse SQ fields from header
-					var sq = d.stdout
-							.filter(d => d.startsWith("@SQ"))
-							.map(d => {
-								var info = d.split("\t")
-											.filter(d => d.startsWith("SN:") || d.startsWith("LN:"))
-											.map(d => d.replace("SN:", "").replace("LN:", ""))				
-								return {
-									name: info[0],
-									end: +info[1] + 1
-								}
-							});
-
-					// Define bam object
-					_Bam = {
-						sourceType: "file",
-						header: {
-							sq: sq,
-							toStr: d.stdout.join("\n")
-						},
-						fetch: function(chrom, start, end, callback) {
-							app.exec(`samtools view ${mountInfo[bamFile.name].path} ${chrom}:${start}-${end}`).then(d =>
-							{
-								// Turn read string into object
-								var reads = [];
-								if(d.stdout != null)
-								{
-									reads = d.stdout.map(r => {
-										var readInfo = r.split("\t");
-										var record = {
-											readName: readInfo[0],
-											flag: +readInfo[1],
-											segment: readInfo[2],
-											pos: +readInfo[3],
-											mq: +readInfo[4],
-											cigar: readInfo[5]
-										}
-
-										// Parse SA tag
-										for (var i = 0; i < readInfo.length; i++) {
-											if (readInfo[i].substr(0, 2) == "SA") {
-												record.SA = readInfo[i].split(":")[2];
-												break;
-											}
-										}
-
-										return record;
-									});
-
-									// Last read should be an empty line
-									var lastRead = reads.pop();
-									// ... but in case it isn't...
-									if(lastRead.segment != null)
-										reads.push(lastRead);
-								}
-								callback(reads);
-							});
-						}
-					};
-					bam_loaded();
+					// Get the BAM header
+					return this.getHeader();
 				});
+		}
+
+		if(this.source == "url")
+			return this.getHeader();
+	}
+
+	// -------------------------------------------------------------------------
+	// Query BAM file
+	// -------------------------------------------------------------------------
+
+	getHeader()
+	{
+		// Get header from file in the browser
+		if(this.source == "file") {
+			return this.aioli.exec({
+				raw: true,
+				args: `view -H ${this.bamFile.path}`.split(" ")
+			}).then(d => this.parseHeader(d.stdout));
+		}
+
+		// Get header from URL using iobio
+		if(this.source == "url") {
+			return Bam.iobio("alignmentHeader", { url: this.bamFile.path })
+					  .then(d => this.parseHeader(d.split("\n")));
+		}
+	}
+
+	getReads(chrom, start, end)
+	{
+		// Get reads from file in the browser
+		if(this.source == "file") {
+			return this.aioli.exec({
+				raw: true,
+				args: `view ${this.bamFile.path} ${chrom}:${start}-${end}`.split(" ")
+			}).then(d => this.parseReads(d.stdout));
+		}
+
+		// Get reads from URL using iobio
+		if(this.source == "url") {
+			return Bam.iobio("viewAlignments", {
+				url: this.bamFile.path,
+				regions: [{
+					name: chrom,
+					start: start,
+					end: end
+				}]
+			}).then(d => this.parseReads(d.split("\n")));
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Parse BAM file
+	// -------------------------------------------------------------------------
+
+	parseHeader(stdout)
+	{
+		return new Promise((resolve, reject) =>
+		{
+			if(stdout == null) {
+				user_message("Error", "Could not parse the BAM file header.");
+				return;
+			}
+	
+			// Parse SQ fields from header
+			var sq = stdout
+				.filter(d => d.startsWith("@SQ"))
+				.map(d => {
+					var info = d.split("\t")
+								.filter(d => d.startsWith("SN:") || d.startsWith("LN:"))
+								.map(d => d.replace("SN:", "").replace("LN:", ""));
+					return { name: info[0], end: +info[1] + 1 };
+				});
+
+			// Store header
+			this.header = {
+				sq: sq,
+				toStr: stdout.join("\n")
+			};
+
+			this.ready = true;
+			resolve(this.header);
+		});
+	}
+
+	parseReads(stdout)
+	{
+		return new Promise((resolve, reject) =>
+		{
+			if(stdout == null) {
+				user_message("Error", "Could not parse the BAM reads.");
+				return;
+			}
+
+			// Turn read string into object
+			var reads = stdout.map(r => {
+				var readInfo = r.split("\t");
+				var record = {
+					readName: readInfo[0],
+					flag: +readInfo[1],
+					segment: readInfo[2],
+					pos: +readInfo[3],
+					mq: +readInfo[4],
+					cigar: readInfo[5]
+				};
+
+				// Parse SA tag
+				for (var i = 0; i < readInfo.length; i++) {
+					if (readInfo[i].substr(0, 2) == "SA") {
+						record.SA = readInfo[i].split(":")[2];
+						break;
+					}
+				}
+
+				return record;
 			});
+
+			// Last read should be an empty line
+			var lastRead = reads.pop();
+			// ... but in case it isn't...
+			if(lastRead.segment != null)
+				reads.push(lastRead);
+
+			resolve(reads);
+		});
+	}
+
+	// -------------------------------------------------------------------------
+	// API calls to iobio
+	// -------------------------------------------------------------------------
+
+	static iobio(endpoint, data)
+	{
+		return fetch(`https://backend.iobio.io/${endpoint}`, {
+			// API expects text/plain content-type
+			headers: { "Content-Type": "text/plain" },
+			method: "post",
+			body: JSON.stringify(data)
+		}).catch(d => {
+			alert("Could not connect to iobio server. Please try again later.");
+        	console.error(d);
+		}).then(d => {
+			return d.text();
+    	});
 	}
 }
 
+
+// ===========================================================================
+// == BAM Parsing
+// ===========================================================================
+
+var aioli = null;
+
 // Initialize app on page load
-document.addEventListener("DOMContentLoaded", function() {
-	// Setup app
-	app = new App();
-	app.init();
+document.addEventListener("DOMContentLoaded", () =>
+{
+	// Create Aioli (and the WebWorker in which WASM code will run)
+	aioli = new Aioli({ imports: ["samtools.worker.js"] });
+
+	// Get samtools version once initialized
+	aioli
+		.init()
+		.then(() => aioli.exec({ raw: true, args: ["--version"] }))
+		.then(d => console.log(d.stdout.join("\n")));
 });
 
 
