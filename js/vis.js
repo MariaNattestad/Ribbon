@@ -5,6 +5,9 @@ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 ga('create', 'UA-82379658-1', 'auto');
 ga('send', 'pageview');
 
+// URLs
+var URL_SANDBOX = "https://api.sandbox.bio/v0";
+var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
 
 // Calculations for drawing and spacing out elements on the screen
 var _padding = {};
@@ -38,6 +41,7 @@ var _Features = [];
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
 // Reading bam file
+var _samtools = null;
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
 
@@ -3906,32 +3910,45 @@ d3.select("#click_info_link").on("click",show_info_panel)
 d3.select("#click_getting_started_link").on("click",show_getting_started_panel);
 d3.select("#click_advanced_settings_link").on("click",show_advanced_settings_panel)
 
-function add_examples_to_navbar() {
-	var core_url = window.location.href.split("?")[0];
-	d3.select("#examples_navbar_item").style("visibility","visible");
-	navbar_examples = d3.select("ul#examples_list");
+// Cookie Management (documentation: https://www.w3schools.com/js/js_cookies.asp)
+// ¯\_(ツ)_/¯
+function get_cookie() {
+	// document.cookie looks like "myvar1=myvalue1; myvar2=myvalue2; ..."
+	var ribbon = document.cookie
+		.split(";")
+		.map(d => d.trim().split("="))
+		.filter(d => d[0] == "ribbon");
 
-	jQuery.ajax({
-		url: "permalinks",
-		cache: false,
-		error: function() {
-			navbar_examples.append("li").html("Create examples using permalinks and then rename the .json file in the permalinks folder to E_*.json where * is a quick dataset description with underscores instead of spaces, and they will automatically appear here.");
-		},
-		success: function (data) {
-			$(data).find("a").each(function() {
-				// will loop through
-				var example_file = $(this).attr("href");
-				if (example_file.substr(0,2) == "E_" && example_file.substr(example_file.length-5,example_file.length) == ".json") {
-					
-					var name = example_file.substr(2,example_file.length-7).replace(/_/g," ");
-					navbar_examples.append("li").append("a")
-						.attr("target","_blank")
-						.attr("href", (core_url+"?perma=" + example_file.substr(0, example_file.length-5)))
-						.text(name);
-				}
-			})
-		}
-	});
+	if(ribbon.length == 0 || ribbon[0].length < 2)
+		return { links: [] };
+	return JSON.parse(ribbon[0][1]);
+}
+
+function set_cookie(data) {
+	var date = new Date();
+	var expires = date.setTime(date.getTime() + (300*24*60*60*1000));
+	document.cookie = `ribbon=${JSON.stringify(data)}; expires=${expires}`;
+}
+
+// Show user links saved in cookies
+function add_user_links_to_navbar() {
+	var data = get_cookie(),
+	    user_links = data.links;
+
+	d3.select("#user_data_navbar_item").style("visibility", user_links == null ? "hidden" : "visible");
+	if(user_links == null)
+		return;
+
+	// Each user_link = { name: ..., perma: ..., date: ... }
+	d3.select("ul#user_data_list").html("");
+	$.each(user_links, function(k, v) {
+		d3.select("ul#user_data_list")
+		  .append("li")
+		  .append("a")
+		  .attr("target","_blank")
+		  .attr("href", `?perma=${v.perma}`)
+		  .html(`${v.name} &nbsp;&nbsp;&nbsp;<small><small>${moment(v.date).fromNow()}</small></small>`);
+	})
 }
 
 function variants_just_loaded() {
@@ -3997,6 +4014,17 @@ function load_json_bam(header) {
 }
 
 
+// Compress data before sending it
+function generate_permalink_data(post_data) {
+	return btoa(  					// 3/3: convert resulting binary to base 64 so we can send it to the server
+		pako.deflate(				// 2/3: compress string with zlib
+			JSON.stringify(post_data),	// 1/3: stringify object so we can compress it
+			{ to: 'string' }
+		)
+	);
+}
+
+// Create new permalink
 function write_permalink() {
 
 	d3.select("#generate_permalink_button").html("Creating permalink...");
@@ -4018,21 +4046,34 @@ function write_permalink() {
 		"features":_Features, 
 		"_Refs_show_or_hide":_Refs_show_or_hide,
 		"config": {"focus_regions":_Additional_ref_intervals, "selected_read":_current_read_index, "settings":_settings},
-		"permalink_name": permalink_name//,
-		// "images": image_URIs
+		"permalink_name": permalink_name,
 	}};
 	if (_Chunk_alignments.length > 800) {
 		user_message("Warning", "A large dataset may fail to create a permalink. Reduce upload file size if this occurs.");	
 	}
-	
+
 	jQuery.ajax({
 		type: "POST",
-		url: "permalink_creator.php",
-		data: {ribbon: JSON.stringify(post_data), name: permalink_name},
+		url: URL_SANDBOX_STORE,
+		data: JSON.stringify({
+			name: permalink_name,
+			ribbon: generate_permalink_data(post_data)
+		}),
 		success: function(data) {
-			user_message("Permalink", data);
+			user_message("Permalink", `<a href="?perma=${data.data}">${permalink_name}</a>`);
 			d3.select("#generate_permalink_button").property("disabled",false);
 			d3.select("#generate_permalink_button").html("Share permalink");
+
+			var cookie = get_cookie();
+			if(cookie.links == null)
+				cookie.links = [];
+			cookie.links.push({
+				name: permalink_name,
+				perma: data.data,
+				date: moment().format()
+			});
+			set_cookie(cookie);
+			add_user_links_to_navbar();
 		},
 		error: function(e) {
 			alert("Error:" + e.message);
@@ -4042,15 +4083,26 @@ function write_permalink() {
 	});
 }
 
-
+// Read existing permalink
 function read_permalink(id) {
 	ga('send', 'event', "Permalink","read",id);
 
 	user_message("Info","Loading data from permalink");
 
 	jQuery.ajax({
-		url: "permalinks/" + id + ".json", 
-		success: function(file_content) {
+		url: URL_SANDBOX_STORE + id,
+		success: function(data) {
+			// Decompress
+			file_content = JSON.parse(
+				// Decompress
+				pako.inflate(
+					// Convert base-64 encoding (needed for data transfer) to binary
+					atob(data.data.ribbon),
+					// Decompress to string
+					{ to: 'string' }
+				)
+			);
+
 			// Data type
 			var json_data = null; 
 			if (typeof(file_content) === "object") {
@@ -4170,7 +4222,8 @@ function read_permalink(id) {
 	});
 }
 
-add_examples_to_navbar();
+add_user_links_to_navbar();
+
 
 // ===========================================================================
 // == Load bed file
@@ -4792,23 +4845,6 @@ function submit_bam_url() {
 }
 d3.select("#submit_bam_url").on("click",submit_bam_url);
 
-
-if (splitthreader_data != "") {
-	console.log("Found SplitThreader data");
-	_Bedpe = [];
-	for (var i in splitthreader_data) {
-		_Bedpe.push({"chrom1":splitthreader_data[i].chrom1, "pos1":parseInt(splitthreader_data[i].pos1),"strand1": splitthreader_data[i].strand1,"chrom2":splitthreader_data[i].chrom2, "pos2":parseInt(splitthreader_data[i].pos2), "strand2": splitthreader_data[i].strand2,"name": splitthreader_data[i].variant_name, "score": splitthreader_data[i].score, "type":splitthreader_data[i].variant_type});
-	}
-	user_message("Instructions","You have loaded rearrangements from SplitThreader! Now select a bam file above to view read alignments in those regions.");
-	$('.nav-tabs a[href="#bam"]').tab('show');
-
-
-	update_bedpe();
-	draw_region_view();
-	refresh_ui_elements();
-
-}
-
 window.addEventListener("beforeunload", function (e) {
 	var confirmationMessage = 'Leave Ribbon?';
 
@@ -5056,16 +5092,14 @@ class Bam
 	bamFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
 	baiFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
 	source = null;                   // "url" or "file"
-	aioli = null;                    // Aioli object
 	header = { sq: null, toStr: ""}  // BAM header
 	ready = false;                   // True once .bam file + header is loaded
 
-	constructor(bamFile, baiFile, aioli=window.aioli)
+	constructor(bamFile, baiFile)
 	{
 		// Support File objects
 		if(bamFile instanceof File && baiFile instanceof File)
 		{
-			this.aioli = aioli;
 			this.source = "file";
 			this.bamFile.file = bamFile;
 			this.baiFile.file = baiFile;
@@ -5091,17 +5125,12 @@ class Bam
 	{
 		if(this.source == "file")
 		{
-			// Mount files and fetch header
-			return this.aioli
-				.mount({ files: [this.bamFile.file, this.baiFile.file] })
-				.then(mountInfo => {
-					// Save path in virtual file system where bam/bai files are located
-					this.bamFile.path = mountInfo[this.bamFile.file.name].path;
-					this.baiFile.path = mountInfo[this.baiFile.file.name].path;
-
-					// Get the BAM header
-					return this.getHeader();
-				});
+			return Promise.all([
+				// Mount .bam file
+				Aioli.mount(this.bamFile.file).then(f => this.bamFile = f),
+				// Mount .bai file
+				Aioli.mount(this.baiFile.file).then(f => this.baiFile = f)				
+			]).then(() => this.getHeader());
 		}
 
 		if(this.source == "url")
@@ -5116,16 +5145,15 @@ class Bam
 	{
 		// Get header from file in the browser
 		if(this.source == "file") {
-			return this.aioli.exec({
-				raw: true,
-				args: `view -H ${this.bamFile.path}`.split(" ")
-			}).then(d => this.parseHeader(d.stdout));
+			console.warn(this.bamFile)
+			return _samtools.exec(`view -H ${this.bamFile.path}`)
+							.then(d => this.parseHeader(d.stdout));
 		}
 
 		// Get header from URL using iobio
 		if(this.source == "url") {
 			return Bam.iobio("alignmentHeader", { url: this.bamFile.path })
-					  .then(d => this.parseHeader(d.split("\n")));
+					  .then(d => this.parseHeader(d));
 		}
 	}
 
@@ -5133,10 +5161,8 @@ class Bam
 	{
 		// Get reads from file in the browser
 		if(this.source == "file") {
-			return this.aioli.exec({
-				raw: true,
-				args: `view ${this.bamFile.path} ${chrom}:${start}-${end}`.split(" ")
-			}).then(d => this.parseReads(d.stdout));
+			return _samtools.exec(`view ${this.bamFile.path} ${chrom}:${start}-${end}`)
+							.then(d => this.parseReads(d.stdout));
 		}
 
 		// Get reads from URL using iobio
@@ -5148,7 +5174,7 @@ class Bam
 					start: start,
 					end: end
 				}]
-			}).then(d => this.parseReads(d.split("\n")));
+			}).then(d => this.parseReads(d));
 		}
 	}
 
@@ -5158,6 +5184,7 @@ class Bam
 
 	parseHeader(stdout)
 	{
+		stdout = stdout.split("\n");
 		return new Promise((resolve, reject) =>
 		{
 			if(stdout == null) {
@@ -5188,6 +5215,7 @@ class Bam
 
 	parseReads(stdout)
 	{
+		stdout = stdout.split("\n");
 		return new Promise((resolve, reject) =>
 		{
 			if(stdout == null) {
@@ -5253,19 +5281,17 @@ class Bam
 // == BAM Parsing
 // ===========================================================================
 
-var aioli = null;
-
 // Initialize app on page load
 document.addEventListener("DOMContentLoaded", () =>
 {
 	// Create Aioli (and the WebWorker in which WASM code will run)
-	aioli = new Aioli({ imports: ["samtools.worker.js"] });
+	_samtools = new Aioli("samtools/1.10");
 
 	// Get samtools version once initialized
-	aioli
+	_samtools
 		.init()
-		.then(() => aioli.exec({ raw: true, args: ["--version"] }))
-		.then(d => console.log(d.stdout.join("\n")));
+		.then(() => _samtools.exec("--version"))
+		.then(d => console.log(d.stdout));
 });
 
 
