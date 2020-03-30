@@ -14,7 +14,7 @@ If you need to deploy Ribbon locally, here are the steps:
 
 1. Clone this repository: `git clone https://github.com/marianattestad/ribbon`
 
-2. Launch `index.html` in your browser
+2. Open `index.html` in your browser
 
 That is the entire installation process for Ribbon. Don't you love web applications?
 
