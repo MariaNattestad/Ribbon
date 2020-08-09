@@ -5119,6 +5119,38 @@ class Bam
 			return _samtools.exec(`view -o /tmp/reads.sam ${this.bamFile.path} ${chrom}:${start}-${end}`)
 				.then(() => _samtools.cat("/tmp/reads.sam"))
 				.then(d => this.parseReads(d));
+			var region = `${chrom}:${start}-${end}`,
+				subsampling = "";
+
+			// Use "samtools coverage" to estimate how many bases we would need to load (in contrast,
+			// using "samtools view -c" would only tell us the number of reads, which is misleading
+			// for long-read data!). This is generally much much faster than trying to load the region
+			// so for most cases, the additional runtime is negligible.
+			console.time("samtools coverage");
+			return _samtools.exec(`coverage ${this.bamFile.path} -r ${region} --no-header`).then(d => {
+				console.timeEnd("samtools coverage");
+
+				// Estimate how much data we're looking at in the selected region, and subsample if
+				// the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
+				// See http://www.htslib.org/doc/samtools-coverage.html for documentation.
+				var stats = d.stdout.split("\t"),
+					sampling = Math.round(1e6 / (+stats[4] * +stats[6]) * 100) / 100;
+				if(sampling < 1) {
+					sampling = prompt(`⚠️ Warning\n\nThis region contains a lot of data and may crash your browser.\n\nEnter the fraction of reads to sample (use the default if you're not sure):`, sampling)
+					subsampling = ` -s ${sampling}`;
+					user_message("Warning", `Region contains a lot of data; sampling ${Math.round(sampling * 100)}% of reads.`);
+				}
+
+				// Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
+				// The alternative is to append each line output to Aioli's STDOUT variable, which involves
+				// converting bytes to strings each time, as opposed to doing it once at the end when we call
+				// _samtools.cat(). Based on a few tests run on Illumina and PacBio data, using the command
+				// "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
+				console.time("samtools view");
+				return _samtools.exec(`view${subsampling} -o /tmp/reads.sam ${this.bamFile.path} ${region}`)
+					.then(() => _samtools.cat("/tmp/reads.sam"))
+					.then(d => this.parseReads(d));
+			});
 		}
 
 		// Get reads from URL using iobio
@@ -5208,6 +5240,7 @@ class Bam
 			if(lastRead.segment != null)
 				reads.push(lastRead);
 
+			console.timeEnd("samtools view");
 			resolve(reads);
 		});
 	}
