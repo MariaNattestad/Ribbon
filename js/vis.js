@@ -5235,8 +5235,8 @@ class Bam
 					cigar: readInfo[5]
 				};
 
-				// Parse SA tag
-				for (var i = 0; i < readInfo.length; i++) {
+				// Parse SA tag: In the SAM format, column 11 = readInfo[10] = qual, column 12 = readInfo[11] = start of tags
+				for (var i = 11; i < readInfo.length; i++) {
 					if (readInfo[i].substr(0, 2) == "SA") {
 						record.SA = readInfo[i].split(":")[2];
 						break;
