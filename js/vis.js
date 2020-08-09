@@ -4431,40 +4431,18 @@ function open_bam_file(event) {
 document.getElementById('bam_file').addEventListener('change',open_bam_file,false);
 
 function create_bam(files) {
-
-	// From bam.iobio, thanks Marth lab!
-	if (files.length != 2) {
-		 alert('must select both a .bam and index (.bai or .csi) file');
-		 return;
+	var bamFile = indexFile = null;
+	for(var file of files) {
+		var ext = file.name.substr(file.name.lastIndexOf('.') + 1);
+		if(ext == "bam")
+			bamFile = file;
+		else if(["bai", "csi"].includes(ext))
+			indexFile = file;
 	}
 
-	var fileType0 = /[^.]+$/.exec(files[0].name)[0];
-	var fileType1 = /[^.]+$/.exec(files[1].name)[0];
-
-	switch(fileType0) {
-		case "bam":
-			bamFile = files[0];
-			break;
-		case "bai":
-			indexFile = files[0];
-			break;
-		case "csi":
-			indexFile = files[0];
-			break;
-	}
-	switch(fileType1) {
-		case "bam":
-			bamFile = files[1];
-			break;
-		case "bai":
-			indexFile = files[1];
-			break;
-		case "csi":
-			indexFile = files[1];
-			break;
-	}
-	if (typeof bamFile == 'undefined' || typeof indexFile == 'undefined') {
-		alert('must select both a .bam and index (.bai or .csi) file');
+	if(files.length != 2 || bamFile == null || indexFile == null) {
+		alert('Please select both a .bam file and an index file (.bai or .csi)');
+		return;
 	}
 
 	// Initialize bam file in the variable _Bam
