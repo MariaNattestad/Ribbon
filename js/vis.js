@@ -5111,14 +5111,6 @@ class Bam
 	{
 		// Get reads from file in the browser
 		if(this.source == "file") {
-			// Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
-			// The alternative is to append each line output to Aioli's STDOUT variable, which involves
-			// converting bytes to strings each time, as opposed to doing it once at the end when we call
-			// _samtools.cat(). Based on a few tests run on Illumina and PacBio data, using the command
-			// "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
-			return _samtools.exec(`view -o /tmp/reads.sam ${this.bamFile.path} ${chrom}:${start}-${end}`)
-				.then(() => _samtools.cat("/tmp/reads.sam"))
-				.then(d => this.parseReads(d));
 			var region = `${chrom}:${start}-${end}`,
 				subsampling = "";
 
