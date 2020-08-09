@@ -4692,34 +4692,6 @@ function parse_bam_record(record) {
 
 }
 
-function parse_bam_text(bam_text) {
-	var bam_records = [];
-	var lines = bam_text.split("\n");
-
-	for (var i = 0; i < lines.length; i++) {
-		var columns = lines[i].split(/\s+/);
-		if (columns[0][0] != "@" && columns.length >= 3) {
-			if (columns.length >= 6) {
-				var SA = "";
-				// We only need the SA tag
-				for (var j = 0; j < columns.length; j++) {
-					if (columns[j].substr(0,2) == "SA") {
-						SA = columns[j].split(":")[2];
-					}
-				}
-
-				bam_records.push({"readName":columns[0],"segment":columns[2], "pos":parseInt(columns[3]), "flag":parseInt(columns[1]), "mq": parseInt(columns[4]), "cigar": columns[5], "SA":SA});
-
-			}
-		}
-	}
-
-	// create list of BamRecords:
-	// {"segment": "chr1","pos":48492988, "flag": 2048, "mq": 60, "cigar":"83984M382H", "tags": "NMskdjfkdjf SAsdkjfskdf etc"}
-	return bam_records;
-
-}
-
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
 
