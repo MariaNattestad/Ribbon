@@ -42,6 +42,7 @@ var _focal_region; // {chrom,start,end}:  one region that the bam file, variants
 
 // Reading bam file
 var _samtools = null;
+var _automation_running = false;
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
 
@@ -116,6 +117,7 @@ _settings.automation_mode = true;
 _settings.automation_reads_split_near_variant_only = true;
 _settings.automation_margin_for_split = 1000;
 _settings.automation_max_reads_to_screenshot = 5;
+_settings.automation_subsample = true;
 
 _settings.add_coordinates_to_figures = false;
 
@@ -4431,40 +4433,18 @@ function open_bam_file(event) {
 document.getElementById('bam_file').addEventListener('change',open_bam_file,false);
 
 function create_bam(files) {
-
-	// From bam.iobio, thanks Marth lab!
-	if (files.length != 2) {
-		 alert('must select both a .bam and index (.bai or .csi) file');
-		 return;
+	var bamFile = indexFile = null;
+	for(var file of files) {
+		var ext = file.name.substr(file.name.lastIndexOf('.') + 1);
+		if(ext == "bam")
+			bamFile = file;
+		else if(["bai", "csi"].includes(ext))
+			indexFile = file;
 	}
 
-	var fileType0 = /[^.]+$/.exec(files[0].name)[0];
-	var fileType1 = /[^.]+$/.exec(files[1].name)[0];
-
-	switch(fileType0) {
-		case "bam":
-			bamFile = files[0];
-			break;
-		case "bai":
-			indexFile = files[0];
-			break;
-		case "csi":
-			indexFile = files[0];
-			break;
-	}
-	switch(fileType1) {
-		case "bam":
-			bamFile = files[1];
-			break;
-		case "bai":
-			indexFile = files[1];
-			break;
-		case "csi":
-			indexFile = files[1];
-			break;
-	}
-	if (typeof bamFile == 'undefined' || typeof indexFile == 'undefined') {
-		alert('must select both a .bam and index (.bai or .csi) file');
+	if(files.length != 2 || bamFile == null || indexFile == null) {
+		alert('Please select both a .bam file and an index file (.bai or .csi)');
+		return;
 	}
 
 	// Initialize bam file in the variable _Bam
@@ -4714,34 +4694,6 @@ function parse_bam_record(record) {
 
 }
 
-function parse_bam_text(bam_text) {
-	var bam_records = [];
-	var lines = bam_text.split("\n");
-
-	for (var i = 0; i < lines.length; i++) {
-		var columns = lines[i].split(/\s+/);
-		if (columns[0][0] != "@" && columns.length >= 3) {
-			if (columns.length >= 6) {
-				var SA = "";
-				// We only need the SA tag
-				for (var j = 0; j < columns.length; j++) {
-					if (columns[j].substr(0,2) == "SA") {
-						SA = columns[j].split(":")[2];
-					}
-				}
-
-				bam_records.push({"readName":columns[0],"segment":columns[2], "pos":parseInt(columns[3]), "flag":parseInt(columns[1]), "mq": parseInt(columns[4]), "cigar": columns[5], "SA":SA});
-
-			}
-		}
-	}
-
-	// create list of BamRecords:
-	// {"segment": "chr1","pos":48492988, "flag": 2048, "mq": 60, "cigar":"83984M382H", "tags": "NMskdjfkdjf SAsdkjfskdf etc"}
-	return bam_records;
-
-}
-
 function use_fetched_data(records) {
 	console.log("Bam record finished loading");
 
@@ -4871,6 +4823,7 @@ var log_number_reads_found = [];
 function run_automation() {
 	console.log("run_automation clicked");
 	_variant_automation_counter = -1;
+	_automation_running = true;
 
 	if (_Bam == undefined) {
 		user_message("Error","No bam file loaded");
@@ -4897,6 +4850,10 @@ d3.select("#automation_max_reads_to_screenshot").on("change", function() {
 
 $('#automation_pick_split_reads').change(function() {
 	_settings.automation_reads_split_near_variant_only = this.checked;
+});
+
+$('#automation_subsample').change(function() {
+	_settings.automation_subsample = this.checked;
 });
 
 $('#add_coordinates_to_figures').change(function() {
@@ -4933,6 +4890,7 @@ function load_next_variant() {
 		d3.select("#permalink_name").property("value", _prefix_for_automated_images + "_" + _Bedpe[_variant_automation_counter].name);
 		wait_save_and_repeat(0);
 	} else {
+		_automation_running = false;
 		user_message("Success","DONE with automation!")
 		audio.play();
 		console.log("Finished: Number of split reads found by variant:");
@@ -5161,8 +5119,39 @@ class Bam
 	{
 		// Get reads from file in the browser
 		if(this.source == "file") {
-			return _samtools.exec(`view ${this.bamFile.path} ${chrom}:${start}-${end}`)
-							.then(d => this.parseReads(d.stdout));
+			var region = `${chrom}:${start}-${end}`,
+				subsampling = "";
+
+			// Use "samtools coverage" to estimate how many bases we would need to load (in contrast,
+			// using "samtools view -c" would only tell us the number of reads, which is misleading
+			// for long-read data!). This is generally much much faster than trying to load the region
+			// so for most cases, the additional runtime is negligible.
+			console.time("samtools coverage");
+			return _samtools.exec(`coverage ${this.bamFile.path} -r ${region} --no-header`).then(d => {
+				console.timeEnd("samtools coverage");
+
+				// Estimate how much data we're looking at in the selected region, and subsample if
+				// the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
+				// See http://www.htslib.org/doc/samtools-coverage.html for documentation.
+				var stats = d.stdout.split("\t"),
+					sampling = Math.round(1e6 / (+stats[4] * +stats[6]) * 100) / 100;
+				if(sampling < 1 && (_automation_running && !automation_subsample)) {
+					if(!_automation_running)
+						sampling = prompt(`⚠️ Warning\n\nThis region contains a lot of data and may crash your browser.\n\nEnter the fraction of reads to sample (use the default if you're not sure):`, sampling)
+					subsampling = ` -s ${sampling}`;
+					user_message("Warning", `Region contains a lot of data; sampling ${Math.round(sampling * 100)}% of reads.`);
+				}
+
+				// Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
+				// The alternative is to append each line output to Aioli's STDOUT variable, which involves
+				// converting bytes to strings each time, as opposed to doing it once at the end when we call
+				// _samtools.cat(). Based on a few tests run on Illumina and PacBio data, using the command
+				// "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
+				console.time("samtools view");
+				return _samtools.exec(`view${subsampling} -o /tmp/reads.sam ${this.bamFile.path} ${region}`)
+					.then(() => _samtools.cat("/tmp/reads.sam"))
+					.then(d => this.parseReads(d));
+			});
 		}
 
 		// Get reads from URL using iobio
@@ -5235,8 +5224,8 @@ class Bam
 					cigar: readInfo[5]
 				};
 
-				// Parse SA tag
-				for (var i = 0; i < readInfo.length; i++) {
+				// Parse SA tag: In the SAM format, tags start at index 11
+				for (var i = 11; i < readInfo.length; i++) {
 					if (readInfo[i].substr(0, 2) == "SA") {
 						record.SA = readInfo[i].split(":")[2];
 						break;
@@ -5252,6 +5241,7 @@ class Bam
 			if(lastRead.segment != null)
 				reads.push(lastRead);
 
+			console.timeEnd("samtools view");
 			resolve(reads);
 		});
 	}
