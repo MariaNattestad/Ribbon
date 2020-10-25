@@ -1,6 +1,6 @@
 {
   "name": "Ribbon",
-  "version": "1.2",
+  "version": "1.2.0",
   "description": "A genome browser that shows long reads and complex variants better",
   "repository": {
     "type": "git",
