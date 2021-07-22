@@ -41,7 +41,7 @@ var _Features = [];
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
 // Reading bam file
-var _samtools = null;
+var _CLI = null;
 var _automation_running = false;
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
@@ -5047,8 +5047,8 @@ function resizeWindow() {
 
 class Bam
 {
-	bamFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
-	baiFile = {};                    // { path: "<URL> or </data/mount/path.bam>", file: <File object if any> }
+	bamFile = {};                    // { name: "<URL> or <path.bam>" }
+	baiFile = {};                    // { name: "<URL> or <path.bam>" }
 	source = null;                   // "url" or "file"
 	header = { sq: null, toStr: ""}  // BAM header
 	ready = false;                   // True once .bam file + header is loaded
@@ -5059,16 +5059,16 @@ class Bam
 		if(bamFile instanceof File && baiFile instanceof File)
 		{
 			this.source = "file";
-			this.bamFile.file = bamFile;
-			this.baiFile.file = baiFile;
+			this.bamFile = bamFile;
+			this.baiFile = baiFile;
 		}
 
 		// Support URLs
 		else if(typeof bamFile === "string" && typeof baiFile === "string")
 		{
 			this.source = "url";
-			this.bamFile.path = bamFile;
-			this.baiFile.path = baiFile;
+			this.bamFile.name = bamFile;
+			this.baiFile.name = baiFile;
 		}
 
 		// Otherwise, input error
@@ -5081,15 +5081,9 @@ class Bam
 
 	mount()
 	{
+		// Mount .bam/.bai files and return header
 		if(this.source == "file")
-		{
-			return Promise.all([
-				// Mount .bam file
-				Aioli.mount(this.bamFile.file).then(f => this.bamFile = f),
-				// Mount .bai file
-				Aioli.mount(this.baiFile.file).then(f => this.baiFile = f)				
-			]).then(() => this.getHeader());
-		}
+			return _CLI.mount([ this.bamFile, this.baiFile ]).then(() => this.getHeader());
 
 		if(this.source == "url")
 			return this.getHeader();
@@ -5102,17 +5096,12 @@ class Bam
 	getHeader()
 	{
 		// Get header from file in the browser
-		if(this.source == "file") {
-			console.warn(this.bamFile)
-			return _samtools.exec(`view -H ${this.bamFile.path}`)
-							.then(d => this.parseHeader(d.stdout));
-		}
+		if(this.source == "file")
+			return _CLI.exec(`samtools view -H ${this.bamFile.name}`).then(d => this.parseHeader(d));
 
 		// Get header from URL using iobio
-		if(this.source == "url") {
-			return Bam.iobio("alignmentHeader", { url: this.bamFile.path })
-					  .then(d => this.parseHeader(d));
-		}
+		if(this.source == "url")
+			return Bam.iobio("alignmentHeader", { url: this.bamFile.name }).then(d => this.parseHeader(d));
 	}
 
 	getReads(chrom, start, end)
@@ -5127,13 +5116,13 @@ class Bam
 			// for long-read data!). This is generally much much faster than trying to load the region
 			// so for most cases, the additional runtime is negligible.
 			console.time("samtools coverage");
-			return _samtools.exec(`coverage ${this.bamFile.path} -r ${region} --no-header`).then(d => {
+			return _CLI.exec(`samtools coverage ${this.bamFile.name} -r ${region} --no-header`).then(d => {
 				console.timeEnd("samtools coverage");
 
 				// Estimate how much data we're looking at in the selected region, and subsample if
 				// the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
 				// See http://www.htslib.org/doc/samtools-coverage.html for documentation.
-				var stats = d.stdout.split("\t"),
+				var stats = d.split("\t"),
 					sampling = Math.round(1e6 / (+stats[4] * +stats[6]) * 100) / 100;
 				if(sampling < 1 && (_automation_running && !automation_subsample)) {
 					if(!_automation_running)
@@ -5145,11 +5134,11 @@ class Bam
 				// Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
 				// The alternative is to append each line output to Aioli's STDOUT variable, which involves
 				// converting bytes to strings each time, as opposed to doing it once at the end when we call
-				// _samtools.cat(). Based on a few tests run on Illumina and PacBio data, using the command
+				// _CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
 				// "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
 				console.time("samtools view");
-				return _samtools.exec(`view${subsampling} -o /tmp/reads.sam ${this.bamFile.path} ${region}`)
-					.then(() => _samtools.cat("/tmp/reads.sam"))
+				return _CLI.exec(`samtools view${subsampling} -o /tmp/reads.sam ${this.bamFile.name} ${region}`)
+					.then(() => _CLI.cat("/tmp/reads.sam"))
 					.then(d => this.parseReads(d));
 			});
 		}
@@ -5157,7 +5146,7 @@ class Bam
 		// Get reads from URL using iobio
 		if(this.source == "url") {
 			return Bam.iobio("viewAlignments", {
-				url: this.bamFile.path,
+				url: this.bamFile.name,
 				regions: [{
 					name: chrom,
 					start: start,
@@ -5272,16 +5261,13 @@ class Bam
 // ===========================================================================
 
 // Initialize app on page load
-document.addEventListener("DOMContentLoaded", () =>
+document.addEventListener("DOMContentLoaded", async () =>
 {
 	// Create Aioli (and the WebWorker in which WASM code will run)
-	_samtools = new Aioli("samtools/1.10");
+	_CLI = await new Aioli("samtools/1.10");
 
 	// Get samtools version once initialized
-	_samtools
-		.init()
-		.then(() => _samtools.exec("--version"))
-		.then(d => console.log(d.stdout));
+	console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));
 });
 
 
