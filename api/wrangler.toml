@@ -1,0 +1,8 @@
+name = "genomeribbon-api"
+type = "javascript"
+route = "api.genomeribbon.com/*"
+workers_dev = false
+zone_id = "b1ecf2567bc6ae49e217e83c056e791b"
+kv-namespaces = [
+    { binding = "STORE", id = "67430c82a6794bd2a0836f7d4961a58e" }
+]
