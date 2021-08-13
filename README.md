@@ -1,12 +1,12 @@
 # Ribbon
 
-Please cite our preprint on the BioRxiv: [https://www.biorxiv.org/content/early/2016/10/20/082123](https://www.biorxiv.org/content/early/2016/10/20/082123)
+Please cite our paper in _Bioinformatics_: https://doi.org/10.1093/bioinformatics/btaa680 (preprint available on [bioRxiv](https://www.biorxiv.org/content/10.1101/082123v1)).
 
 ![Ribbon gallery](/images/gallery.png)
 
 Ribbon is an interactive web visualization tool for viewing genomic alignments of short/long reads or assembled contigs to any reference genome. 
 
-Ribbon is available online at genomeribbon.com and can even read large bam files straight from your computer without a local install. 
+Ribbon is available online at [genomeribbon.com](https://genomeribbon.com) and can even read large bam files straight from your computer without a local install. 
 
 ## Local deployment
 
