@@ -1,0 +1,5 @@
+{
+	"name": "api.genomeribbon.com",
+	"description": "API server",
+	"main": "index.js"
+}
