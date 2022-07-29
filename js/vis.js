@@ -5264,7 +5264,14 @@ class Bam
 document.addEventListener("DOMContentLoaded", async () =>
 {
 	// Create Aioli (and the WebWorker in which WASM code will run)
-	_CLI = await new Aioli("samtools/1.10");
+	_CLI = await new Aioli({
+		tool: "samtools",
+		version: "1.10",
+		urlPrefix: `${window.location.origin}/wasm/samtools`,
+	}, {
+		urlAioli: `${window.location.origin}/wasm/aioli.worker.js`,
+		urlBaseModule: `${window.location.origin}/wasm/base`,
+	});
 
 	// Get samtools version once initialized
 	console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));

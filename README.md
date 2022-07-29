@@ -33,3 +33,14 @@ To develop new features in Ribbon:
    npm install
    npm run build
    ```
+
+## Offline mode
+
+```bash
+git clone https://github.com/marianattestad/ribbon
+cd ribbon
+git checkout offline-mode
+python3 -m http.server 1234
+```
+
+Open [http://localhost:1234/](http://localhost:1234/)
