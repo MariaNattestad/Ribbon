@@ -10,26 +10,34 @@ Ribbon is available online at [genomeribbon.com](https://genomeribbon.com) and c
 
 ## Local deployment
 
-If you need to deploy Ribbon locally, here are the steps:
+To deploy Ribbon locally:
 
-1. Clone this repository: `git clone https://github.com/marianattestad/ribbon`
+```bash
+# Clone this repository
+git clone https://github.com/marianattestad/ribbon
+cd ribbon
 
-2. Open `index.html` in your browser
+# Launch a web server to serve the assets
+python3 -m http.server 1234
+# If you only have python2, use python -m SimpleHTTPServer 1234
+```
 
-That is the entire installation process for Ribbon. Don't you love web applications?
+Ribbon is now available at http://localhost:1234.
 
 
 ## Development
 
-To develop new features in Ribbon:
+To develop new features in Ribbon, first install [npm](https://www.npmjs.com/get-npm) if you don't already have it.
 
-1. Install [npm](https://www.npmjs.com/get-npm) if you don't already have it.
+Then clone this repository and build it:
 
-2. Clone this repository and build it:
+```bash
+# Clone repo and install dependencies
+git clone https://github.com/marianattestad/ribbon
+cd ribbon
+npm install
+npm run build
 
-   ```bash
-   git clone https://github.com/marianattestad/ribbon
-   cd ribbon
-   npm install
-   npm run build
-   ```
+# Launch a web server
+python3 -m http.server 1234
+```
