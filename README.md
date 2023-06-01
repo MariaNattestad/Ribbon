@@ -10,6 +10,8 @@ Ribbon is available online at [genomeribbon.com](https://genomeribbon.com) and c
 
 ## Local deployment
 
+Ribbon works without internet access when deployed locally, although note that permalinks and examples don't work and will show errors in the console.
+
 To deploy Ribbon locally:
 
 ```bash
