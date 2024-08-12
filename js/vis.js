@@ -7362,34 +7362,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // ===========================================================================
 
-// When #go_to_ribbon_mode is clicked, switch to ribbon mode by showing #ribbon-app-container
-// and hiding #splitthreader-app-container. And vice versa:
-
 function go_to_ribbon_mode() {
   console.log("go_to_ribbon_mode");
-  d3.select("#ribbon-app-container").style("visibility", "visible");
-  d3.select("#splitthreader-app-container").style("visibility", "hidden");
+  d3.select("#ribbon-app-container").style("display", "block");
+  d3.select("#splitthreader-app-container").style("display", "none");
 }
-d3.select("#go_to_ribbon_mode").on("click", go_to_ribbon_mode);
 
 function go_to_splitthreader_mode() {
   console.log("go_to_splitthreader_mode");
-  d3.select("#ribbon-app-container").style("visibility", "hidden");
-  d3.select("#splitthreader-app-container").style("visibility", "visible");
+  d3.select("#ribbon-app-container").style("display", "none");
+  d3.select("#splitthreader-app-container").style("display", "block");
 }
-
-// d3.select("#go_to_splitthreader_mode").on("click", go_to_splitthreader_mode);
-
-// $("#go_to_splitthreader_mode").click(function () {
-//   console.log("go to splitthreader mode with jquery")
-// });
-
-document
-  .getElementById("go_to_splitthreader_mode")
-  .addEventListener("click", go_to_splitthreader_mode);
-
-
-
 
 // ===========================================================================
 // == Main
