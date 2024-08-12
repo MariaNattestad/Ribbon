@@ -118,7 +118,7 @@ input[type="file"] {
 	border: 1px solid #cccccc;
 }
 
-.ref_block, #svg2_panel .alignment_groups, #click_info_link, #click_getting_started_link, #click_advanced_settings_link {
+.ref_block, #svg2_panel .alignment_groups, #click_info_link, #click_getting_started_link, #click_advanced_settings_link, #go_to_splitthreader_mode {
 	cursor: pointer;
 }
 
