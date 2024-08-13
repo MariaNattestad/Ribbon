@@ -39,6 +39,8 @@ git clone https://github.com/marianattestad/ribbon
 cd ribbon
 npm install
 npm run build
+# To add any new packages, edit the build.sh after doing 
+# `npm install <package>` to get the js and/or css included in the bundle!
 
 # Launch a web server
 python3 -m http.server 1234
