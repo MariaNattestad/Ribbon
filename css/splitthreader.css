@@ -1,0 +1,285 @@
+#svg_landing {
+  float:left;
+  padding: 1vmin 1vmin 1vmin 1vmin;
+  display:inline-block;
+}
+
+/*.panel_box {
+  margin-left: 2vmax;
+  margin-right: 2vmax;
+  margin-top: 2vmax;
+  display: block;
+}*/
+.search_field {
+  width: 100%;
+}
+
+#send_to_ribbon_panel {
+  /*display:none;*/
+}
+#gene_fusion_table, #gene_fusion_table_results {
+  width: 100%;
+}
+
+path.chromosome_arc, .circos_chromosome text {
+  cursor: pointer;
+}
+
+.user_message {
+  margin-bottom: 1vmin;
+  width: 100%;
+  display: inline-block;
+}
+
+.spansplit_loop_top, .spansplit_loop_bottom, .spansplit_connection, .spansplit_stub_top, .spansplit_stub_bottom {
+  cursor: pointer;
+}
+/*#gene_fusion_table_results table, #gene_fusion_table_results th, #gene_fusion_table_results td {
+  text-align: center;
+  padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+  border: 0.1px solid gray;
+  font-size: 1.4vmin;
+}
+#gene_fusion_table table, #gene_fusion_table th, #gene_fusion_table td {
+  text-align: center;
+  padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+  border: 0.1px solid gray;
+  font-size: 1.4vmin;
+}
+*/
+
+th, td {
+  /*text-align: center;*/
+  padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
+  border: 1px solid #cccccc;
+}
+
+
+.gene_search_box {
+  width: 30%;
+  margin: 2%;
+  display: inline-block;
+  vertical-align:top;
+}
+.gene_search_box input{
+  width: 100%;
+  /*margin: 2%;*/
+  /*display: inline-block;*/
+  vertical-align:top;
+}
+#right_panel {
+  float:left;
+  /*padding: 2vmin 2vmin 2vmin 2vmin;*/
+  display:inline-block;
+  overflow: auto;
+}
+
+.gene_list {
+  width: 100%;
+  list-style-type:none;
+  list-style-position:inside;
+  padding: 0 0 0 0;
+  margin-top:10px;
+  /*float: left;*/
+  /*border: 1px solid #cccccc;*/
+  margin-left: 0;
+}
+
+.gene_list li {
+    display:inline-block;
+    /*float: left;*/
+    font-size: 0.7vw;
+    background-color: #cccccc;
+    padding: 0.1vw;
+    margin-right: 0.2vw;
+    margin-bottom: 0.2vw;
+    cursor: pointer;
+}
+
+#genes_labeled li {
+  font-size: 1vw;
+  margin-right: 0.5vw;
+  margin-bottom: 0.5vw;
+}
+
+svg {
+  background-color: #ffffff;
+}
+body {
+  /*background-color: #eeeeee;*/
+  background-color: #ffffff;
+  padding-top: 60px; 
+}
+.frame {
+  fill: none;
+  stroke: #000;
+}
+
+.axis line {
+  stroke:#000;
+}
+
+#variant_detail_text {
+  padding: 2vh 0 2vh 0;
+}
+
+.spansplit_connection {
+  /*shape-rendering: geometricPrecision;*/
+}
+.coverage_rect {
+  /*fill:#f00;*/
+  stroke:#000;
+  /*stroke-width:0.5px;*/
+  shape-rendering: crispEdges;
+}
+
+.sample_title {
+  font: 3vmin "Arial" sans-serif;
+}
+.gene_label {
+  text-anchor: middle;
+}
+
+.top_local_genes text, .bottom_local_genes text{
+  fill: #999999;  /* fill is text color in svg */
+  font-size: 1vmax;
+}
+
+
+.top_local_genes path, .bottom_local_genes path {
+  stroke: #999999;
+  stroke-width: 2px;
+  fill: none;
+}
+
+.variant {
+  /*stroke-opacity: 0.8;*/
+  stroke-width: 2px;
+}
+
+.variant:hover {
+  /*stroke-opacity: 1;*/
+  stroke-width: 5px !important;
+}
+
+
+.top_chosen_genes path, .bottom_chosen_genes path {
+  stroke: #000000;
+  stroke-width: 2px;
+  fill: none;
+}
+
+.panel-group {
+  margin-bottom: 1vmin;
+}
+
+#gene_type_table_box {
+  height: 200px;
+  overflow-y: scroll;
+}
+
+.box {
+  border: 1px solid #cccccc;
+}
+
+.invisible_table, .invisible_table tr, .invisible_table td {
+  border: none;
+}
+
+.nav-tabs li a {
+  padding: 0.5vw;
+}
+
+#submit_fusion {
+  margin: 0.5vmin;
+  display: inline-block;
+}
+
+#show_genes_box {
+  margin: 1vmin 0 1vmin 0;
+  width: 100%;
+}
+
+.zoom_button rect {
+  fill: white;
+  stroke: gray;
+}
+.zoom_button text {
+  fill: gray;
+  font-size: 1.5vw;
+}
+
+h1#title {
+  margin-top: 1vh;
+  margin-bottom: 1vh;
+  font-size: 1.6vw;
+  text-align: center;
+}
+
+#gene_fusion_table_results tr.record {
+  cursor:pointer;
+}
+
+#send_fusion_to_ribbon_form {
+  display: none;
+}
+.settings_table {
+  width: 100%;
+  table-layout: fixed;
+}
+.settings_table table, .settings_table th, .settings_table td {
+  /* top right bottom left */
+  padding: 0.2vmin  0.2vmin 0.2vmin 0.2vmin;
+  border: 0; /*.2px solid blue;*/
+}
+
+.table_landing {
+  overflow: auto;
+}
+
+#main_body_container {
+  padding-left: 0.5vw;
+}
+
+#statistics_landing, #variant_category_tables_landing {
+  padding: 2vmin 2vmin 2vmin 2vmin;
+}
+.col_names, .col_title {
+  text-align: center;
+}
+.row_title {
+  text-align: center;
+}
+
+/*.col_names, .row_names {
+  background-color: #eeeeee;
+}*/
+.col_title, .row_title {
+  background-color: #eeeeee;
+}
+.no_border {
+  border: 0px;
+}
+
+#gene_fusions_tab, #variant_analysis_tab, #feature_search_tab, #help_tab {
+  padding: 2vmin;
+}
+#show_when_fusions_submitted {
+  display:none;
+}
+
+.radio-inline {
+  padding-bottom:1vmin;
+}
+
+.show_after_graph_search {
+  display: none;
+}
+.only_when_features {
+  display: none;
+}
+
+#table_export_buttons .btn {
+  margin: 1vmin;
+  padding: 1vmin;
+}
