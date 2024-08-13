@@ -1,5 +1,5 @@
 #svg_landing {
-  float:left;
+  float: left;
   padding: 1vmin 1vmin 1vmin 1vmin;
   display:inline-block;
 }
@@ -14,9 +14,10 @@
   width: 100%;
 }
 
-#send_to_ribbon_panel {
-  /*display:none;*/
-}
+/* #send_to_ribbon_panel {
+  display:none;
+} */
+
 #gene_fusion_table, #gene_fusion_table_results {
   width: 100%;
 }
@@ -25,7 +26,7 @@ path.chromosome_arc, .circos_chromosome text {
   cursor: pointer;
 }
 
-.user_message {
+.user_message_splitthreader {
   margin-bottom: 1vmin;
   width: 100%;
   display: inline-block;
@@ -49,11 +50,9 @@ path.chromosome_arc, .circos_chromosome text {
 */
 
 th, td {
-  /*text-align: center;*/
   padding: 0.3vmin 0.3vmin 0.3vmin 0.3vmin;
   border: 1px solid #cccccc;
 }
-
 
 .gene_search_box {
   width: 30%;
@@ -67,10 +66,9 @@ th, td {
   /*display: inline-block;*/
   vertical-align:top;
 }
-#right_panel {
-  float:left;
+#right_panel_splitthreader {
+  float: left;
   /*padding: 2vmin 2vmin 2vmin 2vmin;*/
-  display:inline-block;
   overflow: auto;
 }
 

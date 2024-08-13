@@ -459,13 +459,13 @@ d3.select("select#annotation_dropdown")
 
 d3.select("select#annotation_dropdown").on("change", function (d) {
   if (
-    _splitthreader_settings.annotation_path ==
-    _splitthreader_static.annotations_available[
-      this.options[this.selectedIndex].value
-    ]
+    !(
+      _splitthreader_settings.annotation_path ==
+      _splitthreader_static.annotations_available[
+        this.options[this.selectedIndex].value
+      ]
+    )
   ) {
-    user_message_splitthreader("Info", "Already loaded this annotation");
-  } else {
     _splitthreader_settings.annotation_path =
       this.options[this.selectedIndex].value;
     _splitthreader_settings.ucsc_database =
@@ -757,7 +757,7 @@ function wait_then_run_when_all_data_loaded() {
 
       analyze_variants();
       make_variant_table();
-      user_message_splitthreader("Info", "Loading data is complete");
+      user_message_splitthreader("", "");
     }
   } else {
     window.setTimeout(wait_then_run_when_all_data_loaded, 300);
@@ -908,8 +908,6 @@ function read_variant_file(variants_input) {
 
 function read_annotation_file() {
   if (_splitthreader_settings.annotation_path != "none") {
-    user_message_splitthreader("Info", "Loading annotation...");
-
     d3.csv(
       _splitthreader_settings.annotation_path,
       function (error, annotation_input) {
@@ -3553,8 +3551,6 @@ function run_graph_search() {
     user_message_splitthreader("Error", 'Select a dataset in the "To" column');
     return;
   }
-
-  user_message_splitthreader("Info", "Running graph search");
 
   _Feature_search_results = [];
   var run_starts_individually = true;

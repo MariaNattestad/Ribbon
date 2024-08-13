@@ -151,6 +151,7 @@ text {
 	width: 100%;
 	table-layout: fixed;
 }
+
 .settings_table table, .settings_table th, .settings_table td {
 	/* top right bottom left */
 	padding: 0.2vmin  0.2vmin 0.2vmin 0.2vmin;
