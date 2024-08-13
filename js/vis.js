@@ -1,25 +1,3 @@
-(function (i, s, o, g, r, a, m) {
-  i["GoogleAnalyticsObject"] = r;
-  (i[r] =
-    i[r] ||
-    function () {
-      (i[r].q = i[r].q || []).push(arguments);
-    }),
-    (i[r].l = 1 * new Date());
-  (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);
-  a.async = 1;
-  a.src = g;
-  m.parentNode.insertBefore(a, m);
-})(
-  window,
-  document,
-  "script",
-  "https://www.google-analytics.com/analytics.js",
-  "ga"
-);
-ga("create", "UA-82379658-1", "auto");
-ga("send", "pageview");
-
 // URLs
 var URL_SANDBOX = "https://api.genomeribbon.com/v0";
 var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
@@ -2526,7 +2504,6 @@ function sam_input_changed(sam_input_value) {
 $("#sam_input").bind("input propertychange", function () {
   _ribbon_settings.alignment_info_text = "Sam from text field";
   set_alignment_info_text();
-  ga("send", "event", "SAM_text", "change");
   sam_input_changed(this.value);
 });
 
@@ -2653,7 +2630,6 @@ function coords_input_changed(coords_input_value) {
 $("#coords_input").bind("input propertychange", function () {
   remove_coords_file();
   coords_input_changed(this.value);
-  ga("send", "event", "coords_text", "change");
 });
 
 function calculate_type_colors(variant_list) {
@@ -2829,7 +2805,6 @@ function feature_row_click(d) {
     _ribbon_warnings.large_features = true;
   }
   flexible_bam_fetch([{ chrom: d.chrom, start: d.start, end: d.end }]);
-  ga("send", "event", "feature_table", "select");
 }
 
 function variant_row_click(d) {
@@ -2858,7 +2833,6 @@ function variant_row_click(d) {
   }
   flexible_bam_fetch([{ chrom: d.chrom, start: d.start, end: d.end }]);
 
-  ga("send", "event", "variant_table", "select");
 }
 
 function check_bam_done_fetching() {
@@ -2931,7 +2905,6 @@ function bedpe_row_click(d) {
     _Bedpe[i].highlight = _Bedpe[i].name == d.name;
   }
 
-  ga("send", "event", "bedpe_table", "select");
 }
 
 function show_bedpe_table() {
@@ -3099,7 +3072,6 @@ function update_bedpe() {
 }
 
 $("#bed_input").bind("input propertychange", function () {
-  ga("send", "event", "bed_text", "change");
   remove_variant_file();
   bed_input_changed(this.value);
 });
@@ -3183,7 +3155,6 @@ function vcf_input_changed(vcf_input) {
 }
 
 $("#vcf_input").bind("input propertychange", function () {
-  ga("send", "event", "vcf_text", "change");
   remove_variant_file();
   vcf_input_changed(this.value);
 });
@@ -6035,7 +6006,6 @@ function load_bam_url_in_background(url) {
 }
 
 function read_bam_url(url) {
-  ga("send", "event", "BAM_URL", "load", url);
 
   _Bam = new Bam(url, url + ".bai");
   _Bam.mount().then(() => console.log("got header"));
@@ -6094,7 +6064,6 @@ function write_permalink() {
   d3.select("#generate_permalink_button").property("disabled", true);
 
   var permalink_name = get_name();
-  ga("send", "event", "Permalink", "read", permalink_name);
 
   var header = [];
   for (var i in _Whole_refs) {
@@ -6158,7 +6127,6 @@ function write_permalink() {
 
 // Read existing permalink
 function read_permalink(id) {
-  ga("send", "event", "Permalink", "read", id);
 
   user_message_ribbon("Info", "Loading data from permalink");
 
@@ -6331,7 +6299,6 @@ add_user_links_to_navbar();
 // ===========================================================================
 
 function open_bedpe_file(event) {
-  ga("send", "event", "bedpe_file", "load", this.files[0].name);
 
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
@@ -6361,7 +6328,6 @@ function open_variant_file(event) {
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "vcf") {
-    ga("send", "event", "vcf_file", "load", this.files[0].name);
     var raw_data;
     var reader = new FileReader();
     reader.readAsText(this.files[0]);
@@ -6375,7 +6341,6 @@ function open_variant_file(event) {
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
   } else if (file_extension == "bed") {
-    ga("send", "event", "bed_file", "load", this.files[0].name);
     var raw_data;
     var reader = new FileReader();
     reader.readAsText(this.files[0]);
@@ -6483,9 +6448,6 @@ d3.select("#feature_bed_file").on("change", open_feature_bed_file);
 // ===========================================================================
 
 function open_coords_file(event) {
-  console.log("in open_coords_file");
-  ga("send", "event", "coords_file", "load", this.files[0].name);
-
   var raw_data;
   var reader = new FileReader();
 
@@ -6511,8 +6473,6 @@ function open_coords_file(event) {
 d3.select("#coords_file").on("change", open_coords_file);
 
 function open_sam_file(event) {
-  console.log("in open_sam_file");
-  ga("send", "event", "SAM_file", "load", this.files[0].name);
 
   var raw_data;
   var reader = new FileReader();
@@ -6576,7 +6536,6 @@ function create_bam(files) {
 
   _ribbon_settings.alignment_info_text = "Bam from file: " + bamFile.name;
   set_alignment_info_text();
-  ga("send", "event", "BAM_file", "load", bamFile.name);
 }
 
 function wait_then_run_when_bam_file_loaded(counter) {
@@ -6877,7 +6836,6 @@ function tell_user_how_many_records_loaded() {
 }
 
 function region_submitted(event) {
-  ga("send", "event", "manual_BAM_region", "submit");
 
   var chrom = d3.select("#region_chrom").property("value");
   if (chrom == "") {
