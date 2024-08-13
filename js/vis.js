@@ -25,7 +25,7 @@ var URL_SANDBOX = "https://api.genomeribbon.com/v0";
 var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
 
 // Calculations for drawing and spacing out elements on the screen
-var _padding = {};
+var _ribbon_padding = {};
 var _layout = {};
 var _positions = {};
 _positions.multiread = {};
@@ -35,9 +35,9 @@ _positions.dotplot = {};
 _positions.fontsize = 12;
 
 // Elements on the page
-var _svg;
+var _ribbon_svg1;
 
-var _svg2; // for read selection
+var _ribbon_svg2; // for read selection
 
 // Data for visualization
 var _current_read_index = 0;
@@ -51,7 +51,7 @@ var _Refs_show_or_hide = {};
 var _Variants = [];
 var _Bedpe = [];
 var _Additional_ref_intervals = [];
-var _Features = [];
+var _Features_for_ribbon = [];
 
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
@@ -65,12 +65,12 @@ var _Ref_sizes_from_header = {};
 var _region = {}; // chrom, start, end
 
 // Various global variables to capture UI settings and static variables
-var _static = {};
-_static.alignment_alpha = 0.5;
-_static.dotplot_ref_opacity = 0.5;
+var _ribbon_static = {};
+_ribbon_static.alignment_alpha = 0.5;
+_ribbon_static.dotplot_ref_opacity = 0.5;
 
-_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that span most of a reference, we show the whole reference
-_static.read_sort_options = [
+_ribbon_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that span most of a reference, we show the whole reference
+_ribbon_static.read_sort_options = [
   { id: "original", description: "Original order" },
   { id: "longest", description: "Position of longest alignment" },
   {
@@ -80,7 +80,7 @@ _static.read_sort_options = [
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
 ];
-_static.read_orientation_options = [
+_ribbon_static.read_orientation_options = [
   { id: "original", description: "Original orientation" },
   { id: "reverse", description: "Reverse orientation" },
   { id: "longest", description: "Orientation of longest alignment" },
@@ -89,12 +89,12 @@ _static.read_orientation_options = [
     description: "Orientation of alignment in selected locus (SAM/BAM)",
   },
 ];
-_static.color_schemes = [
+_ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
   { name: "Color scheme 2", colors: 1 },
   { name: "Color scheme 3", colors: 2 },
 ];
-_static.color_collections = [
+_ribbon_static.color_collections = [
   [
     "#ff9896",
     "#c5b0d5",
@@ -171,27 +171,27 @@ _static.color_collections = [
     "#999999",
   ],
 ];
-_static.min_indel_size_for_region_view = 50;
-_static.show_indels_as_options = [
+_ribbon_static.min_indel_size_for_region_view = 50;
+_ribbon_static.show_indels_as_options = [
   { id: "none", description: "None" },
   { id: "gaps", description: "Gaps" },
   { id: "thin", description: "Marks" },
   { id: "numbers", description: "Numbers indicating size" },
 ];
-_static.show_features_as_options = [
+_ribbon_static.show_features_as_options = [
   { id: "none", description: "None" },
   { id: "rectangles", description: "Boxes" },
   { id: "arrows", description: "Arrows" },
   { id: "names", description: "Arrows with names" },
 ];
-_static.multiread_layout_fractions = {
+_ribbon_static.multiread_layout_fractions = {
   header: 0.25,
   footer: 0.02,
   variants: 0.1,
   bedpe: 0.05,
   features: 0.07,
 };
-_static.singleread_layout_fractions = {
+_ribbon_static.singleread_layout_fractions = {
   ref_and_mapping: 0.33,
   top_bar: 0.07,
   variants: 0.06,
@@ -199,59 +199,59 @@ _static.singleread_layout_fractions = {
   bottom_bar: 0.03,
 };
 
-var _settings = {};
-_settings.region_min_mapping_quality = 0;
-_settings.max_num_alignments = 1000000;
-_settings.min_num_alignments = 1;
-_settings.max_ref_length = 0;
-_settings.min_aligns_for_ref_interval = 1;
-_settings.min_read_length = 0;
+var _ribbon_settings = {};
+_ribbon_settings.region_min_mapping_quality = 0;
+_ribbon_settings.max_num_alignments = 1000000;
+_ribbon_settings.min_num_alignments = 1;
+_ribbon_settings.max_ref_length = 0;
+_ribbon_settings.min_aligns_for_ref_interval = 1;
+_ribbon_settings.min_read_length = 0;
 
-_settings.ribbon_vs_dotplot = "ribbon";
-_settings.min_mapping_quality = 0;
-_settings.min_indel_size = _static.min_indel_size_for_region_view; // set to -1 to stop showing indels
-_settings.min_align_length = 0;
+_ribbon_settings.ribbon_vs_dotplot = "ribbon";
+_ribbon_settings.min_mapping_quality = 0;
+_ribbon_settings.min_indel_size = _ribbon_static.min_indel_size_for_region_view; // set to -1 to stop showing indels
+_ribbon_settings.min_align_length = 0;
 
-_settings.color_index = 0;
-_settings.colorful = true;
-_settings.ribbon_outline = true;
-_settings.show_only_known_references = true;
-_settings.keep_duplicate_reads = false;
-_settings.feature_to_sort_reads = "original";
-_settings.orient_reads_by = "primary";
+_ribbon_settings.color_index = 0;
+_ribbon_settings.colorful = true;
+_ribbon_settings.ribbon_outline = true;
+_ribbon_settings.show_only_known_references = true;
+_ribbon_settings.keep_duplicate_reads = false;
+_ribbon_settings.feature_to_sort_reads = "original";
+_ribbon_settings.orient_reads_by = "primary";
 
-_settings.current_input_type = "";
-_settings.ref_match_chunk_ref_intervals = true;
-_settings.show_only_selected_variants = false;
-_settings.margin_to_merge_ref_intervals = 10000;
-_settings.show_indels_as = "thin";
-_settings.highlight_selected_read = true;
-_settings.alignment_info_text = "";
-_settings.variant_info_text = "";
-_settings.bam_url = undefined;
-_settings.fetch_margin = 100;
-_settings.show_features_as = "names";
-_settings.feature_types_to_show = { protein_coding: true };
-_settings.single_chrom_highlighted = false;
-_settings.bam_fetch_margin = 100;
-_settings.draw_focus_rectangle = true;
+_ribbon_settings.current_input_type = "";
+_ribbon_settings.ref_match_chunk_ref_intervals = true;
+_ribbon_settings.show_only_selected_variants = false;
+_ribbon_settings.margin_to_merge_ref_intervals = 10000;
+_ribbon_settings.show_indels_as = "thin";
+_ribbon_settings.highlight_selected_read = true;
+_ribbon_settings.alignment_info_text = "";
+_ribbon_settings.variant_info_text = "";
+_ribbon_settings.bam_url = undefined;
+_ribbon_settings.fetch_margin = 100;
+_ribbon_settings.show_features_as = "names";
+_ribbon_settings.feature_types_to_show = { protein_coding: true };
+_ribbon_settings.single_chrom_highlighted = false;
+_ribbon_settings.bam_fetch_margin = 100;
+_ribbon_settings.draw_focus_rectangle = true;
 
 // For paired end reads:
-_settings.paired_end_mode = false;
-_settings.flip_second_read_in_pair = true; // allow user to change this
-_settings.read_pair_spacing = 20; // allow user to change this
+_ribbon_settings.paired_end_mode = false;
+_ribbon_settings.flip_second_read_in_pair = true; // allow user to change this
+_ribbon_settings.read_pair_spacing = 20; // allow user to change this
 
 // Automation
-_settings.automation_mode = true;
-_settings.automation_reads_split_near_variant_only = true;
-_settings.automation_margin_for_split = 1000;
-_settings.automation_max_reads_to_screenshot = 5;
-_settings.automation_subsample = true;
+_ribbon_settings.automation_mode = true;
+_ribbon_settings.automation_reads_split_near_variant_only = true;
+_ribbon_settings.automation_margin_for_split = 1000;
+_ribbon_settings.automation_max_reads_to_screenshot = 5;
+_ribbon_settings.automation_subsample = true;
 
-_settings.add_coordinates_to_figures = false;
+_ribbon_settings.add_coordinates_to_figures = false;
 
-_settings.automation_download_info = true;
-_settings.selected_bedpe_text = "";
+_ribbon_settings.automation_download_info = true;
+_ribbon_settings.selected_bedpe_text = "";
 
 var _ui_properties = {};
 _ui_properties.region_mq_slider_max = 0;
@@ -265,64 +265,62 @@ _ui_properties.indel_size_slider_max = 0;
 _ui_properties.align_length_slider_max = 0;
 
 // Scales for visualization
-var _scales = {};
-_scales.read_scale = d3.scale.linear();
-_scales.whole_ref_scale = d3.scale.linear();
-_scales.chunk_whole_ref_scale = d3.scale.linear();
-_scales.ref_interval_scale = d3.scale.linear();
-_scales.chunk_ref_interval_scale = d3.scale.linear();
-_scales.ref_color_scale = d3.scale
+var _ribbon_scales = {};
+_ribbon_scales.read_scale = d3.scale.linear();
+_ribbon_scales.whole_ref_scale = d3.scale.linear();
+_ribbon_scales.chunk_whole_ref_scale = d3.scale.linear();
+_ribbon_scales.ref_interval_scale = d3.scale.linear();
+_ribbon_scales.chunk_ref_interval_scale = d3.scale.linear();
+_ribbon_scales.ref_color_scale = d3.scale
   .ordinal()
-  .range(_static.color_collections[_settings.color_index]);
-_scales.variant_color_scale = d3.scale.ordinal();
-_scales.feature_color_scale = d3.scale.ordinal();
+  .range(_ribbon_static.color_collections[_ribbon_settings.color_index]);
+_ribbon_scales.variant_color_scale = d3.scale.ordinal();
+_ribbon_scales.feature_color_scale = d3.scale.ordinal();
 
 // Show each warning only the first time it comes up in a session
-var _warnings = {};
-_warnings.pe_mode = false;
-_warnings.large_features = false;
+var _ribbon_warnings = {};
+_ribbon_warnings.pe_mode = false;
+_ribbon_warnings.large_features = false;
 
-var _tooltip = {};
-function show_tooltip(text, x, y, parent_object) {
+var _ribbon_tooltip = {};
+function show_ribbon_tooltip(text, x, y, parent_object) {
   parent_object.selectAll("g.tip").remove();
 
-  _tooltip.width = (text.length + 4) * (_layout.svg_width / 100);
-  _tooltip.height = _layout.svg_height / 20;
+  _ribbon_tooltip.width = (text.length + 4) * (_layout.svg_width / 100);
+  _ribbon_tooltip.height = _layout.svg_height / 20;
 
-  if (x - _tooltip.width / 2 < 0) {
-    x = _tooltip.width / 2;
-  } else if (x + _tooltip.width / 2 > parent_object.attr("width")) {
-    x = parent_object.attr("width") - _tooltip.width / 2;
+  if (x - _ribbon_tooltip.width / 2 < 0) {
+    x = _ribbon_tooltip.width / 2;
+  } else if (x + _ribbon_tooltip.width / 2 > parent_object.attr("width")) {
+    x = parent_object.attr("width") - _ribbon_tooltip.width / 2;
   }
-  if (y - _tooltip.height / 2 < 0) {
-    y = _tooltip.height / 2;
-  } else if (y + _tooltip.height / 2 > parent_object.attr("height")) {
-    y = parent_object.attr("height") - _tooltip.height / 2;
+  if (y - _ribbon_tooltip.height / 2 < 0) {
+    y = _ribbon_tooltip.height / 2;
+  } else if (y + _ribbon_tooltip.height / 2 > parent_object.attr("height")) {
+    y = parent_object.attr("height") - _ribbon_tooltip.height / 2;
   }
-  _tooltip.g = parent_object.append("g").attr("class", "tip");
-  _tooltip.g
+  _ribbon_tooltip.g = parent_object.append("g").attr("class", "tip");
+  _ribbon_tooltip.g
     .attr("transform", "translate(" + x + "," + y + ")")
     .style("visibility", "visible");
 
-  _tooltip.rect = _tooltip.g
+  _ribbon_tooltip.rect = _ribbon_tooltip.g
     .append("rect")
-    .attr("width", _tooltip.width)
-    .attr("x", -_tooltip.width / 2)
-    .attr("height", _tooltip.height)
-    .attr("y", -_tooltip.height / 2)
+    .attr("width", _ribbon_tooltip.width)
+    .attr("x", -_ribbon_tooltip.width / 2)
+    .attr("height", _ribbon_tooltip.height)
+    .attr("y", -_ribbon_tooltip.height / 2)
     .attr("fill", "black");
 
-  _tooltip.tip = _tooltip.g.append("text");
-  _tooltip.tip
+  _ribbon_tooltip.tip = _ribbon_tooltip.g.append("text");
+  _ribbon_tooltip.tip
     .text(text)
     .attr("fill", "white")
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "middle");
 }
 
-function responsive_sizing() {
-  // console.log("responsive_sizing");
-
+function resize_ribbon_views() {
   var w = window,
     d = document,
     e = d.documentElement,
@@ -335,13 +333,13 @@ function responsive_sizing() {
   window_height = (w.innerHeight || e.clientHeight || g.clientHeight) * 0.96;
 
   var top_banner_size = 60;
-  _padding.top = top_banner_size;
-  _padding.bottom = 0;
-  _padding.left = 0;
-  _padding.right = 0;
-  _padding.between = 0.01 * window_height;
-  _padding.text = _padding.between;
-  _padding.between_top_and_bottom_svg = _padding.between * 2;
+  _ribbon_padding.top = top_banner_size;
+  _ribbon_padding.bottom = 0;
+  _ribbon_padding.left = 0;
+  _ribbon_padding.right = 0;
+  _ribbon_padding.between = 0.01 * window_height;
+  _ribbon_padding.text = _ribbon_padding.between;
+  _ribbon_padding.between_top_and_bottom_svg = _ribbon_padding.between * 2;
 
   _layout.right_panel_fraction = 0.35;
   _layout.svg_width_fraction = 1 - _layout.right_panel_fraction;
@@ -349,29 +347,30 @@ function responsive_sizing() {
   _layout.svg1_height_fraction = 0.4;
 
   _layout.left_width =
-    (window_width - _padding.left - _padding.right) *
+    (window_width - _ribbon_padding.left - _ribbon_padding.right) *
     (1 - _layout.right_panel_fraction);
   _layout.panel_width =
-    (window_width - _padding.left - _padding.right) *
+    (window_width - _ribbon_padding.left - _ribbon_padding.right) *
     _layout.right_panel_fraction;
 
   _layout.svg1_box_height =
-    (window_height - _padding.top - _padding.bottom) *
+    (window_height - _ribbon_padding.top - _ribbon_padding.bottom) *
     _layout.svg1_height_fraction;
   _layout.svg2_box_height =
-    (window_height - _padding.top - _padding.bottom) *
+    (window_height - _ribbon_padding.top - _ribbon_padding.bottom) *
     (1 - _layout.svg1_height_fraction);
-  _layout.total_height = window_height - _padding.top - _padding.bottom;
+  _layout.total_height =
+    window_height - _ribbon_padding.top - _ribbon_padding.bottom;
 
-  _layout.svg_width = _layout.left_width - _padding.between * 4;
+  _layout.svg_width = _layout.left_width - _ribbon_padding.between * 4;
   _layout.svg_height =
-    _layout.svg1_box_height - _padding.between_top_and_bottom_svg;
+    _layout.svg1_box_height - _ribbon_padding.between_top_and_bottom_svg;
 
-  _layout.svg2_width = _layout.left_width - _padding.between * 4;
+  _layout.svg2_width = _layout.left_width - _ribbon_padding.between * 4;
   _layout.svg2_height =
-    _layout.svg2_box_height - _padding.between_top_and_bottom_svg;
+    _layout.svg2_box_height - _ribbon_padding.between_top_and_bottom_svg;
 
-  _layout.input_margin = _padding.between;
+  _layout.input_margin = _ribbon_padding.between;
 
   _positions.fontsize = _layout.svg2_width * 0.012;
 
@@ -405,21 +404,22 @@ function responsive_sizing() {
 function adjust_multiread_layout() {
   var remaining_fraction_for_reads =
     1.0 -
-    _static.multiread_layout_fractions["header"] -
-    _static.multiread_layout_fractions["footer"];
+    _ribbon_static.multiread_layout_fractions["header"] -
+    _ribbon_static.multiread_layout_fractions["footer"];
   var fractional_pos_for_variants = 0;
   var fractional_pos_for_features = 0;
 
   if (_Variants.length > 0 || _Bedpe.length > 0) {
     remaining_fraction_for_reads -=
-      _static.multiread_layout_fractions["variants"];
+      _ribbon_static.multiread_layout_fractions["variants"];
   }
-  if (_Features.length > 0) {
+  if (_Features_for_ribbon.length > 0) {
     remaining_fraction_for_reads -=
-      _static.multiread_layout_fractions["features"];
+      _ribbon_static.multiread_layout_fractions["features"];
   }
   _positions.multiread.ref_intervals = {
-    y: _layout.svg2_height * _static.multiread_layout_fractions["header"],
+    y:
+      _layout.svg2_height * _ribbon_static.multiread_layout_fractions["header"],
     height: _layout.svg2_height * remaining_fraction_for_reads,
     x: _layout.svg2_width * 0.05,
     width: _layout.svg2_width * 0.9,
@@ -432,11 +432,12 @@ function adjust_multiread_layout() {
   };
 
   fractional_pos_for_variants =
-    _static.multiread_layout_fractions["header"] + remaining_fraction_for_reads;
+    _ribbon_static.multiread_layout_fractions["header"] +
+    remaining_fraction_for_reads;
   if (_Variants.length > 0 || _Bedpe.length > 0) {
     fractional_pos_for_features =
       fractional_pos_for_variants +
-      _static.multiread_layout_fractions["variants"];
+      _ribbon_static.multiread_layout_fractions["variants"];
   } else {
     fractional_pos_for_features = fractional_pos_for_variants;
   }
@@ -444,26 +445,30 @@ function adjust_multiread_layout() {
     y: _layout.svg2_height * fractional_pos_for_variants,
     rect_height:
       _layout.svg2_height *
-      _static.multiread_layout_fractions["variants"] *
+      _ribbon_static.multiread_layout_fractions["variants"] *
       0.9,
     ankle_height: _layout.svg2_height * 0.015,
     bezier_height:
       _layout.svg2_height *
-      _static.multiread_layout_fractions["variants"] *
+      _ribbon_static.multiread_layout_fractions["variants"] *
       0.9,
     foot_length:
-      (_layout.svg2_height * _static.multiread_layout_fractions["variants"]) /
+      (_layout.svg2_height *
+        _ribbon_static.multiread_layout_fractions["variants"]) /
       5,
     arrow_size:
-      (_layout.svg2_height * _static.multiread_layout_fractions["variants"]) /
+      (_layout.svg2_height *
+        _ribbon_static.multiread_layout_fractions["variants"]) /
       20,
   };
   _positions.multiread.features = {
     y: _layout.svg2_height * fractional_pos_for_features,
     rect_height:
-      _layout.svg2_height * _static.multiread_layout_fractions["features"],
+      _layout.svg2_height *
+      _ribbon_static.multiread_layout_fractions["features"],
     arrow_size:
-      (_layout.svg2_height * _static.multiread_layout_fractions["features"]) /
+      (_layout.svg2_height *
+        _ribbon_static.multiread_layout_fractions["features"]) /
       7,
   };
 }
@@ -499,7 +504,7 @@ $("#region_mq_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     $("#region_mq_label").html(ui.value);
-    _settings.region_min_mapping_quality = ui.value;
+    _ribbon_settings.region_min_mapping_quality = ui.value;
     draw_region_view();
   },
 });
@@ -509,7 +514,7 @@ $("#min_read_length_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     d3.select("#min_read_length_input").property("value", ui.value);
-    _settings.min_read_length = ui.value;
+    _ribbon_settings.min_read_length = ui.value;
     draw_region_view();
   },
 });
@@ -519,10 +524,10 @@ $("#min_aligns_for_ref_interval_slider").slider({
   max: 20,
   slide: function (event, ui) {
     d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
-    _settings.min_aligns_for_ref_interval = ui.value;
+    _ribbon_settings.min_aligns_for_ref_interval = ui.value;
     apply_ref_filters();
     draw_region_view();
-    if (_settings.ref_match_chunk_ref_intervals == true) {
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
       select_read();
     }
   },
@@ -532,10 +537,10 @@ $("#max_ref_length_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     d3.select("#max_ref_length_input").property("value", ui.value);
-    _settings.max_ref_length = ui.value;
+    _ribbon_settings.max_ref_length = ui.value;
     max_ref_length_changed();
     apply_ref_filters();
-    if (_settings.ref_match_chunk_ref_intervals == true) {
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
       select_read();
     }
   },
@@ -548,8 +553,8 @@ $("#num_aligns_range_slider").slider({
   values: [100, 300],
   slide: function (event, ui) {
     $("#num_aligns_range_label").html("" + ui.values[0] + " - " + ui.values[1]);
-    _settings.min_num_alignments = ui.values[0];
-    _settings.max_num_alignments = ui.values[1];
+    _ribbon_settings.min_num_alignments = ui.values[0];
+    _ribbon_settings.max_num_alignments = ui.values[1];
     draw_region_view();
   },
 });
@@ -559,7 +564,7 @@ $("#mq_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     $("#mq_label").html(ui.value);
-    _settings.min_mapping_quality = ui.value;
+    _ribbon_settings.min_mapping_quality = ui.value;
     draw();
   },
 });
@@ -569,7 +574,7 @@ $("#indel_size_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     $("#indel_size_label").html(ui.value);
-    _settings.min_indel_size = ui.value;
+    _ribbon_settings.min_indel_size = ui.value;
 
     _Alignments = reparse_read(
       _Chunk_alignments[_current_read_index]
@@ -583,7 +588,7 @@ $("#align_length_slider").slider({
   max: 1000,
   slide: function (event, ui) {
     $("#align_length_label").html(ui.value);
-    _settings.min_align_length = ui.value;
+    _ribbon_settings.min_align_length = ui.value;
     draw();
   },
 });
@@ -591,7 +596,7 @@ $("#align_length_slider").slider({
 function max_ref_length_changed() {
   for (var i in _Whole_refs) {
     _Refs_show_or_hide[_Whole_refs[i].chrom] =
-      _Whole_refs[i].size <= _settings.max_ref_length;
+      _Whole_refs[i].size <= _ribbon_settings.max_ref_length;
   }
 
   d3.select("#chrom_highlighted").html("by size");
@@ -601,15 +606,15 @@ function max_ref_length_changed() {
 
 function search_select_chrom(chrom) {
   // Reset the ref size slider to default
-  _settings.max_ref_length = _ui_properties.ref_length_slider_max;
+  _ribbon_settings.max_ref_length = _ui_properties.ref_length_slider_max;
   $("#max_ref_length_slider").slider(
     "option",
     "value",
-    _settings.max_ref_length
+    _ribbon_settings.max_ref_length
   );
   d3.select("#max_ref_length_input").property(
     "value",
-    _settings.max_ref_length
+    _ribbon_settings.max_ref_length
   );
 
   highlight_chromosome(chrom);
@@ -620,44 +625,47 @@ function search_select_read(d) {
 }
 
 d3.select("#min_read_length_input").on("keyup", function () {
-  _settings.min_read_length = parseInt(this.value);
-  if (isNaN(_settings.min_read_length)) {
-    _settings.min_read_length = 0;
+  _ribbon_settings.min_read_length = parseInt(this.value);
+  if (isNaN(_ribbon_settings.min_read_length)) {
+    _ribbon_settings.min_read_length = 0;
   }
 
   $("#min_read_length_slider").slider(
     "option",
     "value",
-    _settings.min_read_length
+    _ribbon_settings.min_read_length
   );
   draw_region_view();
 });
 
 d3.select("#max_ref_length_input").on("keyup", function () {
-  _settings.max_ref_length = parseInt(this.value);
-  if (isNaN(_settings.max_ref_length)) {
-    _settings.max_ref_length = 0;
+  _ribbon_settings.max_ref_length = parseInt(this.value);
+  if (isNaN(_ribbon_settings.max_ref_length)) {
+    _ribbon_settings.max_ref_length = 0;
   }
 
   $("#max_ref_length_slider").slider(
     "option",
     "value",
-    _settings.max_ref_length
+    _ribbon_settings.max_ref_length
   );
   max_ref_length_changed();
 });
 
 d3.select("#bam_fetch_margin").on("keyup", function () {
-  _settings.bam_fetch_margin = parseInt(this.value);
-  if (isNaN(_settings.bam_fetch_margin) || _settings.bam_fetch_margin < 1) {
-    _settings.bam_fetch_margin = 1;
+  _ribbon_settings.bam_fetch_margin = parseInt(this.value);
+  if (
+    isNaN(_ribbon_settings.bam_fetch_margin) ||
+    _ribbon_settings.bam_fetch_margin < 1
+  ) {
+    _ribbon_settings.bam_fetch_margin = 1;
   }
 });
 
 d3.select("#margin_to_merge_ref_intervals").on("keyup", function () {
-  _settings.margin_to_merge_ref_intervals = parseInt(this.value);
-  if (isNaN(_settings.margin_to_merge_ref_intervals)) {
-    _settings.margin_to_merge_ref_intervals = 0;
+  _ribbon_settings.margin_to_merge_ref_intervals = parseInt(this.value);
+  if (isNaN(_ribbon_settings.margin_to_merge_ref_intervals)) {
+    _ribbon_settings.margin_to_merge_ref_intervals = 0;
   }
   organize_references_for_chunk();
   apply_ref_filters();
@@ -725,42 +733,42 @@ $("#show_all_refs").click(function () {
   show_all_chromosomes();
   apply_ref_filters();
   draw_region_view();
-  if (_settings.ref_match_chunk_ref_intervals == true) {
+  if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
     apply_ref_filters();
     select_read();
   }
 });
 
 $("#ref_match_region_view").change(function () {
-  _settings.ref_match_chunk_ref_intervals = this.checked;
+  _ribbon_settings.ref_match_chunk_ref_intervals = this.checked;
   select_read(); // need to recalculate ref intervals
 });
 
 $("#colors_checkbox").change(function () {
-  _settings.colorful = this.checked;
+  _ribbon_settings.colorful = this.checked;
   draw();
 });
 
 $("#show_only_selected_variants").change(function () {
-  _settings.show_only_selected_variants = this.checked;
+  _ribbon_settings.show_only_selected_variants = this.checked;
   draw_region_view();
   draw();
 });
 
 $("#highlight_selected_read").change(function () {
-  _settings.highlight_selected_read = this.checked;
+  _ribbon_settings.highlight_selected_read = this.checked;
   new_read_selected(_current_read_index);
 });
 
 $("#outline_checkbox").change(function () {
-  _settings.ribbon_outline = this.checked;
+  _ribbon_settings.ribbon_outline = this.checked;
   draw();
 });
 
 $(".ribbon_vs_dotplot").click(function () {
   var value = d3.select("input[name=ribbon_vs_dotplot]:checked").node().value;
-  if (_settings.ribbon_vs_dotplot != value) {
-    _settings.ribbon_vs_dotplot = value;
+  if (_ribbon_settings.ribbon_vs_dotplot != value) {
+    _ribbon_settings.ribbon_vs_dotplot = value;
 
     // Show settings specific to each plot
     $(".ribbon_settings").toggle();
@@ -784,7 +792,7 @@ function draw_chunk_ref() {
     height: _layout.svg2_height * 0.03,
   };
   // Draw "Reference" label
-  _svg2
+  _ribbon_svg2
     .append("text")
     .attr("id", "ref_tag")
     .text("Reference")
@@ -803,13 +811,13 @@ function draw_chunk_ref() {
     .style("font-size", _positions.fontsize);
 
   // _scales.read_scale.range([_positions.read.x,_positions.read.x+_positions.read.width]);
-  _scales.chunk_whole_ref_scale.range([
+  _ribbon_scales.chunk_whole_ref_scale.range([
     _positions.multiread.ref_block.x,
     _positions.multiread.ref_block.x + _positions.multiread.ref_block.width,
   ]);
 
   // Whole reference chromosomes for the relevant references:
-  var ref_blocks = _svg2
+  var ref_blocks = _ribbon_svg2
     .selectAll("g.ref_block")
     .data(_Whole_refs)
     .enter()
@@ -821,23 +829,25 @@ function draw_chunk_ref() {
     .attr("transform", function (d) {
       return (
         "translate(" +
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos) +
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos) +
         "," +
         _positions.multiread.ref_block.y +
         ")"
       );
     })
     .on("mouseout", function (d) {
-      _svg2.selectAll("g.tip").remove();
+      _ribbon_svg2.selectAll("g.tip").remove();
     })
     .on("click", function (d) {
       highlight_chromosome(d.chrom);
     })
     .on("mouseover", function (d) {
       var text = d.chrom + ": " + bp_format(d.size);
-      var x = _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size / 2);
-      var y = _positions.multiread.ref_block.y - _padding.text * 3;
-      show_tooltip(text, x, y, _svg2);
+      var x = _ribbon_scales.chunk_whole_ref_scale(
+        d.filtered_cum_pos + d.size / 2
+      );
+      var y = _positions.multiread.ref_block.y - _ribbon_padding.text * 3;
+      show_tooltip(text, x, y, _ribbon_svg2);
     });
 
   ref_blocks
@@ -847,13 +857,13 @@ function draw_chunk_ref() {
     .attr("y", 0)
     .attr("width", function (d) {
       return (
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) -
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos)
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) -
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos)
       );
     })
     .attr("height", _positions.multiread.ref_block.height)
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     })
     .style("stroke-width", 1)
     .style("stroke", "black");
@@ -866,8 +876,8 @@ function draw_chunk_ref() {
     })
     .filter(function (d) {
       return (
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) -
-          _scales.chunk_whole_ref_scale(d.filtered_cum_pos) >
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size) -
+          _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos) >
         (_positions.fontsize / 5) * d.chrom.length
       );
     })
@@ -877,11 +887,11 @@ function draw_chunk_ref() {
     })
     .attr("x", function (d) {
       return (
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size / 2) -
-        _scales.chunk_whole_ref_scale(d.filtered_cum_pos)
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos + d.size / 2) -
+        _ribbon_scales.chunk_whole_ref_scale(d.filtered_cum_pos)
       );
     })
-    .attr("y", -_padding.text)
+    .attr("y", -_ribbon_padding.text)
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "bottom")
     .style("font-size", _positions.fontsize);
@@ -906,14 +916,14 @@ function draw_chunk_ref_intervals() {
 
   // console.log("draw_chunk_ref_intervals");
 
-  _scales.chunk_ref_interval_scale.range([
+  _ribbon_scales.chunk_ref_interval_scale.range([
     _positions.multiread.ref_intervals.x,
     _positions.multiread.ref_intervals.x +
       _positions.multiread.ref_intervals.width,
   ]);
 
   // Zoom into reference intervals where the read maps:
-  _svg2
+  _ribbon_svg2
     .selectAll("rect.ref_interval")
     .data(_Chunk_ref_intervals)
     .enter()
@@ -923,37 +933,37 @@ function draw_chunk_ref_intervals() {
       return d.cum_pos != -1;
     })
     .attr("x", function (d) {
-      return _scales.chunk_ref_interval_scale(d.cum_pos);
+      return _ribbon_scales.chunk_ref_interval_scale(d.cum_pos);
     })
     .attr("y", _positions.multiread.ref_intervals.y)
     .attr("width", function (d) {
       return (
-        _scales.chunk_ref_interval_scale(d.end) -
-        _scales.chunk_ref_interval_scale(d.start)
+        _ribbon_scales.chunk_ref_interval_scale(d.end) -
+        _ribbon_scales.chunk_ref_interval_scale(d.start)
       );
     })
     .attr("height", _positions.multiread.ref_intervals.height)
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     })
-    .attr("fill-opacity", _static.dotplot_ref_opacity)
+    .attr("fill-opacity", _ribbon_static.dotplot_ref_opacity)
     .style("stroke-width", 1)
     .style("stroke", "black")
     .on("mouseover", function (d) {
       var text =
         d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-      var x = _scales.chunk_ref_interval_scale(
+      var x = _ribbon_scales.chunk_ref_interval_scale(
         d.cum_pos + (d.end - d.start) / 2
       );
-      var y = _positions.multiread.ref_intervals.y - _padding.text;
-      show_tooltip(text, x, y, _svg2);
+      var y = _positions.multiread.ref_intervals.y - _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg2);
     })
     .on("mouseout", function (d) {
-      _svg2.selectAll("g.tip").remove();
+      _ribbon_svg2.selectAll("g.tip").remove();
     });
 
   // Ref interval mapping back to ref
-  _svg2
+  _ribbon_svg2
     .selectAll("path.ref_mapping")
     .data(_Chunk_ref_intervals)
     .enter()
@@ -969,7 +979,7 @@ function draw_chunk_ref_intervals() {
       return ref_mapping_path_generator(d, true);
     })
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     });
 }
 
@@ -1038,16 +1048,16 @@ function calculate_offsets_for_features_in_view(features_in_view) {
 
 function draw_chunk_features() {
   if (_Chunk_alignments.length > 0) {
-    if (_Features.length > 0) {
+    if (_Features_for_ribbon.length > 0) {
       var features_in_view = find_features_in_view(
-        _Features,
+        _Features_for_ribbon,
         closest_map_chunk_ref_interval,
-        _scales.chunk_ref_interval_scale
+        _ribbon_scales.chunk_ref_interval_scale
       );
       var max_overlaps =
         calculate_offsets_for_features_in_view(features_in_view);
-      if (_settings.show_features_as == "rectangles") {
-        _svg2
+      if (_ribbon_settings.show_features_as == "rectangles") {
+        _ribbon_svg2
           .selectAll("rect.features")
           .data(features_in_view)
           .enter()
@@ -1077,7 +1087,7 @@ function draw_chunk_features() {
             (_positions.multiread.features.rect_height * 0.9) / max_overlaps
           )
           .style("fill", function (d) {
-            return _scales.feature_color_scale(d.type);
+            return _ribbon_scales.feature_color_scale(d.type);
           })
           .on("mouseover", function (d) {
             var text = d.name;
@@ -1089,15 +1099,15 @@ function draw_chunk_features() {
               _positions.multiread.features.y +
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
-              _padding.text;
-            show_tooltip(text, x, y, _svg2);
+              _ribbon_padding.text;
+            show_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
-            _svg2.selectAll("g.tip").remove();
+            _ribbon_svg2.selectAll("g.tip").remove();
           });
       } else if (
-        _settings.show_features_as == "arrows" ||
-        _settings.show_features_as == "names"
+        _ribbon_settings.show_features_as == "arrows" ||
+        _ribbon_settings.show_features_as == "names"
       ) {
         var feature_path_generator = function (d) {
           var arrow = -1 * _positions.multiread.features.arrow_size,
@@ -1142,7 +1152,7 @@ function draw_chunk_features() {
           );
         };
 
-        _svg2
+        _ribbon_svg2
           .selectAll("path.features")
           .data(features_in_view)
           .enter()
@@ -1156,7 +1166,7 @@ function draw_chunk_features() {
           })
           .attr("d", feature_path_generator)
           .style("stroke", function (d) {
-            return _scales.feature_color_scale(d.type);
+            return _ribbon_scales.feature_color_scale(d.type);
           })
           .on("mouseover", function (d) {
             var text = d.name;
@@ -1168,15 +1178,15 @@ function draw_chunk_features() {
               _positions.multiread.features.y +
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
-              _padding.text;
-            show_tooltip(text, x, y, _svg2);
+              _ribbon_padding.text;
+            show_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
-            _svg2.selectAll("g.tip").remove();
+            _ribbon_svg2.selectAll("g.tip").remove();
           });
 
-        if (_settings.show_features_as == "names") {
-          var text_boxes = _svg2
+        if (_ribbon_settings.show_features_as == "names") {
+          var text_boxes = _ribbon_svg2
             .selectAll("g.features")
             .data(features_in_view)
             .enter()
@@ -1190,7 +1200,7 @@ function draw_chunk_features() {
                 (_positions.multiread.features.y +
                   (_positions.multiread.features.rect_height * d.offset) /
                     max_overlaps -
-                  _padding.text) +
+                  _ribbon_padding.text) +
                 ")"
               );
             });
@@ -1211,7 +1221,7 @@ function draw_chunk_features() {
             .attr("x", 0)
             .attr("y", 0)
             .attr("fill", function (d) {
-              return _scales.feature_color_scale(d.type);
+              return _ribbon_scales.feature_color_scale(d.type);
             })
             .style("font-size", height)
             .style("text-anchor", "middle")
@@ -1232,12 +1242,12 @@ function draw_chunk_variants() {
       var variants_in_view = find_features_in_view(
         _Variants,
         closest_map_chunk_ref_interval,
-        _scales.chunk_ref_interval_scale
+        _ribbon_scales.chunk_ref_interval_scale
       );
       var variants_to_show = [];
       for (var i in variants_in_view) {
         if (
-          _settings.show_only_selected_variants == false ||
+          _ribbon_settings.show_only_selected_variants == false ||
           variants_in_view[i].highlight == true
         ) {
           variants_to_show.push(variants_in_view[i]);
@@ -1246,7 +1256,7 @@ function draw_chunk_variants() {
 
       var max_overlaps =
         calculate_offsets_for_features_in_view(variants_to_show);
-      _svg2
+      _ribbon_svg2
         .selectAll("rect.variants")
         .data(variants_to_show)
         .enter()
@@ -1276,7 +1286,7 @@ function draw_chunk_variants() {
           (_positions.multiread.variants.rect_height * 0.9) / max_overlaps
         )
         .style("fill", function (d) {
-          return _scales.variant_color_scale(d.type);
+          return _ribbon_scales.variant_color_scale(d.type);
         })
         .on("mouseover", function (d) {
           var text = d.name;
@@ -1288,11 +1298,11 @@ function draw_chunk_variants() {
             _positions.multiread.variants.y +
             (_positions.multiread.variants.rect_height * d.offset) /
               max_overlaps -
-            _padding.text;
-          show_tooltip(text, x, y, _svg2);
+            _ribbon_padding.text;
+          show_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
-          _svg2.selectAll("g.tip").remove();
+          _ribbon_svg2.selectAll("g.tip").remove();
         });
     }
 
@@ -1300,7 +1310,7 @@ function draw_chunk_variants() {
       var variants_in_view = [];
       for (var i in _Bedpe) {
         if (
-          _settings.show_only_selected_variants == false ||
+          _ribbon_settings.show_only_selected_variants == false ||
           _Bedpe[i].highlight == true
         ) {
           if (
@@ -1314,19 +1324,23 @@ function draw_chunk_variants() {
               variant.chrom1,
               variant.pos1
             );
-            variant.cum_pos1 = _scales.chunk_ref_interval_scale(results1.pos);
+            variant.cum_pos1 = _ribbon_scales.chunk_ref_interval_scale(
+              results1.pos
+            );
 
             var results2 = closest_map_chunk_ref_interval(
               variant.chrom2,
               variant.pos2
             );
-            variant.cum_pos2 = _scales.chunk_ref_interval_scale(results2.pos);
+            variant.cum_pos2 = _ribbon_scales.chunk_ref_interval_scale(
+              results2.pos
+            );
             variants_in_view.push(variant);
             if (
               _Bedpe[i].highlight == true &&
-              _settings.add_coordinates_to_figures == true
+              _ribbon_settings.add_coordinates_to_figures == true
             ) {
-              _svg2
+              _ribbon_svg2
                 .append("text")
                 .text(
                   _Bedpe[i].chrom1 +
@@ -1440,7 +1454,7 @@ function draw_chunk_variants() {
         ); // toe
       };
 
-      _svg2
+      _ribbon_svg2
         .selectAll("path.bedpe_variants")
         .data(variants_in_view)
         .enter()
@@ -1460,11 +1474,11 @@ function draw_chunk_variants() {
             text = d.name + " (" + d.type + ")";
           }
           var x = (d.cum_pos1 + d.cum_pos2) / 2;
-          var y = _positions.multiread.variants.y - _padding.text;
-          show_tooltip(text, x, y, _svg2);
+          var y = _positions.multiread.variants.y - _ribbon_padding.text;
+          show_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
-          _svg2.selectAll("g.tip").remove();
+          _ribbon_svg2.selectAll("g.tip").remove();
         });
     }
   }
@@ -1490,19 +1504,20 @@ function draw_chunk_alignments() {
   if (_Additional_ref_intervals.length > 0) {
     for (var i in _Additional_ref_intervals) {
       var d = _Additional_ref_intervals[i];
-      _Additional_ref_intervals[i].x_pos = _scales.chunk_ref_interval_scale(
-        map_chunk_ref_interval(d.chrom, d.start)
-      );
+      _Additional_ref_intervals[i].x_pos =
+        _ribbon_scales.chunk_ref_interval_scale(
+          map_chunk_ref_interval(d.chrom, d.start)
+        );
       _Additional_ref_intervals[i].width =
-        _scales.chunk_ref_interval_scale(
+        _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.chrom, d.end)
         ) -
-        _scales.chunk_ref_interval_scale(
+        _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.chrom, d.start)
         );
     }
-    if (_settings.draw_focus_rectangle == true) {
-      _svg2
+    if (_ribbon_settings.draw_focus_rectangle == true) {
+      _ribbon_svg2
         .selectAll("rect.focal_regions")
         .data(_Additional_ref_intervals)
         .enter()
@@ -1530,10 +1545,12 @@ function draw_chunk_alignments() {
   for (var i in _Chunk_alignments) {
     if (
       _Chunk_alignments[i].alignments[0].read_length >=
-        _settings.min_read_length &&
-      _Chunk_alignments[i].alignments.length <= _settings.max_num_alignments &&
-      _Chunk_alignments[i].alignments.length >= _settings.min_num_alignments &&
-      _Chunk_alignments[i].max_mq >= _settings.region_min_mapping_quality
+        _ribbon_settings.min_read_length &&
+      _Chunk_alignments[i].alignments.length <=
+        _ribbon_settings.max_num_alignments &&
+      _Chunk_alignments[i].alignments.length >=
+        _ribbon_settings.min_num_alignments &&
+      _Chunk_alignments[i].max_mq >= _ribbon_settings.region_min_mapping_quality
     ) {
       var has_visible_alignments = false;
       for (var j in _Chunk_alignments[i].alignments) {
@@ -1570,26 +1587,26 @@ function draw_chunk_alignments() {
   }
 
   //////////////  SORT READS  //////////////
-  if (_settings.feature_to_sort_reads == "num_alignments") {
+  if (_ribbon_settings.feature_to_sort_reads == "num_alignments") {
     chunks.sort(function (a, b) {
       return a.alignments.length - b.alignments.length;
     });
-  } else if (_settings.feature_to_sort_reads == "readname") {
+  } else if (_ribbon_settings.feature_to_sort_reads == "readname") {
     chunks.sort(function (a, b) {
       return natural_sort(a.readname, b.readname);
     });
-  } else if (_settings.feature_to_sort_reads == "original") {
+  } else if (_ribbon_settings.feature_to_sort_reads == "original") {
     chunks.sort(function (a, b) {
       return a.index - b.index;
     });
-  } else if (_settings.feature_to_sort_reads == "longest") {
+  } else if (_ribbon_settings.feature_to_sort_reads == "longest") {
     for (var i in chunks) {
       if (chunks[i].longest_ref_pos == undefined) {
         var longest = chunks[i].alignments[chunks[i].index_longest];
         if (longest == undefined) {
           longest = chunks[i].alignments[0];
         }
-        chunks[i].longest_ref_pos = _scales.chunk_ref_interval_scale(
+        chunks[i].longest_ref_pos = _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(longest.r, longest.rs)
         );
       }
@@ -1597,14 +1614,14 @@ function draw_chunk_alignments() {
     chunks.sort(function (a, b) {
       return a.longest_ref_pos - b.longest_ref_pos;
     });
-  } else if (_settings.feature_to_sort_reads == "primary") {
+  } else if (_ribbon_settings.feature_to_sort_reads == "primary") {
     for (var i in chunks) {
       if (chunks[i].primary_ref_pos == undefined) {
         var primary = chunks[i].alignments[chunks[i].index_primary];
         if (primary == undefined) {
           primary = chunks[i].alignments[0];
         }
-        chunks[i].primary_ref_pos = _scales.chunk_ref_interval_scale(
+        chunks[i].primary_ref_pos = _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(primary.r, primary.rs)
         );
       }
@@ -1618,17 +1635,17 @@ function draw_chunk_alignments() {
   var num_reads_to_show = chunks.length;
   for (var i = 0; i < chunks.length; i++) {
     // Whether to flip orientation across all alignments of the read
-    if (_settings.orient_reads_by == "primary") {
+    if (_ribbon_settings.orient_reads_by == "primary") {
       chunks[i].flip =
         chunks[i].unfiltered_alignments[chunks[i].index_primary].qe -
           chunks[i].unfiltered_alignments[chunks[i].index_primary].qs <
         0;
-    } else if (_settings.orient_reads_by == "longest") {
+    } else if (_ribbon_settings.orient_reads_by == "longest") {
       chunks[i].flip =
         chunks[i].unfiltered_alignments[chunks[i].index_longest].qe -
           chunks[i].unfiltered_alignments[chunks[i].index_longest].qs <
         0;
-    } else if (_settings.orient_reads_by == "reverse") {
+    } else if (_ribbon_settings.orient_reads_by == "reverse") {
       chunks[i].flip = true;
     } else {
       chunks[i].flip = false;
@@ -1641,7 +1658,7 @@ function draw_chunk_alignments() {
   }
 
   //////////////  Draw rows  //////////////
-  var alignment_groups = _svg2
+  var alignment_groups = _ribbon_svg2
     .selectAll("g.alignment_groups")
     .data(chunks)
     .enter()
@@ -1654,7 +1671,7 @@ function draw_chunk_alignments() {
       new_read_selected(d.index);
     });
 
-  if (_settings.paired_end_mode) {
+  if (_ribbon_settings.paired_end_mode) {
     alignment_groups
       .append("line")
       .filter(function (d) {
@@ -1665,7 +1682,7 @@ function draw_chunk_alignments() {
       })
       .attr("class", "pair_link")
       .attr("x1", function (d) {
-        return _scales.chunk_ref_interval_scale(
+        return _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(
             d.pair_link.chrom[d.flip],
             d.pair_link.from[d.flip]
@@ -1673,7 +1690,7 @@ function draw_chunk_alignments() {
         );
       })
       .attr("x2", function (d) {
-        return _scales.chunk_ref_interval_scale(
+        return _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(
             d.pair_link.chrom[d.flip],
             d.pair_link.to[d.flip]
@@ -1684,7 +1701,7 @@ function draw_chunk_alignments() {
   }
 
   ////////////  Draw alignments  //////////////
-  if (_settings.show_indels_as == "none") {
+  if (_ribbon_settings.show_indels_as == "none") {
     // Draw simple lines
     alignment_groups
       .selectAll("line.alignment")
@@ -1695,12 +1712,12 @@ function draw_chunk_alignments() {
       .append("line")
       .attr("class", "alignment")
       .attr("x1", function (d) {
-        return _scales.chunk_ref_interval_scale(
+        return _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.r, d.rs)
         );
       })
       .attr("x2", function (d) {
-        return _scales.chunk_ref_interval_scale(
+        return _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.r, d.re)
         );
       })
@@ -1723,18 +1740,19 @@ function draw_chunk_alignments() {
       })
       .on("mouseover", function (d) {
         var text = "select read";
-        var x = _scales.chunk_ref_interval_scale(
+        var x = _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.r, (d.rs + d.re) / 2)
         );
-        var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-        show_tooltip(text, x, y, _svg2);
+        var y =
+          d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
+        show_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
-        _svg2.selectAll("g.tip").remove();
+        _ribbon_svg2.selectAll("g.tip").remove();
       });
   } else {
     function chunk_alignment_path_generator(d) {
-      var previous_x = _scales.chunk_ref_interval_scale(
+      var previous_x = _ribbon_scales.chunk_ref_interval_scale(
         map_chunk_ref_interval(d.r, d.path[0].R)
       );
       var previous_read_position = d.path[0].Q;
@@ -1742,7 +1760,7 @@ function draw_chunk_alignments() {
       var output = "M " + previous_x + " " + 0;
 
       for (var i = 1; i < d.path.length; i++) {
-        var current_x = _scales.chunk_ref_interval_scale(
+        var current_x = _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.r, d.path[i].R)
         );
         var current_read_position = d.path[i].Q;
@@ -1785,20 +1803,21 @@ function draw_chunk_alignments() {
       })
       .on("mouseover", function (d) {
         var text = "select read";
-        var x = _scales.chunk_ref_interval_scale(
+        var x = _ribbon_scales.chunk_ref_interval_scale(
           map_chunk_ref_interval(d.r, (d.rs + d.re) / 2)
         );
-        var y = d3.select(this.parentNode).datum().read_y - _tooltip.height;
-        show_tooltip(text, x, y, _svg2);
+        var y =
+          d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
+        show_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
-        _svg2.selectAll("g.tip").remove();
+        _ribbon_svg2.selectAll("g.tip").remove();
       });
 
     // Record all of the insertions and deletions from these alignments
     if (
-      _settings.show_indels_as != "none" &&
-      _settings.show_indels_as != "gaps"
+      _ribbon_settings.show_indels_as != "none" &&
+      _ribbon_settings.show_indels_as != "gaps"
     ) {
       for (var i in chunks) {
         for (var j in chunks[i].alignments) {
@@ -1839,8 +1858,8 @@ function draw_chunk_alignments() {
       }
 
       if (
-        _settings.show_indels_as == "thin" ||
-        _settings.show_indels_as == "numbers"
+        _ribbon_settings.show_indels_as == "thin" ||
+        _ribbon_settings.show_indels_as == "numbers"
       ) {
         var deletion_groups = alignment_groups
           .selectAll("g.alignment_deletions")
@@ -1859,27 +1878,27 @@ function draw_chunk_alignments() {
           .attr("class", "deletions")
           .on("mouseover", function (d) {
             var text = d.size + "bp deletion";
-            var x = _scales.chunk_ref_interval_scale(
+            var x = _ribbon_scales.chunk_ref_interval_scale(
               map_chunk_ref_interval(d.chrom, (d.R1 + d.R2) / 2)
             );
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
-              _tooltip.height;
-            show_tooltip(text, x, y, _svg2);
+              _ribbon_tooltip.height;
+            show_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
-            _svg2.selectAll("g.tip").remove();
+            _ribbon_svg2.selectAll("g.tip").remove();
           });
 
         deletion_groups
           .append("line")
           .attr("x1", function (d) {
-            return _scales.chunk_ref_interval_scale(
+            return _ribbon_scales.chunk_ref_interval_scale(
               map_chunk_ref_interval(d.chrom, d.R1)
             );
           })
           .attr("x2", function (d) {
-            return _scales.chunk_ref_interval_scale(
+            return _ribbon_scales.chunk_ref_interval_scale(
               map_chunk_ref_interval(d.chrom, d.R2)
             );
           })
@@ -1920,22 +1939,22 @@ function draw_chunk_alignments() {
           .attr("class", "insertions")
           .on("mouseover", function (d) {
             var text = d.size + "bp insertion";
-            var x = _scales.chunk_ref_interval_scale(
+            var x = _ribbon_scales.chunk_ref_interval_scale(
               map_chunk_ref_interval(d.chrom, d.R)
             );
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
-              _tooltip.height;
-            show_tooltip(text, x, y, _svg2);
+              _ribbon_tooltip.height;
+            show_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
-            _svg2.selectAll("g.tip").remove();
+            _ribbon_svg2.selectAll("g.tip").remove();
           });
 
         insertion_groups
           .append("circle")
           .attr("cx", function (d) {
-            return _scales.chunk_ref_interval_scale(
+            return _ribbon_scales.chunk_ref_interval_scale(
               map_chunk_ref_interval(d.chrom, d.R)
             );
           })
@@ -1966,7 +1985,7 @@ function draw_chunk_alignments() {
           .style("stroke", "black")
           .style("stroke-width", 1);
 
-        if (_settings.show_indels_as == "numbers") {
+        if (_ribbon_settings.show_indels_as == "numbers") {
           var height =
             (_positions.multiread.reads.height / num_reads_to_show) * 0.9; //_layout.svg_height/40;
           var width = height * 4;
@@ -1976,7 +1995,7 @@ function draw_chunk_alignments() {
             .attr("width", width)
             .attr("x", function (d) {
               return (
-                _scales.chunk_ref_interval_scale(
+                _ribbon_scales.chunk_ref_interval_scale(
                   map_chunk_ref_interval(d.chrom, (d.R1 + d.R2) / 2)
                 ) -
                 width / 2
@@ -1991,7 +2010,7 @@ function draw_chunk_alignments() {
               return d.size;
             })
             .attr("x", function (d) {
-              return _scales.chunk_ref_interval_scale(
+              return _ribbon_scales.chunk_ref_interval_scale(
                 map_chunk_ref_interval(d.chrom, (d.R1 + d.R2) / 2)
               );
             })
@@ -2005,7 +2024,7 @@ function draw_chunk_alignments() {
             .attr("width", width)
             .attr("x", function (d) {
               return (
-                _scales.chunk_ref_interval_scale(
+                _ribbon_scales.chunk_ref_interval_scale(
                   map_chunk_ref_interval(d.chrom, d.R)
                 ) -
                 width / 2
@@ -2020,7 +2039,7 @@ function draw_chunk_alignments() {
               return d.size;
             })
             .attr("x", function (d) {
-              return _scales.chunk_ref_interval_scale(
+              return _ribbon_scales.chunk_ref_interval_scale(
                 map_chunk_ref_interval(d.chrom, d.R)
               );
             })
@@ -2057,15 +2076,15 @@ function clear_data() {
 }
 
 function highlight_chromosome(chromosome) {
-  if (_settings.single_chrom_highlighted == true) {
+  if (_ribbon_settings.single_chrom_highlighted == true) {
     show_all_chromosomes();
     apply_ref_filters();
     draw_region_view();
-    if (_settings.ref_match_chunk_ref_intervals == true) {
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
       apply_ref_filters();
       select_read();
     }
-    _settings.single_chrom_highlighted = false;
+    _ribbon_settings.single_chrom_highlighted = false;
   } else {
     for (var chrom in _Refs_show_or_hide) {
       // console.log("hiding " + chrom);
@@ -2076,13 +2095,13 @@ function highlight_chromosome(chromosome) {
     apply_ref_filters();
     draw_region_view();
 
-    if (_settings.ref_match_chunk_ref_intervals == true) {
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
       select_read();
     }
 
     d3.select("#chrom_highlighted").html(chromosome);
     d3.select("#show_all_refs").style("display", "inline");
-    _settings.single_chrom_highlighted = true;
+    _ribbon_settings.single_chrom_highlighted = true;
   }
 }
 
@@ -2098,11 +2117,14 @@ function show_all_chromosomes() {
 }
 
 function apply_feature_filters() {
-  for (var f in _Features) {
-    if (_settings.feature_types_to_show[_Features[f].type] === true) {
-      _Features[f].show = true;
+  for (var f in _Features_for_ribbon) {
+    if (
+      _ribbon_settings.feature_types_to_show[_Features_for_ribbon[f].type] ===
+      true
+    ) {
+      _Features_for_ribbon[f].show = true;
     } else {
-      _Features[f].show = false;
+      _Features_for_ribbon[f].show = false;
     }
   }
 }
@@ -2113,7 +2135,7 @@ function apply_ref_filters() {
     if (_Refs_show_or_hide[_Chunk_ref_intervals[i].chrom] == true) {
       if (
         _Chunk_ref_intervals[i].num_alignments >=
-        _settings.min_aligns_for_ref_interval
+        _ribbon_settings.min_aligns_for_ref_interval
       ) {
         _Chunk_ref_intervals[i].cum_pos = interval_cumulative_position;
         interval_cumulative_position += _Chunk_ref_intervals[i].size;
@@ -2132,8 +2154,11 @@ function apply_ref_filters() {
     }
   }
 
-  _scales.chunk_ref_interval_scale.domain([0, interval_cumulative_position]);
-  _scales.chunk_whole_ref_scale.domain([0, whole_cumulative_position]);
+  _ribbon_scales.chunk_ref_interval_scale.domain([
+    0,
+    interval_cumulative_position,
+  ]);
+  _ribbon_scales.chunk_whole_ref_scale.domain([0, whole_cumulative_position]);
 
   var chromosomes = d3.keys(_Refs_show_or_hide);
   chromosomes.sort(function (a, b) {
@@ -2184,8 +2209,8 @@ function chunk_changed() {
 }
 
 function parse_paired_end(record) {
-  var first_read_length = _settings.default_read_length;
-  var second_read_length = _settings.default_read_length;
+  var first_read_length = _ribbon_settings.default_read_length;
+  var second_read_length = _ribbon_settings.default_read_length;
   var readname = "";
   var new_alignments = [];
   var pair_link_positions = {
@@ -2227,21 +2252,24 @@ function parse_paired_end(record) {
       new_alignments.push(alignment);
     }
   }
-  var second_read_shift = first_read_length + _settings.read_pair_spacing;
+  var second_read_shift =
+    first_read_length + _ribbon_settings.read_pair_spacing;
   var total_read_length =
-    first_read_length + _settings.read_pair_spacing + second_read_length;
+    first_read_length + _ribbon_settings.read_pair_spacing + second_read_length;
   if (record.second != undefined) {
     readname = record.second.readname;
     second_read_length = record.second.alignments[0].read_length;
     total_read_length =
-      first_read_length + _settings.read_pair_spacing + second_read_length;
+      first_read_length +
+      _ribbon_settings.read_pair_spacing +
+      second_read_length;
 
     for (var i in record.second.alignments) {
       var new_alignment = {};
       for (key in record.second.alignments[i]) {
         new_alignment[key] = record.second.alignments[i][key];
       }
-      if (_settings.flip_second_read_in_pair) {
+      if (_ribbon_settings.flip_second_read_in_pair) {
         new_alignment.qs = record.second.alignments[i].qe + second_read_shift;
         new_alignment.qe = record.second.alignments[i].qs + second_read_shift;
       } else {
@@ -2250,7 +2278,7 @@ function parse_paired_end(record) {
       }
       var new_path = [];
       for (var j = 0; j < new_alignment.path.length; j++) {
-        if (_settings.flip_second_read_in_pair) {
+        if (_ribbon_settings.flip_second_read_in_pair) {
           new_path.push({
             R: new_alignment.path[j].R,
             Q: total_read_length - new_alignment.path[j].Q,
@@ -2306,7 +2334,7 @@ function parse_paired_end(record) {
     alignments: new_alignments,
     read_lengths: [
       first_read_length,
-      _settings.read_pair_spacing,
+      _ribbon_settings.read_pair_spacing,
       second_read_length,
     ],
     pair_link: pair_link_positions,
@@ -2316,25 +2344,25 @@ function parse_paired_end(record) {
 function consolidate_records(records) {
   // Removing duplicates and pairing up records from paired-end reads
 
-  _settings.paired_end_mode = false;
+  _ribbon_settings.paired_end_mode = false;
   for (var i = 0; i < records.length; i++) {
     if ((records[i].flag & 1) == 1) {
       // read is paired
-      _settings.paired_end_mode = true;
+      _ribbon_settings.paired_end_mode = true;
     }
     if (i > 100) {
       break;
     }
   }
 
-  if (_settings.paired_end_mode) {
+  if (_ribbon_settings.paired_end_mode) {
     console.log("Found flag indicating paired end reads");
-    if (!_warnings.pe_mode) {
-      user_message(
+    if (!_ribbon_warnings.pe_mode) {
+      user_message_ribbon(
         "Info",
         "Paired-end mode activated. Note that only read pairs within the region are shown because we use the SA tag to grab other alignments for the same read, but this does not help us get the other read in each pair"
       );
-      _warnings.pe_mode = true;
+      _ribbon_warnings.pe_mode = true;
     }
     var paired_end_reads = {};
     var read_length_counts = {};
@@ -2368,7 +2396,7 @@ function consolidate_records(records) {
       }
     }
     // console.log("most_common_length:", most_common_length);
-    _settings.default_read_length = parseInt(most_common_length);
+    _ribbon_settings.default_read_length = parseInt(most_common_length);
 
     var glued_together = [];
     for (var readname in paired_end_reads) {
@@ -2446,9 +2474,9 @@ function consolidate_records(records) {
 }
 
 function sam_input_changed(sam_input_value) {
-  _settings.current_input_type = "sam";
+  _ribbon_settings.current_input_type = "sam";
   // Check match refs from region view checkbox by default
-  _settings.ref_match_chunk_ref_intervals = true;
+  _ribbon_settings.ref_match_chunk_ref_intervals = true;
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
@@ -2477,7 +2505,7 @@ function sam_input_changed(sam_input_value) {
           records.push(parsed_line);
         }
       } else {
-        user_message(
+        user_message_ribbon(
           "Error",
           "Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments."
         );
@@ -2496,42 +2524,42 @@ function sam_input_changed(sam_input_value) {
 }
 
 $("#sam_input").bind("input propertychange", function () {
-  _settings.alignment_info_text = "Sam from text field";
+  _ribbon_settings.alignment_info_text = "Sam from text field";
   set_alignment_info_text();
   ga("send", "event", "SAM_text", "change");
   sam_input_changed(this.value);
 });
 
 d3.select("#sam_info_icon").on("click", function () {
-  user_message(
+  user_message_ribbon(
     "Instructions",
     "Create a sam file using an aligner such as BWA. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead."
   );
 });
 
 d3.select("#bam_info_icon").on("click", function () {
-  user_message(
+  user_message_ribbon(
     "Instructions",
     "Create a bam file using an aligner such as BWA. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, select the my_file.sorted.bam and the my_file.sorted.bam.bai files. The bam file is not uploaded, but is read locally on your computer using the .bai file as the index. (This is secure because a site can only access the files you chose.)"
   );
 });
 
 d3.select("#coords_info_icon").on("click", function () {
-  user_message(
+  user_message_ribbon(
     "Instructions",
     "The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>"
   );
 });
 
 d3.selectAll(".bed_info_icon").on("click", function () {
-  user_message(
+  user_message_ribbon(
     "Instructions",
     "Paste or upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
   );
 });
 
 d3.selectAll(".vcf_info_icon").on("click", function () {
-  user_message(
+  user_message_ribbon(
     "Instructions",
     "Paste or upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
   );
@@ -2562,10 +2590,10 @@ function parse_coords_columns(columns) {
 }
 
 function coords_input_changed(coords_input_value) {
-  _settings.current_input_type = "coords";
+  _ribbon_settings.current_input_type = "coords";
 
   // Uncheck match refs from region view checkbox by default
-  _settings.ref_match_chunk_ref_intervals = false;
+  _ribbon_settings.ref_match_chunk_ref_intervals = false;
   d3.select("#ref_match_region_view").property("checked", false);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
@@ -2597,7 +2625,7 @@ function coords_input_changed(coords_input_value) {
     } else if (columns.length < 3) {
       continue;
     } else if (columns.length != 11) {
-      user_message(
+      user_message_ribbon(
         "Error",
         "The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>"
       );
@@ -2665,7 +2693,7 @@ function calculate_type_colors(variant_list) {
       colors_for_variants.push("green");
     } else if (variant_types[type] > 1) {
       colors_for_variants.push(
-        _static.color_collections[2][other_colors_index]
+        _ribbon_static.color_collections[2][other_colors_index]
       );
       other_colors_index++;
     } else {
@@ -2691,7 +2719,7 @@ function flexible_bam_fetch(region_list) {
     _Bam_records_from_multiregions = [];
 
     fetch_whole_region = false;
-    region_fetch_margin = _settings.bam_fetch_margin;
+    region_fetch_margin = _ribbon_settings.bam_fetch_margin;
 
     if (fetch_whole_region == true) {
       for (var i in region_list) {
@@ -2772,7 +2800,7 @@ function flexible_bam_fetch(region_list) {
     d3.select("#bam_fetch_info").html(info);
   } else {
     console.log("No bam file");
-    user_message("Error", "No bam file");
+    user_message_ribbon("Error", "No bam file");
   }
 }
 
@@ -2790,15 +2818,15 @@ function feature_row_click(d) {
       d.end
   );
   // Mark feature as selected:
-  for (var i in _Features) {
-    _Features[i].highlight = _Features[i].name == d.name;
+  for (var i in _Features_for_ribbon) {
+    _Features_for_ribbon[i].highlight = _Features_for_ribbon[i].name == d.name;
   }
-  if (!_warnings.large_features && d.end - d.start > 1000) {
-    user_message(
+  if (!_ribbon_warnings.large_features && d.end - d.start > 1000) {
+    user_message_ribbon(
       "Warning",
       "Be careful with long features as loading too many reads can cause out-of-memory errors."
     );
-    _warnings.large_features = true;
+    _ribbon_warnings.large_features = true;
   }
   flexible_bam_fetch([{ chrom: d.chrom, start: d.start, end: d.end }]);
   ga("send", "event", "feature_table", "select");
@@ -2821,12 +2849,12 @@ function variant_row_click(d) {
   for (var i in _Variants) {
     _Variants[i].highlight = _Variants[i].name == d.name;
   }
-  if (!_warnings.large_features && d.end - d.start > 1000) {
-    user_message(
+  if (!_ribbon_warnings.large_features && d.end - d.start > 1000) {
+    user_message_ribbon(
       "Warning",
       "Be careful with large regions as loading too many reads can cause out-of-memory errors."
     );
-    _warnings.large_features = true;
+    _ribbon_warnings.large_features = true;
   }
   flexible_bam_fetch([{ chrom: d.chrom, start: d.start, end: d.end }]);
 
@@ -2847,7 +2875,7 @@ function show_feature_table() {
   d3.select("#feature_table_landing").call(
     d3
       .superTable()
-      .table_data(_Features)
+      .table_data(_Features_for_ribbon)
       .num_rows_to_show(15)
       .click_function(feature_row_click)
       .show_advanced_filters(true)
@@ -2932,7 +2960,7 @@ function show_bedpe_table() {
   d3.select(".d3-superTable-table")
     .selectAll("input")
     .on("focus", function () {
-      user_message(
+      user_message_ribbon(
         "Instructions",
         "Filter table on each column by typing for instance =17 to get all rows where that column is 17, you can also do >9000 or <9000. Separate multiple filters in the same column with spaces."
       );
@@ -2954,7 +2982,7 @@ function bed_input_changed(bed_input) {
           score = 0;
         }
         if (isNaN(start) || isNaN(end)) {
-          user_message(
+          user_message_ribbon(
             "Error",
             "Bed file must contain numbers in columns 2 and 3. Found: <pre>" +
               columns[1] +
@@ -2978,7 +3006,7 @@ function bed_input_changed(bed_input) {
     }
   }
 
-  user_message("Info", "Loaded " + _Variants.length + " bed entries");
+  user_message_ribbon("Info", "Loaded " + _Variants.length + " bed entries");
 
   clear_vcf_input();
   update_variants();
@@ -3010,7 +3038,7 @@ function bedpe_input_changed(bedpe_input) {
         // 	score = 0;
         // }
         if (isNaN(start1) || isNaN(end1)) {
-          user_message(
+          user_message_ribbon(
             "Error",
             "Bedpe file must contain numbers in columns 2,3,5, and 6. Found: <pre>" +
               columns[1] +
@@ -3047,7 +3075,7 @@ function bedpe_input_changed(bedpe_input) {
     }
   }
 
-  user_message("Info", "Loaded " + _Bedpe.length + " bedpe entries");
+  user_message_ribbon("Info", "Loaded " + _Bedpe.length + " bedpe entries");
 
   update_bedpe();
   draw_region_view();
@@ -3056,7 +3084,7 @@ function bedpe_input_changed(bedpe_input) {
 
 function update_variants() {
   var color_calculations = calculate_type_colors(_Variants);
-  _scales.variant_color_scale
+  _ribbon_scales.variant_color_scale
     .domain(color_calculations.names)
     .range(color_calculations.colors);
   show_variant_table();
@@ -3064,7 +3092,7 @@ function update_variants() {
 
 function update_bedpe() {
   var color_calculations = calculate_type_colors(_Bedpe);
-  _scales.variant_color_scale
+  _ribbon_scales.variant_color_scale
     .domain(color_calculations.names)
     .range(color_calculations.colors);
   show_bedpe_table();
@@ -3077,8 +3105,8 @@ $("#bed_input").bind("input propertychange", function () {
 });
 
 function update_features() {
-  var color_calculations = calculate_type_colors(_Features);
-  _scales.feature_color_scale
+  var color_calculations = calculate_type_colors(_Features_for_ribbon);
+  _ribbon_scales.feature_color_scale
     .domain(color_calculations.names)
     .range(color_calculations.colors);
   show_feature_table();
@@ -3107,7 +3135,7 @@ function vcf_input_changed(vcf_input) {
           score = 0;
         }
         if (isNaN(start) || isNaN(end)) {
-          user_message(
+          user_message_ribbon(
             "Error",
             "VCF file must contain a number in column 2. Found: <pre>" +
               columns[1] +
@@ -3147,7 +3175,7 @@ function vcf_input_changed(vcf_input) {
     }
   }
 
-  user_message("Info", "Loaded " + _Variants.length + " vcf entries");
+  user_message_ribbon("Info", "Loaded " + _Variants.length + " vcf entries");
   clear_bed_input();
   update_variants();
   draw_region_view();
@@ -3165,10 +3193,10 @@ function remove_variant_file() {
   d3.select("#variant_file").property("value", "");
 }
 
-function run() {
-  responsive_sizing();
+function run_ribbon() {
+  resize_ribbon_views();
   refresh_visibility();
-  user_message("Instructions", "Start by loading alignments below");
+  user_message_ribbon("Instructions", "Start by loading alignments below");
 }
 
 function dict_length(dictionary) {
@@ -3236,18 +3264,18 @@ function all_read_analysis() {
   _ui_properties.num_alignments_slider_max = overall_max_num_alignments;
   _ui_properties.read_length_slider_max = max_readlength;
 
-  _settings.max_num_alignments = overall_max_num_alignments;
-  _settings.min_num_alignments = 1;
-  _settings.region_min_mapping_quality = overall_min_mq;
-  _settings.min_mapping_quality = overall_min_mq;
+  _ribbon_settings.max_num_alignments = overall_max_num_alignments;
+  _ribbon_settings.min_num_alignments = 1;
+  _ribbon_settings.region_min_mapping_quality = overall_min_mq;
+  _ribbon_settings.min_mapping_quality = overall_min_mq;
   // _settings.min_indel_size = _static.min_indel_size_for_region_view;
-  _settings.min_align_length = 0;
+  _ribbon_settings.min_align_length = 0;
   // _settings.min_aligns_for_ref_interval = 0;
-  _settings.min_read_length = 0;
+  _ribbon_settings.min_read_length = 0;
 }
 
 function feature_type_checkbox(d) {
-  _settings.feature_types_to_show[d.type] = d3.event.target.checked;
+  _ribbon_settings.feature_types_to_show[d.type] = d3.event.target.checked;
   apply_feature_filters();
   draw_region_view();
   draw();
@@ -3256,14 +3284,16 @@ function make_feature_type_table() {
   d3.select("#feature_filter_tab").style("display", "inline");
 
   var type_counts = {};
-  _settings.feature_types_to_show = {};
+  _ribbon_settings.feature_types_to_show = {};
 
-  for (var i in _Features) {
-    if (type_counts[_Features[i].type] == undefined) {
-      type_counts[_Features[i].type] = 1;
-      _settings.feature_types_to_show[_Features[i].type] = false;
+  for (var i in _Features_for_ribbon) {
+    if (type_counts[_Features_for_ribbon[i].type] == undefined) {
+      type_counts[_Features_for_ribbon[i].type] = 1;
+      _ribbon_settings.feature_types_to_show[
+        _Features_for_ribbon[i].type
+      ] = false;
     } else {
-      type_counts[_Features[i].type]++;
+      type_counts[_Features_for_ribbon[i].type]++;
     }
   }
 
@@ -3311,7 +3341,7 @@ function make_feature_type_table() {
 function create_dropdowns() {
   d3.select("select#read_orientation_dropdown")
     .selectAll("option")
-    .data(_static.read_orientation_options)
+    .data(_ribbon_static.read_orientation_options)
     .enter()
     .append("option")
     .text(function (d) {
@@ -3321,18 +3351,18 @@ function create_dropdowns() {
       return d.id;
     })
     .property("selected", function (d) {
-      return d.id === _settings.orient_reads_by;
+      return d.id === _ribbon_settings.orient_reads_by;
     });
 
   d3.select("select#read_orientation_dropdown").on("change", function (d) {
-    _settings.orient_reads_by = this.options[this.selectedIndex].value;
+    _ribbon_settings.orient_reads_by = this.options[this.selectedIndex].value;
     draw_region_view();
     draw();
   });
 
   d3.select("select#read_sorting_dropdown")
     .selectAll("option")
-    .data(_static.read_sort_options)
+    .data(_ribbon_static.read_sort_options)
     .enter()
     .append("option")
     .text(function (d) {
@@ -3342,17 +3372,18 @@ function create_dropdowns() {
       return d.id;
     })
     .property("selected", function (d) {
-      return d.id === _settings.feature_to_sort_reads;
+      return d.id === _ribbon_settings.feature_to_sort_reads;
     });
 
   d3.select("select#read_sorting_dropdown").on("change", function (d) {
-    _settings.feature_to_sort_reads = this.options[this.selectedIndex].value;
+    _ribbon_settings.feature_to_sort_reads =
+      this.options[this.selectedIndex].value;
     draw_region_view();
   });
 
   d3.select("select#color_scheme_dropdown")
     .selectAll("option")
-    .data(_static.color_schemes)
+    .data(_ribbon_static.color_schemes)
     .enter()
     .append("option")
     .text(function (d) {
@@ -3363,9 +3394,9 @@ function create_dropdowns() {
     });
 
   d3.select("select#color_scheme_dropdown").on("change", function (d) {
-    _settings.color_index = this.options[this.selectedIndex].value;
-    _scales.ref_color_scale.range(
-      _static.color_collections[_settings.color_index]
+    _ribbon_settings.color_index = this.options[this.selectedIndex].value;
+    _ribbon_scales.ref_color_scale.range(
+      _ribbon_static.color_collections[_ribbon_settings.color_index]
     );
     draw_region_view();
     draw();
@@ -3373,7 +3404,7 @@ function create_dropdowns() {
 
   d3.select("select#show_indels_as_dropdown")
     .selectAll("option")
-    .data(_static.show_indels_as_options)
+    .data(_ribbon_static.show_indels_as_options)
     .enter()
     .append("option")
     .text(function (d) {
@@ -3383,17 +3414,17 @@ function create_dropdowns() {
       return d.id;
     })
     .property("selected", function (d) {
-      return d.id === _settings.show_indels_as;
+      return d.id === _ribbon_settings.show_indels_as;
     });
 
   d3.select("select#show_indels_as_dropdown").on("change", function (d) {
-    _settings.show_indels_as = this.options[this.selectedIndex].value;
+    _ribbon_settings.show_indels_as = this.options[this.selectedIndex].value;
     draw_region_view();
   });
 
   d3.select("select#show_features_as_dropdown")
     .selectAll("option")
-    .data(_static.show_features_as_options)
+    .data(_ribbon_static.show_features_as_options)
     .enter()
     .append("option")
     .text(function (d) {
@@ -3403,33 +3434,33 @@ function create_dropdowns() {
       return d.id;
     })
     .property("selected", function (d) {
-      return d.id === _settings.show_features_as;
+      return d.id === _ribbon_settings.show_features_as;
     });
 
   d3.select("select#show_features_as_dropdown").on("change", function (d) {
-    _settings.show_features_as = this.options[this.selectedIndex].value;
+    _ribbon_settings.show_features_as = this.options[this.selectedIndex].value;
     draw_region_view();
     draw();
   });
 }
 
 function reset_settings_for_new_dataset() {
-  if (_settings.current_input_type == "coords") {
-    _settings.orient_reads_by = "longest";
-    _settings.show_indels_as = "none";
+  if (_ribbon_settings.current_input_type == "coords") {
+    _ribbon_settings.orient_reads_by = "longest";
+    _ribbon_settings.show_indels_as = "none";
     d3.select(".when_bam_file_only").style("display", "none");
   } else if (
-    _settings.current_input_type == "sam" ||
-    _settings.current_input_type == "bam"
+    _ribbon_settings.current_input_type == "sam" ||
+    _ribbon_settings.current_input_type == "bam"
   ) {
     d3.select(".when_bam_file_only").style("display", "block");
-    _settings.orient_reads_by = "primary";
-    _settings.show_indels_as = "thin";
+    _ribbon_settings.orient_reads_by = "primary";
+    _ribbon_settings.show_indels_as = "thin";
   }
 }
 
 function refresh_ui_for_new_dataset() {
-  if (_settings.current_input_type == "coords") {
+  if (_ribbon_settings.current_input_type == "coords") {
     $("#min_mq_title").html("Minimum % identity: ");
     $("#mq_slider").slider("option", "step", 0.01);
     $("#region_min_mq_title").html("Minimum % identity of best alignment:");
@@ -3444,8 +3475,8 @@ function refresh_ui_for_new_dataset() {
 
     $("#show_indels_as_dropdown").attr("disabled", true);
   } else if (
-    _settings.current_input_type == "sam" ||
-    _settings.current_input_type == "bam"
+    _ribbon_settings.current_input_type == "sam" ||
+    _ribbon_settings.current_input_type == "bam"
   ) {
     $("#min_mq_title").html("Minimum mapping quality: ");
     $("#mq_slider").slider("option", "step", 1);
@@ -3474,7 +3505,7 @@ function refresh_ui_elements() {
     d3.selectAll(".when_variants_only").style("color", "#dddddd");
     $("#show_only_selected_variants").attr("disabled", true);
   }
-  if (_Features.length > 0) {
+  if (_Features_for_ribbon.length > 0) {
     d3.selectAll(".when_features_only").style("color", "black");
     $("#show_features_as_dropdown").attr("disabled", false);
   } else {
@@ -3496,9 +3527,9 @@ function refresh_ui_elements() {
   $("#region_mq_slider").slider(
     "option",
     "value",
-    _settings.region_min_mapping_quality
+    _ribbon_settings.region_min_mapping_quality
   );
-  $("#region_mq_label").html(_settings.region_min_mapping_quality);
+  $("#region_mq_label").html(_ribbon_settings.region_min_mapping_quality);
 
   $("#max_ref_length_slider").slider(
     "option",
@@ -3508,11 +3539,11 @@ function refresh_ui_elements() {
   $("#max_ref_length_slider").slider(
     "option",
     "value",
-    _settings.max_ref_length
+    _ribbon_settings.max_ref_length
   );
   d3.select("#max_ref_length_input").property(
     "value",
-    _settings.max_ref_length
+    _ribbon_settings.max_ref_length
   );
 
   $("#min_read_length_slider").slider(
@@ -3523,11 +3554,11 @@ function refresh_ui_elements() {
   $("#min_read_length_slider").slider(
     "option",
     "value",
-    _settings.min_read_length
+    _ribbon_settings.min_read_length
   );
   d3.select("#min_read_length_input").property(
     "value",
-    _settings.min_read_length
+    _ribbon_settings.min_read_length
   );
 
   // Number of alignments in region view
@@ -3539,22 +3570,29 @@ function refresh_ui_elements() {
   $("#num_aligns_range_slider").slider(
     "values",
     0,
-    _settings.min_num_alignments
+    _ribbon_settings.min_num_alignments
   );
   $("#num_aligns_range_slider").slider(
     "values",
     1,
-    _settings.max_num_alignments
+    _ribbon_settings.max_num_alignments
   );
   $("#num_aligns_range_label").html(
-    "" + _settings.min_num_alignments + " - " + _settings.max_num_alignments
+    "" +
+      _ribbon_settings.min_num_alignments +
+      " - " +
+      _ribbon_settings.max_num_alignments
   );
 
   // Mapping quality in read detail view
   $("#mq_slider").slider("option", "max", _ui_properties.mq_slider_max);
   $("#mq_slider").slider("option", "min", _ui_properties.region_mq_slider_min);
-  $("#mq_slider").slider("option", "value", _settings.min_mapping_quality);
-  $("#mq_label").html(_settings.min_mapping_quality);
+  $("#mq_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_mapping_quality
+  );
+  $("#mq_label").html(_ribbon_settings.min_mapping_quality);
 
   // Indel size in read detail view
   $("#indel_size_slider").slider(
@@ -3562,8 +3600,12 @@ function refresh_ui_elements() {
     "max",
     _ui_properties.indel_size_slider_max + 1
   );
-  $("#indel_size_slider").slider("option", "value", _settings.min_indel_size);
-  $("#indel_size_label").html(_settings.min_indel_size);
+  $("#indel_size_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_indel_size
+  );
+  $("#indel_size_label").html(_ribbon_settings.min_indel_size);
 
   // Alignment length in read detail view
   $("#align_length_slider").slider(
@@ -3574,22 +3616,22 @@ function refresh_ui_elements() {
   $("#align_length_slider").slider(
     "option",
     "value",
-    _settings.min_align_length
+    _ribbon_settings.min_align_length
   );
-  $("#align_length_label").html(_settings.min_align_length);
+  $("#align_length_label").html(_ribbon_settings.min_align_length);
 
   // Minimum alignments for each reference interval
   $("#min_aligns_for_ref_interval_slider").slider(
     "option",
     "value",
-    _settings.min_aligns_for_ref_interval
+    _ribbon_settings.min_aligns_for_ref_interval
   );
   $("#min_aligns_for_ref_interval_label").html(
-    _settings.min_aligns_for_ref_interval
+    _ribbon_settings.min_aligns_for_ref_interval
   );
 
   // Dot plot vs. Ribbon plot
-  if (_settings.ribbon_vs_dotplot == "ribbon") {
+  if (_ribbon_settings.ribbon_vs_dotplot == "ribbon") {
     d3.selectAll(".ribbon_settings").style("display", "table-row");
     d3.selectAll(".dotplot_settings").style("display", "none");
     d3.select("#select_ribbon").property("checked", true);
@@ -3604,44 +3646,47 @@ function refresh_ui_elements() {
   // All checkboxes
   d3.select("#ref_match_region_view").property(
     "checked",
-    _settings.ref_match_chunk_ref_intervals
+    _ribbon_settings.ref_match_chunk_ref_intervals
   );
-  d3.select("#colors_checkbox").property("checked", _settings.colorful);
+  d3.select("#colors_checkbox").property("checked", _ribbon_settings.colorful);
   d3.select("#show_only_selected_variants").property(
     "checked",
-    _settings.show_only_selected_variants
+    _ribbon_settings.show_only_selected_variants
   );
   d3.select("#highlight_selected_read").property(
     "checked",
-    _settings.highlight_selected_read
+    _ribbon_settings.highlight_selected_read
   );
-  d3.select("#outline_checkbox").property("checked", _settings.ribbon_outline);
+  d3.select("#outline_checkbox").property(
+    "checked",
+    _ribbon_settings.ribbon_outline
+  );
 
   // All dropdowns
   d3.select("select#read_orientation_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
-      return d.id === _settings.orient_reads_by;
+      return d.id === _ribbon_settings.orient_reads_by;
     });
   d3.select("select#read_sorting_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
-      return d.id === _settings.feature_to_sort_reads;
+      return d.id === _ribbon_settings.feature_to_sort_reads;
     });
   d3.select("select#color_scheme_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
-      return d.id === _settings.color_index;
+      return d.id === _ribbon_settings.color_index;
     });
   d3.select("select#show_indels_as_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
-      return d.id === _settings.show_indels_as;
+      return d.id === _ribbon_settings.show_indels_as;
     });
   d3.select("select#show_features_as_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
-      return d.id === _settings.show_features_as;
+      return d.id === _ribbon_settings.show_features_as;
     });
 }
 
@@ -3650,7 +3695,7 @@ function parse_cigar(cigar_string) {
   var cigar_regex = /(\d+)(\D)/;
   var parsed = cigar_string.split(cigar_regex);
   if (parsed.length < 2) {
-    user_message(
+    user_message_ribbon(
       "Error",
       "This doesn't look like a SAM/BAM file. The 6th column must be a valid cigar string."
     );
@@ -3696,7 +3741,7 @@ function parse_SA_field(sa) {
   return alignments;
 }
 
-function user_message(message_type, message) {
+function user_message_ribbon(message_type, message) {
   var message_style = "default";
   switch (message_type) {
     case "Permalink":
@@ -3873,7 +3918,10 @@ function read_cigar(unparsed_cigar, chrom, rstart, strand, mq) {
         ref_pos += num;
         break;
       case "I":
-        if (_settings.min_indel_size != -1 && num >= _settings.min_indel_size) {
+        if (
+          _ribbon_settings.min_indel_size != -1 &&
+          num >= _ribbon_settings.min_indel_size
+        ) {
           alignment.path.push({ R: ref_pos, Q: read_pos });
           alignment.path.push({ R: ref_pos, Q: read_pos + step * num });
         }
@@ -3883,7 +3931,10 @@ function read_cigar(unparsed_cigar, chrom, rstart, strand, mq) {
         read_pos += step * num;
         break;
       case "D":
-        if (_settings.min_indel_size != -1 && num >= _settings.min_indel_size) {
+        if (
+          _ribbon_settings.min_indel_size != -1 &&
+          num >= _ribbon_settings.min_indel_size
+        ) {
           alignment.path.push({ R: ref_pos, Q: read_pos });
           alignment.path.push({ R: ref_pos + num, Q: read_pos });
         }
@@ -3939,7 +3990,7 @@ function planesweep_consolidate_intervals(starts_and_stops) {
   for (var i = 0; i < starts_and_stops.length; i++) {
     if (starts_and_stops[i][1] == "e") {
       starts_and_stops[i][0] =
-        starts_and_stops[i][0] + _settings.margin_to_merge_ref_intervals;
+        starts_and_stops[i][0] + _ribbon_settings.margin_to_merge_ref_intervals;
     }
   }
 
@@ -3966,7 +4017,8 @@ function planesweep_consolidate_intervals(starts_and_stops) {
         // Remove margin from the final stop point before recording, avoiding margins on the edges of the intervals
         intervals.push([
           most_recent_start,
-          starts_and_stops[i][0] - _settings.margin_to_merge_ref_intervals,
+          starts_and_stops[i][0] -
+            _ribbon_settings.margin_to_merge_ref_intervals,
           alignment_count,
         ]);
         alignment_count = 0; // reset
@@ -4000,8 +4052,11 @@ function reparse_read(record_from_chunk) {
 function new_read_selected(index) {
   _current_read_index = index;
   select_read();
-  _svg2.selectAll("g.alignment_groups").attr("id", function (d) {
-    if (d.index == _current_read_index && _settings.highlight_selected_read) {
+  _ribbon_svg2.selectAll("g.alignment_groups").attr("id", function (d) {
+    if (
+      d.index == _current_read_index &&
+      _ribbon_settings.highlight_selected_read
+    ) {
       return "selected_read_in_region_view";
     } else {
       return "";
@@ -4055,18 +4110,21 @@ function select_read() {
     }
   }
 
-  _settings.min_align_length = 0;
-  if (_settings.min_indel_size == _static.min_indel_size_for_region_view) {
-    _settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
+  _ribbon_settings.min_align_length = 0;
+  if (
+    _ribbon_settings.min_indel_size ==
+    _ribbon_static.min_indel_size_for_region_view
+  ) {
+    _ribbon_settings.min_indel_size = _ui_properties.indel_size_slider_max + 1;
   }
 
-  if (_settings.ref_match_chunk_ref_intervals) {
+  if (_ribbon_settings.ref_match_chunk_ref_intervals) {
     organize_refs_for_read_same_as_chunk();
   } else {
     organize_references_for_read();
   }
 
-  _scales.read_scale.domain([
+  _ribbon_scales.read_scale.domain([
     0,
     _Alignments[_Alignments.length - 1].read_length,
   ]);
@@ -4123,7 +4181,7 @@ function ribbon_alignment_path_generator(d) {
     var cum_pos = map_ref_interval(datum.r, datum.path[index].R);
     if (cum_pos != undefined) {
       return (
-        _scales.ref_interval_scale(
+        _ribbon_scales.ref_interval_scale(
           map_ref_interval(datum.r, datum.path[index].R)
         ) +
         "," +
@@ -4131,7 +4189,7 @@ function ribbon_alignment_path_generator(d) {
       );
     } else {
       return (
-        _scales.read_scale(datum.path[index].Q) +
+        _ribbon_scales.read_scale(datum.path[index].Q) +
         " " +
         (top_y + ((bottom_y - top_y) * 2) / 3)
       );
@@ -4139,11 +4197,12 @@ function ribbon_alignment_path_generator(d) {
   }
 
   var output = "M " + get_top_coords(d, 0); // ref start
-  output += " L " + _scales.read_scale(d.path[0].Q) + " " + bottom_y; // read start
+  output += " L " + _ribbon_scales.read_scale(d.path[0].Q) + " " + bottom_y; // read start
 
   for (var i = 1; i < d.path.length; i++) {
     var ref_coord = " L " + get_top_coords(d, i); // ref
-    var read_coord = " L " + _scales.read_scale(d.path[i].Q) + " " + bottom_y; // read
+    var read_coord =
+      " L " + _ribbon_scales.read_scale(d.path[i].Q) + " " + bottom_y; // read
     if (i % 2 == 0) {
       // alternate reference and read side so top goes to top
       output += ref_coord + read_coord;
@@ -4153,7 +4212,7 @@ function ribbon_alignment_path_generator(d) {
   }
 
   output += " L " + get_top_coords(d, 0); // ref start
-  output += " L " + _scales.read_scale(d.path[0].Q) + " " + bottom_y; // read start
+  output += " L " + _ribbon_scales.read_scale(d.path[0].Q) + " " + bottom_y; // read start
 
   return output;
 }
@@ -4164,33 +4223,33 @@ function ref_mapping_path_generator(d, chunk) {
 
   if (chunk == true) {
     bottom.y = _positions.multiread.ref_intervals.y;
-    bottom.left = _scales.chunk_ref_interval_scale(d.cum_pos);
+    bottom.left = _ribbon_scales.chunk_ref_interval_scale(d.cum_pos);
     bottom.right =
       bottom.left +
-      _scales.chunk_ref_interval_scale(d.end) -
-      _scales.chunk_ref_interval_scale(d.start);
+      _ribbon_scales.chunk_ref_interval_scale(d.end) -
+      _ribbon_scales.chunk_ref_interval_scale(d.start);
 
     top.y =
       _positions.multiread.ref_block.y + _positions.multiread.ref_block.height;
-    top.left = _scales.chunk_whole_ref_scale(
+    top.left = _ribbon_scales.chunk_whole_ref_scale(
       map_chunk_whole_ref(d.chrom, d.start)
     );
-    top.right = _scales.chunk_whole_ref_scale(
+    top.right = _ribbon_scales.chunk_whole_ref_scale(
       map_chunk_whole_ref(d.chrom, d.end)
     );
   } else {
     bottom.y = _positions.singleread.top_bar.y;
-    bottom.left = _scales.ref_interval_scale(d.cum_pos);
+    bottom.left = _ribbon_scales.ref_interval_scale(d.cum_pos);
     bottom.right =
       bottom.left +
-      _scales.ref_interval_scale(d.end) -
-      _scales.ref_interval_scale(d.start);
+      _ribbon_scales.ref_interval_scale(d.end) -
+      _ribbon_scales.ref_interval_scale(d.start);
 
     top.y =
       _positions.singleread.ref_block.y +
       _positions.singleread.ref_block.height;
-    top.left = _scales.whole_ref_scale(map_whole_ref(d.chrom, d.start));
-    top.right = _scales.whole_ref_scale(map_whole_ref(d.chrom, d.end));
+    top.left = _ribbon_scales.whole_ref_scale(map_whole_ref(d.chrom, d.start));
+    top.right = _ribbon_scales.whole_ref_scale(map_whole_ref(d.chrom, d.end));
   }
 
   return (
@@ -4388,7 +4447,7 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
     var new_ref_data = undefined;
     if (_Ref_sizes_from_header[chrom] == undefined) {
       var length_guess = intervals[intervals.length - 1][1] * 2;
-      if (!_settings.show_only_known_references) {
+      if (!_ribbon_settings.show_only_known_references) {
         new_ref_data = {
           chrom: chrom,
           size: length_guess,
@@ -4414,10 +4473,10 @@ function get_chromosome_sizes(ref_intervals_by_chrom) {
     }
   }
 
-  _settings.max_ref_length = _ui_properties.ref_length_slider_max;
+  _ribbon_settings.max_ref_length = _ui_properties.ref_length_slider_max;
 
-  _scales.whole_ref_scale.domain([0, cumulative_whole_ref_size]);
-  _scales.ref_color_scale.domain(chromosomes);
+  _ribbon_scales.whole_ref_scale.domain([0, cumulative_whole_ref_size]);
+  _ribbon_scales.ref_color_scale.domain(chromosomes);
 }
 
 function ref_intervals_from_ref_pieces(ref_pieces) {
@@ -4440,7 +4499,7 @@ function ref_intervals_from_ref_pieces(ref_pieces) {
       // console.log(chrom_sum*1.0/_Ref_sizes_from_header[chrom]);
       if (
         (chrom_sum * 1.0) / _Ref_sizes_from_header[chrom] >
-        _static.fraction_ref_to_show_whole
+        _ribbon_static.fraction_ref_to_show_whole
       ) {
         // console.log(ref_intervals_by_chrom[chrom]);
         ref_intervals_by_chrom[chrom] = [
@@ -4535,14 +4594,16 @@ function organize_references_for_chunk() {
   // 	_focal_region = longest_region;
   // }
 
-  _scales.chunk_ref_interval_scale.domain([0, cumulative_position]);
+  _ribbon_scales.chunk_ref_interval_scale.domain([0, cumulative_position]);
 
   refresh_visibility();
 }
 
 function organize_refs_for_read_same_as_chunk() {
   _Ref_intervals = _Chunk_ref_intervals;
-  _scales.ref_interval_scale.domain(_scales.chunk_ref_interval_scale.domain());
+  _ribbon_scales.ref_interval_scale.domain(
+    _ribbon_scales.chunk_ref_interval_scale.domain()
+  );
 }
 
 function organize_references_for_read() {
@@ -4610,7 +4671,7 @@ function organize_references_for_read() {
     }
   }
 
-  _scales.ref_interval_scale.domain([0, cumulative_position]);
+  _ribbon_scales.ref_interval_scale.domain([0, cumulative_position]);
 }
 
 function refresh_visibility() {
@@ -4627,7 +4688,7 @@ function refresh_visibility() {
 
   if (
     _Chunk_alignments.length > 0 ||
-    (_settings.automation_mode == true &&
+    (_ribbon_settings.automation_mode == true &&
       _Bam != undefined &&
       _Bedpe.length > 0)
   ) {
@@ -4640,7 +4701,7 @@ function refresh_visibility() {
 
   if (
     _Alignments.length > 0 ||
-    (_settings.automation_mode == true &&
+    (_ribbon_settings.automation_mode == true &&
       _Bam != undefined &&
       _Bedpe.length > 0)
   ) {
@@ -4664,7 +4725,7 @@ function draw() {
   }
   adjust_singleread_layout();
 
-  if (_settings.ribbon_vs_dotplot == "dotplot") {
+  if (_ribbon_settings.ribbon_vs_dotplot == "dotplot") {
     draw_dotplot();
   } else {
     draw_ribbons();
@@ -4675,7 +4736,7 @@ function reset_svg2() {
   ////////  Clear the svg to start drawing from scratch  ////////
   d3.select("#svg2_panel").selectAll("svg").remove();
 
-  _svg2 = d3
+  _ribbon_svg2 = d3
     .select("#svg2_panel")
     .append("svg")
     .attr("width", _layout.svg2_width)
@@ -4683,7 +4744,7 @@ function reset_svg2() {
     .attr("id", "svg_multi_read")
     .style("background-color", "#ffffff");
 
-  _svg2
+  _ribbon_svg2
     .append("text")
     .attr("id", "no_alignments_message")
     .attr("x", _layout.svg2_width / 2)
@@ -4700,7 +4761,7 @@ function reset_svg() {
   ////////  Clear the svg to start drawing from scratch  ////////
   d3.select("#svg1_panel").selectAll("svg").remove();
 
-  _svg = d3
+  _ribbon_svg1 = d3
     .select("#svg1_panel")
     .append("svg")
     .attr("width", _layout.svg_width)
@@ -4710,17 +4771,17 @@ function reset_svg() {
 }
 
 function dotplot_alignment_path_generator(d) {
-  var previous_x = _scales.ref_interval_scale(
+  var previous_x = _ribbon_scales.ref_interval_scale(
     map_ref_interval(d.r, d.path[0].R)
   );
-  var previous_y = _scales.read_scale(d.path[0].Q);
+  var previous_y = _ribbon_scales.read_scale(d.path[0].Q);
   var output = "M " + previous_x + " " + previous_y;
 
   for (var i = 1; i < d.path.length; i++) {
-    var current_x = _scales.ref_interval_scale(
+    var current_x = _ribbon_scales.ref_interval_scale(
       map_ref_interval(d.r, d.path[i].R)
     );
-    var current_y = _scales.read_scale(d.path[i].Q);
+    var current_y = _ribbon_scales.read_scale(d.path[i].Q);
     if (current_x == previous_x || current_y == previous_y) {
       output += " M " + current_x + " " + current_y;
     } else {
@@ -4754,7 +4815,7 @@ function draw_dotplot() {
       _layout.svg_height * 0.05,
   };
 
-  var canvas = _svg
+  var canvas = _ribbon_svg1
     .append("g")
     .attr("class", "dotplot_canvas")
     .attr(
@@ -4792,7 +4853,7 @@ function draw_dotplot() {
     .attr("y2", _positions.read.bottom)
     .style("stroke-width", 1)
     .style("stroke", "black");
-  _svg
+  _ribbon_svg1
     .append("text")
     .text("Read / Query")
     .style("text-anchor", "middle")
@@ -4816,7 +4877,7 @@ function draw_dotplot() {
     .attr("y2", _positions.ref.y)
     .style("stroke-width", 1)
     .style("stroke", "black");
-  _svg
+  _ribbon_svg1
     .append("text")
     .text("Reference")
     .attr(
@@ -4828,7 +4889,10 @@ function draw_dotplot() {
     .attr("dominant-baseline", "ideographic")
     .style("font-size", _positions.fontsize);
 
-  _scales.ref_interval_scale.range([_positions.ref.left, _positions.ref.right]);
+  _ribbon_scales.ref_interval_scale.range([
+    _positions.ref.left,
+    _positions.ref.right,
+  ]);
 
   canvas
     .selectAll("rect.ref_interval")
@@ -4840,18 +4904,19 @@ function draw_dotplot() {
       return d.cum_pos != -1;
     })
     .attr("x", function (d) {
-      return _scales.ref_interval_scale(d.cum_pos);
+      return _ribbon_scales.ref_interval_scale(d.cum_pos);
     })
     .attr("y", 0)
     .attr("width", function (d) {
       return (
-        _scales.ref_interval_scale(d.end) - _scales.ref_interval_scale(d.start)
+        _ribbon_scales.ref_interval_scale(d.end) -
+        _ribbon_scales.ref_interval_scale(d.start)
       );
     })
     .attr("height", _positions.dotplot.canvas.height)
     .attr("fill", function (d) {
-      if (_settings.colorful) {
-        return _scales.ref_color_scale(d.chrom);
+      if (_ribbon_settings.colorful) {
+        return _ribbon_scales.ref_color_scale(d.chrom);
       } else {
         return "white";
       }
@@ -4863,35 +4928,35 @@ function draw_dotplot() {
         d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
       var x =
         _positions.dotplot.canvas.x +
-        _scales.ref_interval_scale(d.cum_pos + (d.end - d.start) / 2);
+        _ribbon_scales.ref_interval_scale(d.cum_pos + (d.end - d.start) / 2);
       var y =
         _positions.dotplot.canvas.y +
         _positions.dotplot.canvas.height +
-        _padding.text;
-      show_tooltip(text, x, y, _svg);
+        _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     })
     .style("stroke-opacity", 0.5)
-    .attr("fill-opacity", _static.dotplot_ref_opacity);
+    .attr("fill-opacity", _ribbon_static.dotplot_ref_opacity);
 
   // Alignments
   var flip = false;
 
-  if (_settings.orient_reads_by == "primary") {
+  if (_ribbon_settings.orient_reads_by == "primary") {
     var primary_alignment =
       _Chunk_alignments[_current_read_index].alignments[
         _Chunk_alignments[_current_read_index].index_primary
       ];
     flip = primary_alignment.qe - primary_alignment.qs < 0;
-  } else if (_settings.orient_reads_by == "longest") {
+  } else if (_ribbon_settings.orient_reads_by == "longest") {
     var longest_alignment =
       _Chunk_alignments[_current_read_index].alignments[
         _Chunk_alignments[_current_read_index].index_longest
       ];
     flip = longest_alignment.qe - longest_alignment.qs < 0;
-  } else if (_settings.orient_reads_by == "reverse") {
+  } else if (_ribbon_settings.orient_reads_by == "reverse") {
     flip = true;
   } else {
     flip = false;
@@ -4899,10 +4964,16 @@ function draw_dotplot() {
 
   if (flip == true) {
     // _scales.read_scale.range([ _positions.read.x+_positions.read.width, _positions.read.x]); // from ribbon plot
-    _scales.read_scale.range([_positions.read.top, _positions.read.bottom]);
+    _ribbon_scales.read_scale.range([
+      _positions.read.top,
+      _positions.read.bottom,
+    ]);
   } else {
     // _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
-    _scales.read_scale.range([_positions.read.bottom, _positions.read.top]);
+    _ribbon_scales.read_scale.range([
+      _positions.read.bottom,
+      _positions.read.top,
+    ]);
   }
 
   var a_groups = canvas
@@ -4915,8 +4986,8 @@ function draw_dotplot() {
     .append("path")
     .filter(function (d) {
       return (
-        d.mq >= _settings.min_mapping_quality &&
-        d.aligned_length >= _settings.min_align_length
+        d.mq >= _ribbon_settings.min_mapping_quality &&
+        d.aligned_length >= _ribbon_settings.min_align_length
       );
     })
     .filter(function (d) {
@@ -4934,25 +5005,27 @@ function draw_dotplot() {
       var text = Math.abs(d.qe - d.qs) + " bp";
       var x =
         _positions.dotplot.canvas.x +
-        _scales.ref_interval_scale(map_ref_interval(d.r, (d.rs + d.re) / 2));
+        _ribbon_scales.ref_interval_scale(
+          map_ref_interval(d.r, (d.rs + d.re) / 2)
+        );
       var y =
-        _padding.text * -3 +
+        _ribbon_padding.text * -3 +
         _positions.dotplot.canvas.y +
-        _scales.read_scale((d.qs + d.qe) / 2);
-      show_tooltip(text, x, y, _svg);
+        _ribbon_scales.read_scale((d.qs + d.qe) / 2);
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     });
 
   var read_axis = d3.svg
     .axis()
-    .scale(_scales.read_scale)
+    .scale(_ribbon_scales.read_scale)
     .orient("left")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
-  var read_axis_label = _svg
+  var read_axis_label = _ribbon_svg1
     .append("g")
     .attr("class", "axis")
     .attr(
@@ -4969,7 +5042,7 @@ function draw_dotplot() {
 
   if (
     _Additional_ref_intervals.length > 0 &&
-    _settings.draw_focus_rectangle == true
+    _ribbon_settings.draw_focus_rectangle == true
   ) {
     canvas
       .selectAll("rect.focal_regions")
@@ -4978,13 +5051,15 @@ function draw_dotplot() {
       .append("rect")
       .attr("class", "focal_regions")
       .attr("x", function (d) {
-        return _scales.ref_interval_scale(map_ref_interval(d.chrom, d.start));
+        return _ribbon_scales.ref_interval_scale(
+          map_ref_interval(d.chrom, d.start)
+        );
       })
       .attr("y", _positions.read.top)
       .attr("width", function (d) {
         return (
-          _scales.ref_interval_scale(map_ref_interval(d.chrom, d.end)) -
-          _scales.ref_interval_scale(map_ref_interval(d.chrom, d.start))
+          _ribbon_scales.ref_interval_scale(map_ref_interval(d.chrom, d.end)) -
+          _ribbon_scales.ref_interval_scale(map_ref_interval(d.chrom, d.start))
         );
       })
       .attr("height", _positions.read.bottom - _positions.read.top)
@@ -4996,35 +5071,42 @@ function draw_dotplot() {
 
 function adjust_singleread_layout() {
   _positions.singleread.top_bar = {
-    y: _layout.svg_height * _static.singleread_layout_fractions.ref_and_mapping,
-    height: _layout.svg_height * _static.singleread_layout_fractions.top_bar,
+    y:
+      _layout.svg_height *
+      _ribbon_static.singleread_layout_fractions.ref_and_mapping,
+    height:
+      _layout.svg_height * _ribbon_static.singleread_layout_fractions.top_bar,
   };
 
-  var total_header = _static.singleread_layout_fractions.ref_and_mapping;
+  var total_header = _ribbon_static.singleread_layout_fractions.ref_and_mapping;
 
-  if (_Features.length > 0 || _Variants.length > 0 || _Bedpe.length > 0) {
-    total_header += _static.singleread_layout_fractions.top_bar;
+  if (
+    _Features_for_ribbon.length > 0 ||
+    _Variants.length > 0 ||
+    _Bedpe.length > 0
+  ) {
+    total_header += _ribbon_static.singleread_layout_fractions.top_bar;
   }
 
-  if (_Features.length > 0) {
+  if (_Features_for_ribbon.length > 0) {
     _positions.singleread.features = {
       arrow_size:
         (_layout.svg2_height *
-          _static.singleread_layout_fractions["features"]) /
+          _ribbon_static.singleread_layout_fractions["features"]) /
         7,
     };
     _positions.singleread.features.y = _layout.svg_height * total_header;
-    total_header += _static.singleread_layout_fractions.features;
+    total_header += _ribbon_static.singleread_layout_fractions.features;
     _positions.singleread.features.rect_height =
-      _layout.svg_height * _static.singleread_layout_fractions.features;
+      _layout.svg_height * _ribbon_static.singleread_layout_fractions.features;
   }
 
   if (_Variants.length > 0 || _Bedpe.length > 0) {
     _positions.singleread.variants = {};
     _positions.singleread.variants.y = _layout.svg_height * total_header;
-    total_header += _static.singleread_layout_fractions.variants;
+    total_header += _ribbon_static.singleread_layout_fractions.variants;
     _positions.singleread.variants.height =
-      _layout.svg_height * _static.singleread_layout_fractions.variants;
+      _layout.svg_height * _ribbon_static.singleread_layout_fractions.variants;
   }
 
   _positions.singleread.ref_block = {
@@ -5040,7 +5122,9 @@ function adjust_singleread_layout() {
 
   _positions.singleread.bottom_bar = {
     y: _layout.svg_height * total_header,
-    height: _layout.svg_height * _static.singleread_layout_fractions.bottom_bar,
+    height:
+      _layout.svg_height *
+      _ribbon_static.singleread_layout_fractions.bottom_bar,
   };
   // total_header += _static.singleread_layout_fractions.bottom_bar;
 }
@@ -5049,7 +5133,7 @@ function draw_singleread_header() {
   adjust_singleread_layout();
 
   // Draw "Reference" label
-  _svg
+  _ribbon_svg1
     .append("text")
     .attr("id", "ref_tag")
     .text("Reference")
@@ -5067,36 +5151,36 @@ function draw_singleread_header() {
     .attr("dominant-baseline", "middle")
     .style("font-size", _positions.fontsize);
 
-  _scales.whole_ref_scale.range([
+  _ribbon_scales.whole_ref_scale.range([
     _positions.singleread.ref_block.x,
     _positions.singleread.ref_block.x + _positions.singleread.ref_block.width,
   ]);
-  _scales.ref_interval_scale.range([
+  _ribbon_scales.ref_interval_scale.range([
     _positions.singleread.ref_intervals.x,
     _positions.singleread.ref_intervals.x +
       _positions.singleread.ref_intervals.width,
   ]);
 
   // Whole reference chromosomes for the relevant references:
-  _svg
+  _ribbon_svg1
     .selectAll("rect.ref_block")
     .data(_Whole_refs)
     .enter()
     .append("rect")
     .attr("class", "ref_block")
     .attr("x", function (d) {
-      return _scales.whole_ref_scale(d.cum_pos);
+      return _ribbon_scales.whole_ref_scale(d.cum_pos);
     })
     .attr("y", _positions.singleread.ref_block.y)
     .attr("width", function (d) {
       return (
-        _scales.whole_ref_scale(d.cum_pos + d.size) -
-        _scales.whole_ref_scale(d.cum_pos)
+        _ribbon_scales.whole_ref_scale(d.cum_pos + d.size) -
+        _ribbon_scales.whole_ref_scale(d.cum_pos)
       );
     })
     .attr("height", _positions.singleread.ref_block.height)
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     })
     .style("stroke-width", 1)
     .style("stroke", "black")
@@ -5105,15 +5189,15 @@ function draw_singleread_header() {
     })
     .on("mouseover", function (d) {
       var text = d.chrom + ": " + bp_format(d.size);
-      var x = _scales.whole_ref_scale(d.cum_pos + d.size / 2);
-      var y = _positions.singleread.ref_block.y - _padding.text;
-      show_tooltip(text, x, y, _svg);
+      var x = _ribbon_scales.whole_ref_scale(d.cum_pos + d.size / 2);
+      var y = _positions.singleread.ref_block.y - _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  _svg
+  _ribbon_svg1
     .selectAll("text.ref_block")
     .data(_Whole_refs)
     .enter()
@@ -5121,8 +5205,8 @@ function draw_singleread_header() {
     .attr("class", "ref_block")
     .filter(function (d) {
       return (
-        _scales.whole_ref_scale(d.cum_pos + d.size) -
-          _scales.whole_ref_scale(d.cum_pos) >
+        _ribbon_scales.whole_ref_scale(d.cum_pos + d.size) -
+          _ribbon_scales.whole_ref_scale(d.cum_pos) >
         (_positions.fontsize / 5) * d.chrom.length
       );
     })
@@ -5131,9 +5215,9 @@ function draw_singleread_header() {
       return chrom.replace("chr", "");
     })
     .attr("x", function (d) {
-      return _scales.whole_ref_scale(d.cum_pos + d.size / 2);
+      return _ribbon_scales.whole_ref_scale(d.cum_pos + d.size / 2);
     })
-    .attr("y", _positions.singleread.ref_block.y - _padding.text)
+    .attr("y", _positions.singleread.ref_block.y - _ribbon_padding.text)
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "bottom")
     .style("font-size", _positions.fontsize);
@@ -5142,7 +5226,7 @@ function draw_singleread_header() {
   // .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 
   // Zoom into reference intervals where the read maps:
-  _svg
+  _ribbon_svg1
     .selectAll("rect.top_bar")
     .data(_Ref_intervals)
     .enter()
@@ -5150,18 +5234,19 @@ function draw_singleread_header() {
     .attr("class", "top_bar")
     .filter(function (d) {
       return (
-        _settings.ref_match_chunk_ref_intervals == false ||
+        _ribbon_settings.ref_match_chunk_ref_intervals == false ||
         (_Refs_show_or_hide[d.chrom] &&
-          d.num_alignments >= _settings.min_aligns_for_ref_interval)
+          d.num_alignments >= _ribbon_settings.min_aligns_for_ref_interval)
       );
     })
     .attr("x", function (d) {
-      return _scales.ref_interval_scale(d.cum_pos);
+      return _ribbon_scales.ref_interval_scale(d.cum_pos);
     })
     .attr("y", _positions.singleread.top_bar.y)
     .attr("width", function (d) {
       return (
-        _scales.ref_interval_scale(d.end) - _scales.ref_interval_scale(d.start)
+        _ribbon_scales.ref_interval_scale(d.end) -
+        _ribbon_scales.ref_interval_scale(d.start)
       );
     })
     .attr(
@@ -5169,7 +5254,7 @@ function draw_singleread_header() {
       _positions.singleread.bottom_bar.y - _positions.singleread.top_bar.y
     )
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     })
     .style("stroke-width", 1)
     .style("stroke", "black")
@@ -5177,15 +5262,17 @@ function draw_singleread_header() {
     .on("mouseover", function (d) {
       var text =
         d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-      var x = _scales.ref_interval_scale(d.cum_pos + (d.end - d.start) / 2);
-      var y = _positions.singleread.top_bar.y - _padding.text;
-      show_tooltip(text, x, y, _svg);
+      var x = _ribbon_scales.ref_interval_scale(
+        d.cum_pos + (d.end - d.start) / 2
+      );
+      var y = _positions.singleread.top_bar.y - _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  _svg
+  _ribbon_svg1
     .selectAll("rect.bottom_bar")
     .data(_Ref_intervals)
     .enter()
@@ -5193,38 +5280,41 @@ function draw_singleread_header() {
     .attr("class", "bottom_bar")
     .filter(function (d) {
       return (
-        _settings.ref_match_chunk_ref_intervals == false ||
+        _ribbon_settings.ref_match_chunk_ref_intervals == false ||
         (_Refs_show_or_hide[d.chrom] &&
-          d.num_alignments >= _settings.min_aligns_for_ref_interval)
+          d.num_alignments >= _ribbon_settings.min_aligns_for_ref_interval)
       );
     })
     .attr("x", function (d) {
-      return _scales.ref_interval_scale(d.cum_pos);
+      return _ribbon_scales.ref_interval_scale(d.cum_pos);
     })
     .attr("y", _positions.singleread.bottom_bar.y)
     .attr("width", function (d) {
       return (
-        _scales.ref_interval_scale(d.end) - _scales.ref_interval_scale(d.start)
+        _ribbon_scales.ref_interval_scale(d.end) -
+        _ribbon_scales.ref_interval_scale(d.start)
       );
     })
     .attr("height", _positions.singleread.bottom_bar.height)
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     })
     .style("stroke-width", 1)
     .style("stroke", "black")
     .on("mouseover", function (d) {
       var text =
         d.chrom + ": " + comma_format(d.start) + " - " + comma_format(d.end);
-      var x = _scales.ref_interval_scale(d.cum_pos + (d.end - d.start) / 2);
-      var y = _positions.singleread.bottom_bar.y - _padding.text;
-      show_tooltip(text, x, y, _svg);
+      var x = _ribbon_scales.ref_interval_scale(
+        d.cum_pos + (d.end - d.start) / 2
+      );
+      var y = _positions.singleread.bottom_bar.y - _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  _svg
+  _ribbon_svg1
     .selectAll("path.ref_mapping")
     .data(_Ref_intervals)
     .enter()
@@ -5233,16 +5323,16 @@ function draw_singleread_header() {
     .filter(function (d) {
       return (
         map_whole_ref(d.chrom, d.start) != undefined &&
-        (_settings.ref_match_chunk_ref_intervals == false ||
+        (_ribbon_settings.ref_match_chunk_ref_intervals == false ||
           (_Refs_show_or_hide[d.chrom] &&
-            d.num_alignments >= _settings.min_aligns_for_ref_interval))
+            d.num_alignments >= _ribbon_settings.min_aligns_for_ref_interval))
       );
     })
     .attr("d", function (d) {
       return ref_mapping_path_generator(d, false);
     })
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.chrom);
+      return _ribbon_scales.ref_color_scale(d.chrom);
     });
 
   /////////////////////////   Variants   /////////////////////////////
@@ -5250,12 +5340,12 @@ function draw_singleread_header() {
     var variants_in_view = find_features_in_view(
       _Variants,
       closest_map_ref_interval,
-      _scales.ref_interval_scale
+      _ribbon_scales.ref_interval_scale
     );
     var variants_to_show = [];
     for (var i in variants_in_view) {
       if (
-        _settings.show_only_selected_variants == false ||
+        _ribbon_settings.show_only_selected_variants == false ||
         variants_in_view[i].highlight == true
       ) {
         variants_to_show.push(variants_in_view[i]);
@@ -5264,7 +5354,7 @@ function draw_singleread_header() {
 
     var max_overlaps = calculate_offsets_for_features_in_view(variants_to_show);
 
-    _svg
+    _ribbon_svg1
       .selectAll("rect.variants")
       .data(variants_to_show)
       .enter()
@@ -5293,7 +5383,7 @@ function draw_singleread_header() {
         (_positions.singleread.variants.height / max_overlaps) * 0.9
       )
       .style("fill", function (d) {
-        return _scales.variant_color_scale(d.type);
+        return _ribbon_scales.variant_color_scale(d.type);
       })
       .on("mouseover", function (d) {
         var text = d.name;
@@ -5304,22 +5394,22 @@ function draw_singleread_header() {
         var y =
           _positions.singleread.variants.y +
           _positions.singleread.ref_intervals.height / max_overlaps +
-          _padding.text;
-        show_tooltip(text, x, y, _svg);
+          _ribbon_padding.text;
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
   }
 
-  if (_Features.length > 0) {
+  if (_Features_for_ribbon.length > 0) {
     draw_singleread_features();
   }
   if (_Bedpe.length > 0) {
     var variants_in_view = [];
     for (var i in _Bedpe) {
       if (
-        _settings.show_only_selected_variants == false ||
+        _ribbon_settings.show_only_selected_variants == false ||
         _Bedpe[i].highlight == true
       ) {
         var variant = _Bedpe[i];
@@ -5327,8 +5417,8 @@ function draw_singleread_header() {
         var results2 = closest_map_ref_interval(variant.chrom2, variant.pos2);
 
         if (results1.precision == "exact" && results2.precision == "exact") {
-          variant.cum_pos1 = _scales.ref_interval_scale(results1.pos);
-          variant.cum_pos2 = _scales.ref_interval_scale(results2.pos);
+          variant.cum_pos1 = _ribbon_scales.ref_interval_scale(results1.pos);
+          variant.cum_pos2 = _ribbon_scales.ref_interval_scale(results2.pos);
           variants_in_view.push(variant);
         }
       }
@@ -5429,7 +5519,7 @@ function draw_singleread_header() {
       ); // toe
     };
 
-    _svg
+    _ribbon_svg1
       .selectAll("path.bedpe_variants")
       .data(variants_in_view)
       .enter()
@@ -5449,24 +5539,24 @@ function draw_singleread_header() {
           text = d.name + " (" + d.type + ")";
         }
         var x = (d.cum_pos1 + d.cum_pos2) / 2;
-        var y = _positions.singleread.variants.y - _padding.text;
-        show_tooltip(text, x, y, _svg);
+        var y = _positions.singleread.variants.y - _ribbon_padding.text;
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
   }
 }
 
 function draw_singleread_features() {
   var features_in_view = find_features_in_view(
-    _Features,
+    _Features_for_ribbon,
     closest_map_ref_interval,
-    _scales.ref_interval_scale
+    _ribbon_scales.ref_interval_scale
   );
   var max_overlaps = calculate_offsets_for_features_in_view(features_in_view);
-  if (_settings.show_features_as == "rectangles") {
-    _svg
+  if (_ribbon_settings.show_features_as == "rectangles") {
+    _ribbon_svg1
       .selectAll("rect.features")
       .data(features_in_view)
       .enter()
@@ -5495,7 +5585,7 @@ function draw_singleread_features() {
         (_positions.singleread.features.rect_height * 0.9) / max_overlaps
       )
       .style("fill", function (d) {
-        return _scales.feature_color_scale(d.type);
+        return _ribbon_scales.feature_color_scale(d.type);
       })
       .on("mouseover", function (d) {
         var text = d.name;
@@ -5507,15 +5597,15 @@ function draw_singleread_features() {
           _positions.singleread.features.y +
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
-          _padding.text;
-        show_tooltip(text, x, y, _svg);
+          _ribbon_padding.text;
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
   } else if (
-    _settings.show_features_as == "arrows" ||
-    _settings.show_features_as == "names"
+    _ribbon_settings.show_features_as == "arrows" ||
+    _ribbon_settings.show_features_as == "names"
   ) {
     var feature_path_generator = function (d) {
       var arrow = -1 * _positions.singleread.features.arrow_size,
@@ -5560,7 +5650,7 @@ function draw_singleread_features() {
       );
     };
 
-    _svg
+    _ribbon_svg1
       .selectAll("path.features")
       .data(features_in_view)
       .enter()
@@ -5574,7 +5664,7 @@ function draw_singleread_features() {
       })
       .attr("d", feature_path_generator)
       .style("stroke", function (d) {
-        return _scales.feature_color_scale(d.type);
+        return _ribbon_scales.feature_color_scale(d.type);
       })
       .on("mouseover", function (d) {
         var text = d.name;
@@ -5586,15 +5676,15 @@ function draw_singleread_features() {
           _positions.singleread.features.y +
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
-          _padding.text;
-        show_tooltip(text, x, y, _svg);
+          _ribbon_padding.text;
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
 
-    if (_settings.show_features_as == "names") {
-      var text_boxes = _svg
+    if (_ribbon_settings.show_features_as == "names") {
+      var text_boxes = _ribbon_svg1
         .selectAll("g.features")
         .data(features_in_view)
         .enter()
@@ -5608,7 +5698,7 @@ function draw_singleread_features() {
             (_positions.singleread.features.y +
               (_positions.singleread.features.rect_height * d.offset) /
                 max_overlaps -
-              _padding.text) +
+              _ribbon_padding.text) +
             ")"
           );
         });
@@ -5628,7 +5718,7 @@ function draw_singleread_features() {
         .attr("x", 0)
         .attr("y", 0)
         .attr("fill", function (d) {
-          return _scales.feature_color_scale(d.type);
+          return _ribbon_scales.feature_color_scale(d.type);
         })
         .style("font-size", height)
         .style("text-anchor", "middle")
@@ -5659,59 +5749,59 @@ function draw_ribbons() {
   // Alignments
   var flip = false;
 
-  if (_settings.orient_reads_by == "primary") {
+  if (_ribbon_settings.orient_reads_by == "primary") {
     var primary_alignment =
       _Chunk_alignments[_current_read_index].alignments[
         _Chunk_alignments[_current_read_index].index_primary
       ];
     flip = primary_alignment.qe - primary_alignment.qs < 0;
-  } else if (_settings.orient_reads_by == "longest") {
+  } else if (_ribbon_settings.orient_reads_by == "longest") {
     var longest_alignment =
       _Chunk_alignments[_current_read_index].alignments[
         _Chunk_alignments[_current_read_index].index_longest
       ];
     flip = longest_alignment.qe - longest_alignment.qs < 0;
-  } else if (_settings.orient_reads_by == "reverse") {
+  } else if (_ribbon_settings.orient_reads_by == "reverse") {
     flip = true;
   } else {
     flip = false;
   }
 
   if (flip == true) {
-    _scales.read_scale.range([
+    _ribbon_scales.read_scale.range([
       _positions.read.x + _positions.read.width,
       _positions.read.x,
     ]);
   } else {
-    _scales.read_scale.range([
+    _ribbon_scales.read_scale.range([
       _positions.read.x,
       _positions.read.x + _positions.read.width,
     ]);
   }
 
   // Draw read
-  if (_settings.paired_end_mode) {
-    var read_bar = _svg.append("g").attr("class", "read");
+  if (_ribbon_settings.paired_end_mode) {
+    var read_bar = _ribbon_svg1.append("g").attr("class", "read");
     read_bar
       .on("mouseover", function () {
         var text =
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _svg);
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
-    var first_read_start = _scales.read_scale(0);
-    var first_read_end = _scales.read_scale(
+    var first_read_start = _ribbon_scales.read_scale(0);
+    var first_read_end = _ribbon_scales.read_scale(
       _Chunk_alignments[_current_read_index].read_lengths[0]
     );
-    var second_read_start = _scales.read_scale(
+    var second_read_start = _ribbon_scales.read_scale(
       _Chunk_alignments[_current_read_index].read_lengths[0] +
         _Chunk_alignments[_current_read_index].read_lengths[1]
     );
-    var second_read_end = _scales.read_scale(
+    var second_read_end = _ribbon_scales.read_scale(
       _Chunk_alignments[_current_read_index].read_lengths[0] +
         _Chunk_alignments[_current_read_index].read_lengths[1] +
         _Chunk_alignments[_current_read_index].read_lengths[2]
@@ -5744,7 +5834,7 @@ function draw_ribbons() {
       .style("stroke", "black")
       .attr("fill", "black");
   } else {
-    _svg
+    _ribbon_svg1
       .append("rect")
       .attr("class", "read")
       .attr("x", _positions.read.x)
@@ -5759,13 +5849,13 @@ function draw_ribbons() {
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _svg);
+        show_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
-        _svg.selectAll("g.tip").remove();
+        _ribbon_svg1.selectAll("g.tip").remove();
       });
   }
-  _svg
+  _ribbon_svg1
     .append("text")
     .text("Read / Query")
     .attr("x", _positions.read.x + _positions.read.width / 2)
@@ -5775,52 +5865,52 @@ function draw_ribbons() {
     .style("font-size", _positions.fontsize);
 
   // Draw alignments
-  _svg
+  _ribbon_svg1
     .selectAll("path.alignment")
     .data(_Alignments)
     .enter()
     .append("path")
     .filter(function (d) {
       return (
-        d.mq >= _settings.min_mapping_quality &&
-        d.aligned_length >= _settings.min_align_length
+        d.mq >= _ribbon_settings.min_mapping_quality &&
+        d.aligned_length >= _ribbon_settings.min_align_length
       );
     })
     .attr("class", "alignment")
     .attr("d", ribbon_alignment_path_generator)
     .style("stroke-width", function () {
-      if (_settings.ribbon_outline) {
+      if (_ribbon_settings.ribbon_outline) {
         return 1;
       } else {
         return 0;
       }
     })
     .style("stroke", function (d) {
-      return _scales.ref_color_scale(d.r);
+      return _ribbon_scales.ref_color_scale(d.r);
     })
     .style("stroke-opacity", 1)
     .attr("fill", function (d) {
-      return _scales.ref_color_scale(d.r);
+      return _ribbon_scales.ref_color_scale(d.r);
     })
-    .attr("fill-opacity", _static.alignment_alpha)
+    .attr("fill-opacity", _ribbon_static.alignment_alpha)
     .on("mouseover", function (d) {
       var text = Math.abs(d.qe - d.qs) + " bp";
-      var x = _scales.read_scale((d.qs + d.qe) / 2);
-      var y = _positions.read.y - _padding.text;
-      show_tooltip(text, x, y, _svg);
+      var x = _ribbon_scales.read_scale((d.qs + d.qe) / 2);
+      var y = _positions.read.y - _ribbon_padding.text;
+      show_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
-      _svg.selectAll("g.tip").remove();
+      _ribbon_svg1.selectAll("g.tip").remove();
     });
 
   var read_axis = d3.svg
     .axis()
-    .scale(_scales.read_scale)
+    .scale(_ribbon_scales.read_scale)
     .orient("bottom")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
-  var read_axis_label = _svg
+  var read_axis_label = _ribbon_svg1
     .append("g")
     .attr("class", "axis")
     .attr(
@@ -5925,19 +6015,23 @@ function variants_just_loaded() {
 }
 
 function set_alignment_info_text() {
-  d3.select("#text_alignment_file_output").html(_settings.alignment_info_text);
+  d3.select("#text_alignment_file_output").html(
+    _ribbon_settings.alignment_info_text
+  );
 }
 
 function set_variant_info_text() {
-  d3.select("#text_variant_file_output").html(_settings.variant_info_text);
+  d3.select("#text_variant_file_output").html(
+    _ribbon_settings.variant_info_text
+  );
 }
 
 function load_bam_url_in_background(url) {
   _Bam = new Bam(url, url + ".bai");
   _Bam.mount().then(() => console.log("got header from url bam"));
 
-  _settings.alignment_info_text = "Bam from url: " + url;
-  _settings.bam_url = url;
+  _ribbon_settings.alignment_info_text = "Bam from url: " + url;
+  _ribbon_settings.bam_url = url;
 }
 
 function read_bam_url(url) {
@@ -5947,14 +6041,14 @@ function read_bam_url(url) {
   _Bam.mount().then(() => console.log("got header"));
 
   wait_then_run_when_bam_file_loaded();
-  _settings.alignment_info_text = "Bam from url: " + url;
-  _settings.bam_url = url;
+  _ribbon_settings.alignment_info_text = "Bam from url: " + url;
+  _ribbon_settings.bam_url = url;
   set_alignment_info_text();
 }
 
 function load_json_bam(header) {
   // Check match refs from region view checkbox by default
-  _settings.ref_match_chunk_ref_intervals = true;
+  _ribbon_settings.ref_match_chunk_ref_intervals = true;
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
@@ -6012,18 +6106,18 @@ function write_permalink() {
       alignments: _Chunk_alignments,
       variants: _Variants,
       bedpe: _Bedpe,
-      features: _Features,
+      features: _Features_for_ribbon,
       _Refs_show_or_hide: _Refs_show_or_hide,
       config: {
         focus_regions: _Additional_ref_intervals,
         selected_read: _current_read_index,
-        settings: _settings,
+        settings: _ribbon_settings,
       },
       permalink_name: permalink_name,
     },
   };
   if (_Chunk_alignments.length > 800) {
-    user_message(
+    user_message_ribbon(
       "Warning",
       "A large dataset may fail to create a permalink. Reduce upload file size if this occurs."
     );
@@ -6037,7 +6131,7 @@ function write_permalink() {
       ribbon: generate_permalink_data(post_data),
     }),
     success: function (data) {
-      user_message(
+      user_message_ribbon(
         "Permalink",
         `<a href="?perma=${data.data}">${permalink_name}</a>`
       );
@@ -6066,7 +6160,7 @@ function write_permalink() {
 function read_permalink(id) {
   ga("send", "event", "Permalink", "read", id);
 
-  user_message("Info", "Loading data from permalink");
+  user_message_ribbon("Info", "Loading data from permalink");
 
   jQuery.ajax({
     url: URL_SANDBOX_STORE + id,
@@ -6144,7 +6238,7 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["features"] != undefined &&
           json_data["ribbon_perma"]["features"].length > 0
         ) {
-          _Features = json_data["ribbon_perma"]["features"];
+          _Features_for_ribbon = json_data["ribbon_perma"]["features"];
           update_features();
         }
         if (
@@ -6161,17 +6255,17 @@ function read_permalink(id) {
         }
 
         if (json_data["ribbon_perma"]["config"]["settings"] != undefined) {
-          _settings = json_data["ribbon_perma"]["config"]["settings"];
+          _ribbon_settings = json_data["ribbon_perma"]["config"]["settings"];
           // For backwards compatibility:
-          if (_settings.color_index == undefined) {
-            _settings.color_index = 0;
+          if (_ribbon_settings.color_index == undefined) {
+            _ribbon_settings.color_index = 0;
           }
-          if (_settings.feature_types_to_show == undefined) {
-            _settings.feature_types_to_show = { protein_coding: true };
+          if (_ribbon_settings.feature_types_to_show == undefined) {
+            _ribbon_settings.feature_types_to_show = { protein_coding: true };
           }
           refresh_ui_for_new_dataset();
-          _scales.ref_color_scale.range(
-            _static.color_collections[_settings.color_index]
+          _ribbon_scales.ref_color_scale.range(
+            _ribbon_static.color_collections[_ribbon_settings.color_index]
           );
           apply_ref_filters();
           draw_region_view();
@@ -6192,10 +6286,10 @@ function read_permalink(id) {
         if (json_data["bam"] != undefined) {
           if (json_data["bam"]["header"]["sq"] != undefined) {
             // header must be [{name: , end: }, {name: , end: }]
-            _settings.current_input_type = "bam";
+            _ribbon_settings.current_input_type = "bam";
             load_json_bam(json_data["bam"]["header"]["sq"]);
           } else {
-            user_message(
+            user_message_ribbon(
               "JSON object has bam, but bam does not contain key: header.sq"
             );
           }
@@ -6203,7 +6297,7 @@ function read_permalink(id) {
           if (json_data["bam"]["records"] != undefined) {
             use_fetched_data(json_data["bam"]["records"]);
           } else {
-            user_message(
+            user_message_ribbon(
               "JSON object has bam, but bam does not contain key: records"
             );
           }
@@ -6225,7 +6319,7 @@ function read_permalink(id) {
       }
     },
     error: function (e) {
-      user_message("Error", "Permalink not found on server");
+      user_message_ribbon("Error", "Permalink not found on server");
     },
   });
 }
@@ -6240,7 +6334,7 @@ function open_bedpe_file(event) {
   ga("send", "event", "bedpe_file", "load", this.files[0].name);
 
   if (this.files[0].size > 1000000) {
-    user_message("Warning", "Loading large file may take a while.");
+    user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
@@ -6253,15 +6347,16 @@ function open_bedpe_file(event) {
       bedpe_input_changed(raw_data);
       variants_just_loaded();
     };
-    _settings.variant_info_text = "Bedpe from file: " + this.files[0].name;
+    _ribbon_settings.variant_info_text =
+      "Bedpe from file: " + this.files[0].name;
     set_variant_info_text();
   } else {
-    user_message("Error", "File extension must be .bedpe");
+    user_message_ribbon("Error", "File extension must be .bedpe");
   }
 }
 function open_variant_file(event) {
   if (this.files[0].size > 1000000) {
-    user_message("Warning", "Loading large file may take a while.");
+    user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
@@ -6276,7 +6371,8 @@ function open_variant_file(event) {
       vcf_input_changed(raw_data);
       variants_just_loaded();
     };
-    _settings.variant_info_text = "Variants from file: " + this.files[0].name;
+    _ribbon_settings.variant_info_text =
+      "Variants from file: " + this.files[0].name;
     set_variant_info_text();
   } else if (file_extension == "bed") {
     ga("send", "event", "bed_file", "load", this.files[0].name);
@@ -6289,10 +6385,11 @@ function open_variant_file(event) {
       bed_input_changed(raw_data);
       variants_just_loaded();
     };
-    _settings.variant_info_text = "Variants from file: " + this.files[0].name;
+    _ribbon_settings.variant_info_text =
+      "Variants from file: " + this.files[0].name;
     set_variant_info_text();
   } else {
-    user_message("Error", "File extension must be .bed or .vcf");
+    user_message_ribbon("Error", "File extension must be .bed or .vcf");
   }
 }
 
@@ -6307,7 +6404,7 @@ function features_just_loaded() {
 function read_feature_bed(raw_data) {
   var input_text = raw_data.split("\n");
 
-  _Features = [];
+  _Features_for_ribbon = [];
   for (var i in input_text) {
     if (input_text[i][0] == "#") {
       continue;
@@ -6321,7 +6418,7 @@ function read_feature_bed(raw_data) {
         score = 0;
       }
       if (isNaN(start) || isNaN(end)) {
-        user_message(
+        user_message_ribbon(
           "Error",
           "Bed file must contain numbers in columns 2 and 3. Found: <pre>" +
             columns[1] +
@@ -6331,7 +6428,7 @@ function read_feature_bed(raw_data) {
         );
         return;
       }
-      _Features.push({
+      _Features_for_ribbon.push({
         chrom: columns[0],
         start: start,
         end: end,
@@ -6344,9 +6441,9 @@ function read_feature_bed(raw_data) {
     }
   }
 
-  user_message(
+  user_message_ribbon(
     "Info",
-    "Loaded " + _Features.length + " features from bed file"
+    "Loaded " + _Features_for_ribbon.length + " features from bed file"
   );
 
   update_features();
@@ -6359,7 +6456,7 @@ function read_feature_bed(raw_data) {
 
 function open_feature_bed_file(event) {
   if (this.files[0].size > 1000000) {
-    user_message("Warning", "Loading large file may take a while.");
+    user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
@@ -6373,7 +6470,7 @@ function open_feature_bed_file(event) {
       features_just_loaded();
     };
   } else {
-    user_message("Error", "File extension must be .bed");
+    user_message_ribbon("Error", "File extension must be .bed");
   }
 }
 
@@ -6393,7 +6490,7 @@ function open_coords_file(event) {
   var reader = new FileReader();
 
   if (this.files[0].size > 1000000) {
-    user_message("Info", "Loading large file may take a little while.");
+    user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
   reader.readAsText(this.files[0]);
@@ -6406,7 +6503,8 @@ function open_coords_file(event) {
       "panel-collapse collapse"
     );
   };
-  _settings.alignment_info_text = "Coords from file: " + this.files[0].name;
+  _ribbon_settings.alignment_info_text =
+    "Coords from file: " + this.files[0].name;
   set_alignment_info_text();
 }
 
@@ -6420,14 +6518,14 @@ function open_sam_file(event) {
   var reader = new FileReader();
 
   if (this.files[0].size > 10000000) {
-    user_message(
+    user_message_ribbon(
       "Error",
       "File larger than 10MB. Please choose a smaller file or load it as a bam file instead"
     );
     return;
   }
   if (this.files[0].size > 1000000) {
-    user_message("Info", "Loading large file may take a little while.");
+    user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
   reader.readAsText(this.files[0]);
@@ -6441,7 +6539,7 @@ function open_sam_file(event) {
     );
   };
 
-  _settings.alignment_info_text = "Sam from file: " + this.files[0].name;
+  _ribbon_settings.alignment_info_text = "Sam from file: " + this.files[0].name;
   set_alignment_info_text();
 }
 
@@ -6476,7 +6574,7 @@ function create_bam(files) {
   _Bam = new Bam(bamFile, indexFile);
   _Bam.mount().then(bam_loaded);
 
-  _settings.alignment_info_text = "Bam from file: " + bamFile.name;
+  _ribbon_settings.alignment_info_text = "Bam from file: " + bamFile.name;
   set_alignment_info_text();
   ga("send", "event", "BAM_file", "load", bamFile.name);
 }
@@ -6485,7 +6583,7 @@ function wait_then_run_when_bam_file_loaded(counter) {
   if (typeof counter == "undefined") {
     counter = 0;
   } else if (counter > 30) {
-    user_message("Error", "File taking too long to load");
+    user_message_ribbon("Error", "File taking too long to load");
     return;
   }
   if (_Bam != null && _Bam.ready) {
@@ -6515,10 +6613,10 @@ function clear_vcf_input() {
 }
 
 function bam_loaded() {
-  _settings.current_input_type = "bam";
+  _ribbon_settings.current_input_type = "bam";
 
   // Check match refs from region view checkbox by default
-  _settings.ref_match_chunk_ref_intervals = true;
+  _ribbon_settings.ref_match_chunk_ref_intervals = true;
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
@@ -6554,17 +6652,20 @@ function bam_loaded() {
   }
 
   if (PG_count == 0) {
-    user_message("Error", "No header found. Are you sure this is a bam file?");
+    user_message_ribbon(
+      "Error",
+      "No header found. Are you sure this is a bam file?"
+    );
     return;
   }
-  user_message(
+  user_message_ribbon(
     "Success",
     "Loaded alignments from " +
       _Whole_refs.length +
       " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on."
   );
   if (PG_count > 1) {
-    user_message(
+    user_message_ribbon(
       "Warning",
       "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one."
     );
@@ -6607,8 +6708,8 @@ function record_bam_header(sq_list) {
     }
   }
 
-  _scales.whole_ref_scale.domain([0, cumulative_whole_ref_size]);
-  _scales.ref_color_scale.domain(chromosomes);
+  _ribbon_scales.whole_ref_scale.domain([0, cumulative_whole_ref_size]);
+  _ribbon_scales.ref_color_scale.domain(chromosomes);
 }
 
 function remove_bam_file() {
@@ -6645,7 +6746,7 @@ function show_waiting_for_bam() {
   d3.selectAll(".fetch_table_button").html("...");
   _loading_bam_right_now = true;
 
-  _svg2
+  _ribbon_svg2
     .select("#no_alignments_message")
     .attr("fill", "blue")
     .text("Fetching from bam file...");
@@ -6723,7 +6824,7 @@ function parse_bam_record(record) {
 
   for (var i = 0; i < alignments.length; i++) {
     if (alignments[i].read_length != read_length) {
-      user_message(
+      user_message_ribbon(
         "Warning",
         "read length of primary and supplementary alignments do not match for this read (calculated using cigar strings)"
       );
@@ -6761,12 +6862,15 @@ function use_fetched_data(records) {
 
 function tell_user_how_many_records_loaded() {
   if (_Chunk_alignments.length == 0) {
-    _svg2
+    _ribbon_svg2
       .select("#no_alignments_message")
       .attr("fill", "red")
       .text("No reads in the bam file at this location");
   } else {
-    _svg2.select("#no_alignments_message").attr("fill", "white").text("");
+    _ribbon_svg2
+      .select("#no_alignments_message")
+      .attr("fill", "white")
+      .text("");
   }
 
   console.log("Total reads mapped in region: " + _Chunk_alignments.length);
@@ -6777,7 +6881,7 @@ function region_submitted(event) {
 
   var chrom = d3.select("#region_chrom").property("value");
   if (chrom == "") {
-    user_message("Error", "No chromosome given");
+    user_message_ribbon("Error", "No chromosome given");
     return;
   }
   var start = parseInt(
@@ -6785,7 +6889,7 @@ function region_submitted(event) {
   );
 
   if (isNaN(start) == true) {
-    user_message(
+    user_message_ribbon(
       "Error",
       "start value:" +
         d3.select("#region_start").property("value") +
@@ -6828,7 +6932,7 @@ function region_submitted(event) {
       "Showing reads at position: " + chrom + ": " + start
     );
   } else {
-    user_message("Error", "Chromosome does not exist in reference");
+    user_message_ribbon("Error", "Chromosome does not exist in reference");
   }
 }
 
@@ -6878,11 +6982,11 @@ function run_automation() {
   _automation_running = true;
 
   if (_Bam == undefined) {
-    user_message("Error", "No bam file loaded");
+    user_message_ribbon("Error", "No bam file loaded");
     return;
   }
   if (_Bedpe.length == 0) {
-    user_message("Error", "No bedpe file loaded");
+    user_message_ribbon("Error", "No bedpe file loaded");
     return;
   }
 
@@ -6893,38 +6997,38 @@ d3.select("#automation_file_prefix").on("change", function () {
 });
 
 d3.select("#automation_max_reads_to_screenshot").on("change", function () {
-  _settings.automation_max_reads_to_screenshot = parseInt(this.value);
-  if (isNaN(_settings.automation_max_reads_to_screenshot)) {
-    _settings.automation_max_reads_to_screenshot = 0;
+  _ribbon_settings.automation_max_reads_to_screenshot = parseInt(this.value);
+  if (isNaN(_ribbon_settings.automation_max_reads_to_screenshot)) {
+    _ribbon_settings.automation_max_reads_to_screenshot = 0;
   }
 });
 
 $("#automation_pick_split_reads").change(function () {
-  _settings.automation_reads_split_near_variant_only = this.checked;
+  _ribbon_settings.automation_reads_split_near_variant_only = this.checked;
 });
 
 $("#automation_subsample").change(function () {
-  _settings.automation_subsample = this.checked;
+  _ribbon_settings.automation_subsample = this.checked;
 });
 
 $("#add_coordinates_to_figures").change(function () {
-  _settings.add_coordinates_to_figures = this.checked;
+  _ribbon_settings.add_coordinates_to_figures = this.checked;
   draw_region_view();
 });
 
 $("#automation_download_info").change(function () {
-  _settings.automation_download_info = this.checked;
+  _ribbon_settings.automation_download_info = this.checked;
 });
 
 d3.select("#automation_margin_for_split").on("change", function () {
-  _settings.automation_margin_for_split = parseInt(this.value);
-  if (isNaN(_settings.automation_margin_for_split)) {
-    _settings.automation_margin_for_split = 0;
+  _ribbon_settings.automation_margin_for_split = parseInt(this.value);
+  if (isNaN(_ribbon_settings.automation_margin_for_split)) {
+    _ribbon_settings.automation_margin_for_split = 0;
   }
 });
 
 $("#draw_focus_rectangle").change(function () {
-  _settings.draw_focus_rectangle = this.checked;
+  _ribbon_settings.draw_focus_rectangle = this.checked;
   draw_region_view();
 });
 
@@ -6934,8 +7038,8 @@ function load_next_variant() {
   // console.log("_variant_automation_counter: ", _variant_automation_counter);
   if (_variant_automation_counter < _Bedpe.length) {
     _chosen_variant = _Bedpe[_variant_automation_counter];
-    _settings.selected_bedpe_text = _chosen_variant.raw;
-    console.log("CHOSEN VARIANT:", _settings.selected_bedpe_text);
+    _ribbon_settings.selected_bedpe_text = _chosen_variant.raw;
+    console.log("CHOSEN VARIANT:", _ribbon_settings.selected_bedpe_text);
     bedpe_row_click(_chosen_variant);
     d3.select("#permalink_name").property(
       "value",
@@ -6946,7 +7050,7 @@ function load_next_variant() {
     wait_save_and_repeat(0);
   } else {
     _automation_running = false;
-    user_message("Success", "DONE with automation!");
+    user_message_ribbon("Success", "DONE with automation!");
     audio.play();
     console.log("Finished: Number of split reads found by variant:");
     console.log(log_number_reads_found);
@@ -6982,20 +7086,20 @@ function annotate_reads_by_split_near_variant() {
         _Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom1 &&
         (Math.abs(
           _Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos1
-        ) < _settings.automation_margin_for_split ||
+        ) < _ribbon_settings.automation_margin_for_split ||
           Math.abs(
             _Chunk_alignments[i].alignments[j].re - _chosen_variant.pos1
-          ) < _settings.automation_margin_for_split)
+          ) < _ribbon_settings.automation_margin_for_split)
       ) {
         split_1 = true;
       } else if (
         _Chunk_alignments[i].alignments[j].r == _chosen_variant.chrom2 &&
         (Math.abs(
           _Chunk_alignments[i].alignments[j].rs - _chosen_variant.pos2
-        ) < _settings.automation_margin_for_split ||
+        ) < _ribbon_settings.automation_margin_for_split ||
           Math.abs(
             _Chunk_alignments[i].alignments[j].re - _chosen_variant.pos2
-          ) < _settings.automation_margin_for_split)
+          ) < _ribbon_settings.automation_margin_for_split)
       ) {
         split_2 = true;
       }
@@ -7010,10 +7114,10 @@ function annotate_reads_by_split_near_variant() {
 
 function screenshot_individual_reads() {
   var _eligible_read_list = [];
-  if (_settings.automation_reads_split_near_variant_only == true) {
+  if (_ribbon_settings.automation_reads_split_near_variant_only == true) {
     annotate_reads_by_split_near_variant();
   }
-  if (_settings.automation_reads_split_near_variant_only == true) {
+  if (_ribbon_settings.automation_reads_split_near_variant_only == true) {
     for (var i = 0; i < _Chunk_alignments.length; i++) {
       if (_Chunk_alignments[i].split_near_focus == true) {
         _eligible_read_list.push(i);
@@ -7025,7 +7129,7 @@ function screenshot_individual_reads() {
   console.log("_eligible_read_list:", _eligible_read_list);
   log_number_reads_found.push(_eligible_read_list.length);
 
-  if (_settings.automation_download_info == true) {
+  if (_ribbon_settings.automation_download_info == true) {
     create_and_download_info(_eligible_read_list.length);
   }
 
@@ -7033,7 +7137,8 @@ function screenshot_individual_reads() {
   if (_eligible_read_list.length > 0) {
     var extra_tries = 0;
     while (
-      _read_index_list.length < _settings.automation_max_reads_to_screenshot
+      _read_index_list.length <
+      _ribbon_settings.automation_max_reads_to_screenshot
     ) {
       var tmp =
         _eligible_read_list[
@@ -7075,10 +7180,10 @@ function download(filename, text) {
 function create_and_download_info(num_split) {
   var all_info_for_download = [];
   all_info_for_download.push(d3.select("#text_region_output").html());
-  all_info_for_download.push(_settings.alignment_info_text);
-  all_info_for_download.push(_settings.variant_info_text);
+  all_info_for_download.push(_ribbon_settings.alignment_info_text);
+  all_info_for_download.push(_ribbon_settings.variant_info_text);
   all_info_for_download.push(d3.select("#bam_fetch_info").html());
-  all_info_for_download.push("BEDPE: " + _settings.selected_bedpe_text);
+  all_info_for_download.push("BEDPE: " + _ribbon_settings.selected_bedpe_text);
   all_info_for_download.push("Number of split reads: " + num_split.toString());
 
   var filename = get_name() + "_info.txt";
@@ -7113,9 +7218,9 @@ d3.select("#run_automation_button").on("click", run_automation);
 
 // Resize SVG and sidebar when window size changes
 window.onresize = resizeWindow;
-
+// TODO: Combine resizeWindow from here and in SplitThreader.
 function resizeWindow() {
-  responsive_sizing();
+  resize_ribbon_views();
 }
 
 // ===========================================================================
@@ -7208,7 +7313,7 @@ class Bam {
                 sampling
               );
             subsampling = ` -s ${sampling}`;
-            user_message(
+            user_message_ribbon(
               "Warning",
               `Region contains a lot of data; sampling ${Math.round(
                 sampling * 100
@@ -7254,7 +7359,7 @@ class Bam {
     stdout = stdout.split("\n");
     return new Promise((resolve, reject) => {
       if (stdout == null) {
-        user_message("Error", "Could not parse the BAM file header.");
+        user_message_ribbon("Error", "Could not parse the BAM file header.");
         return;
       }
 
@@ -7284,7 +7389,7 @@ class Bam {
     stdout = stdout.split("\n");
     return new Promise((resolve, reject) => {
       if (stdout == null) {
-        user_message("Error", "Could not parse the BAM reads.");
+        user_message_ribbon("Error", "Could not parse the BAM reads.");
         return;
       }
 
@@ -7378,5 +7483,5 @@ function go_to_splitthreader_mode() {
 // == Main
 // ===========================================================================
 
-run();
+run_ribbon();
 open_any_url_files();
