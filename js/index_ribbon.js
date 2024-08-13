@@ -669,11 +669,9 @@ d3.select("#generate_permalink_button").on("click", function () {
 
 // function create_image_URIs() {
 // 	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
-// 		console.log("in svgAsPngUri single read");
 // 		image_URIs.push(uri);
 // 	});
 // 	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
-// 		console.log("in svgAsPngUri multi read");
 // 		image_URIs.push(uri);
 // 	});
 // }
@@ -759,7 +757,6 @@ $(".ribbon_vs_dotplot").click(function () {
 
 function draw_chunk_ref() {
   if (_Whole_refs.length == 0) {
-    // console.log("No references for draw_chunk_ref, not drawing anything");
     return;
   }
 
@@ -891,8 +888,6 @@ function draw_chunk_ref_intervals() {
   if (_Chunk_ref_intervals.length == 0) {
     return;
   }
-
-  // console.log("draw_chunk_ref_intervals");
 
   _ribbon_scales.chunk_ref_interval_scale.range([
     _positions.multiread.ref_intervals.x,
@@ -2065,7 +2060,6 @@ function highlight_chromosome(chromosome) {
     _ribbon_settings.single_chrom_highlighted = false;
   } else {
     for (var chrom in _Refs_show_or_hide) {
-      // console.log("hiding " + chrom);
       _Refs_show_or_hide[chrom] = false;
     }
     _Refs_show_or_hide[chromosome] = true;
@@ -2334,7 +2328,6 @@ function consolidate_records(records) {
   }
 
   if (_ribbon_settings.paired_end_mode) {
-    console.log("Found flag indicating paired end reads");
     if (!_ribbon_warnings.pe_mode) {
       user_message_ribbon(
         "Info",
@@ -2359,11 +2352,12 @@ function consolidate_records(records) {
       } else if ((records[i].flag & 128) == 128) {
         paired_end_reads[records[i].readname].second = records[i];
       } else {
-        console.log("Not first or second in pair");
+        console.warn(
+          "Read found that was not first or second in pair, despite flag indicating that this bam was paired-end"
+        );
       }
     }
 
-    // console.log("Read length counts:", read_length_counts);
     var most_common_length = null;
     for (var length in read_length_counts) {
       if (
@@ -2373,7 +2367,6 @@ function consolidate_records(records) {
         most_common_length = length;
       }
     }
-    // console.log("most_common_length:", most_common_length);
     _ribbon_settings.default_read_length = parseInt(most_common_length);
 
     var glued_together = [];
@@ -2383,8 +2376,6 @@ function consolidate_records(records) {
     }
     return glued_together;
   } else {
-    // console.log("No paired read flag, assuming single-end reads");
-
     // Check if any main alignments are not included in the SA tag of a previous entry for the same read,
     //		this happens for instance if SA tags are not set at all, so this section provides better support for BAM files like that.
     // 		One of those BAM files without SA tags comes from the GMAP aligner with IsoSeq data
@@ -2435,9 +2426,6 @@ function consolidate_records(records) {
             unique_readnames[records[i].readname].raw.SA =
               unique_readnames[records[i].readname].raw.SA + ";" + new_SA_entry;
           }
-
-          console.log("MERGE:");
-          console.log(unique_readnames[records[i].readname]);
         }
       }
     }
@@ -2687,7 +2675,6 @@ function flexible_bam_fetch(region_list) {
   _Additional_ref_intervals = [];
 
   if (_Bam != undefined) {
-    console.log("Fetching bam records at position");
     show_waiting_for_bam();
 
     _num_bam_records_to_load = 0;
@@ -2742,7 +2729,6 @@ function flexible_bam_fetch(region_list) {
       }
 
       var ref_intervals_by_chrom = ref_intervals_from_ref_pieces(ref_pieces);
-      // console.log(ref_intervals_by_chrom);
       _Additional_ref_intervals = [];
       for (var chrom in ref_intervals_by_chrom) {
         for (var i in ref_intervals_by_chrom[chrom]) {
@@ -2757,7 +2743,6 @@ function flexible_bam_fetch(region_list) {
             ref_intervals_by_chrom[chrom][i][1],
             use_additional_fetched_data
           );
-          // console.log("batch_bam_fetching submitted");
         }
       }
     }
@@ -2775,7 +2760,6 @@ function flexible_bam_fetch(region_list) {
     }
     d3.select("#bam_fetch_info").html(info);
   } else {
-    console.log("No bam file");
     user_message_ribbon("Error", "No bam file");
   }
 }
@@ -2832,7 +2816,6 @@ function variant_row_click(d) {
     _ribbon_warnings.large_features = true;
   }
   flexible_bam_fetch([{ chrom: d.chrom, start: d.start, end: d.end }]);
-
 }
 
 function check_bam_done_fetching() {
@@ -2869,17 +2852,6 @@ function show_variant_table() {
   );
 }
 function bedpe_row_click(d) {
-  console.log(
-    "go to regions:",
-    d.chrom1,
-    ":",
-    d.pos1,
-    " and ",
-    d.chrom2,
-    ":",
-    d.pos2
-  );
-
   flexible_bam_fetch([
     { chrom: d.chrom1, start: d.pos1, end: d.pos1 + 1 },
     { chrom: d.chrom2, start: d.pos2, end: d.pos2 + 1 },
@@ -2904,7 +2876,6 @@ function bedpe_row_click(d) {
   for (var i in _Bedpe) {
     _Bedpe[i].highlight = _Bedpe[i].name == d.name;
   }
-
 }
 
 function show_bedpe_table() {
@@ -3662,7 +3633,6 @@ function refresh_ui_elements() {
 }
 
 function parse_cigar(cigar_string) {
-  // console.log(cigar_string);
   var cigar_regex = /(\d+)(\D)/;
   var parsed = cigar_string.split(cigar_regex);
   if (parsed.length < 2) {
@@ -3670,10 +3640,9 @@ function parse_cigar(cigar_string) {
       "Error",
       "This doesn't look like a SAM/BAM file. The 6th column must be a valid cigar string."
     );
-    console.log("Failed cigar string:", cigar_string);
+    console.error("Failed cigar string:", cigar_string);
     throw "input error: not a valid cigar string";
   }
-  // console.log(parsed);
   var results = [];
   for (var i = 0; i < parsed.length; i++) {
     if (parsed[i] != "") {
@@ -3684,7 +3653,6 @@ function parse_cigar(cigar_string) {
   for (var i = 0; i < results.length - 1; i += 2) {
     output.push({ num: parseInt(results[i]), type: results[i + 1] });
   }
-  // console.log(output);
   return output;
 }
 
@@ -3702,10 +3670,10 @@ function parse_SA_field(sa) {
 
       alignments.push(read_cigar(raw_cigar, chrom, rstart, strand, mq));
     } else if (fields.length > 1) {
-      console.log(
-        "ignoring alternate alignment because it doesn't have all 6 columns:"
+      console.warn(
+        "ignoring alternate alignment because it doesn't have all 6 columns:",
+        fields
       );
-      console.log(fields);
     }
   }
 
@@ -3821,10 +3789,10 @@ function cigar_coords(cigar) {
         coords.ref_alignment_length += num;
         break;
       default:
-        console.log(
-          "Don't recognize cigar character: ",
+        console.warn(
+          "Unrecognized cigar character: ",
           cigar[i].type,
-          ", assuming it advances both query and reference, like a match or mismatch"
+          ". As a fallback, we will assume it advances both query and reference, like a match or mismatch"
         );
         coords.read_alignment_length += num;
         coords.ref_alignment_length += num;
@@ -3923,8 +3891,8 @@ function read_cigar(unparsed_cigar, chrom, rstart, strand, mq) {
         ref_pos += num;
         break;
       default:
-        console.log(
-          "Don't recognize cigar character: ",
+        console.warn(
+          "Unrecgonized cigar character: ",
           cigar[i].type,
           ", assuming it advances both query and reference, like a match or mismatch"
         );
@@ -3995,7 +3963,7 @@ function planesweep_consolidate_intervals(starts_and_stops) {
         alignment_count = 0; // reset
       }
     } else {
-      console.log(
+      console.error(
         "ERROR: unrecognized code in planesweep_consolidate_intervals must be s or e"
       );
     }
@@ -4014,8 +3982,8 @@ function reparse_read(record_from_chunk) {
   } else if (record_from_chunk.raw_type == "paired-end") {
     return parse_paired_end(record_from_chunk.raw);
   } else {
-    console.log(
-      "Don't recognize record_from_chunk.raw_type, must be sam or bam"
+    throw new Error(
+      `Unrecognized type: "${record_from_chunk.raw_type}" as record_from_chunk.raw_type, must be sam or bam`
     );
   }
 }
@@ -4044,11 +4012,14 @@ function select_read() {
     return;
   }
   if (_Chunk_alignments[_current_read_index] == undefined) {
-    console.log("_Chunk_alignments[_current_read_index] = undefined)");
-    console.log("_current_read_index: ", _current_read_index);
-    console.log("_Chunk_alignments: ", _Chunk_alignments);
+    console.warn(
+      "_Chunk_alignments[_current_read_index] = undefined)",
+      "_current_read_index: ",
+      _current_read_index,
+      "_Chunk_alignments: ",
+      _Chunk_alignments
+    );
   }
-  var readname = _Chunk_alignments[_current_read_index].readname;
 
   // Show read info
   d3.select("#text_read_output").html(
@@ -4280,9 +4251,6 @@ function map_ref_interval(chrom, position) {
       }
     }
   }
-  // console.log("ERROR: no chrom,pos match found in map_ref_interval()");
-  // console.log(chrom,position);
-  // console.log(_Ref_intervals);
   return undefined;
 }
 
@@ -4306,9 +4274,6 @@ function map_chunk_ref_interval(chrom, position) {
   }
 
   return undefined;
-  // console.log("ERROR: no chrom,pos match found in map_chunk_ref_interval()");
-  // console.log(chrom,position);
-  // console.log(_Chunk_ref_intervals);
 }
 
 function closest_map_ref_interval(chrom, position) {
@@ -4467,12 +4432,10 @@ function ref_intervals_from_ref_pieces(ref_pieces) {
           ref_intervals_by_chrom[chrom][i][0];
         chrom_sum_num_alignments += ref_intervals_by_chrom[chrom][i][2];
       }
-      // console.log(chrom_sum*1.0/_Ref_sizes_from_header[chrom]);
       if (
         (chrom_sum * 1.0) / _Ref_sizes_from_header[chrom] >
         _ribbon_static.fraction_ref_to_show_whole
       ) {
-        // console.log(ref_intervals_by_chrom[chrom]);
         ref_intervals_by_chrom[chrom] = [
           [0, _Ref_sizes_from_header[chrom], chrom_sum_num_alignments],
         ];
@@ -4691,7 +4654,6 @@ function refresh_visibility() {
 
 function draw() {
   if (_Alignments.length == 0) {
-    // console.log("no alignments, not drawing anything");
     return;
   }
   adjust_singleread_layout();
@@ -5416,12 +5378,10 @@ function draw_singleread_header() {
         direction2 = Number(d.strand2 == "-") * 2 - 1;
 
       if (isNaN(xmid) == true) {
-        console.log("xmid is not a number");
-        console.log(d);
+        console.warn("xmid is not a number in object:", d);
       }
       if (isNaN(direction1) == true) {
-        console.log("direction1 is not a number");
-        console.log(d);
+        console.warn("direction1 is not a number in object:", d);
       }
 
       return (
@@ -6006,7 +5966,6 @@ function load_bam_url_in_background(url) {
 }
 
 function read_bam_url(url) {
-
   _Bam = new Bam(url, url + ".bai");
   _Bam.mount().then(() => console.log("got header"));
 
@@ -6127,7 +6086,6 @@ function write_permalink() {
 
 // Read existing permalink
 function read_permalink(id) {
-
   user_message_ribbon("Info", "Loading data from permalink");
 
   jQuery.ajax({
@@ -6154,7 +6112,7 @@ function read_permalink(id) {
           .replace(/\t/g, "\\t");
         json_data = JSON.parse(file_content);
       } else {
-        console.log(
+        console.error(
           "Cannot read permalink, returned type is not object or string"
         );
       }
@@ -6299,7 +6257,6 @@ add_user_links_to_navbar();
 // ===========================================================================
 
 function open_bedpe_file(event) {
-
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
@@ -6473,7 +6430,6 @@ function open_coords_file(event) {
 d3.select("#coords_file").on("change", open_coords_file);
 
 function open_sam_file(event) {
-
   var raw_data;
   var reader = new FileReader();
 
@@ -6546,10 +6502,8 @@ function wait_then_run_when_bam_file_loaded(counter) {
     return;
   }
   if (_Bam != null && _Bam.ready) {
-    console.log("ready");
     bam_loaded();
   } else {
-    console.log("waiting for data to load");
     window.setTimeout(function () {
       wait_then_run_when_bam_file_loaded(counter + 1);
     }, 300);
@@ -6654,8 +6608,10 @@ function record_bam_header(sq_list) {
   for (var j = 0; j < chromosomes.length; j++) {
     var chrom = chromosomes[j];
     if (isNaN(_Ref_sizes_from_header[chrom])) {
-      console.log(
-        "Skipping chromosome: " + chrom + " because its size is not a number"
+      console.warn(
+        "Skipping chromosome: " +
+          chrom +
+          " because its size is not a number (from bam header)."
       );
     } else {
       _Whole_refs.push({
@@ -6729,10 +6685,8 @@ function my_fetch(chrom, start, end, callback) {
 }
 
 function check_if_all_bam_records_loaded() {
-  console.log("_num_bam_records_to_load:", _num_bam_records_to_load);
   if (_num_loaded_regions >= _num_bam_records_to_load) {
     // All bam records loaded, now consolidate to prevent duplicate reads:
-    console.log("Bam records finished loading");
     show_bam_is_ready();
 
     use_fetched_data(_Bam_records_from_multiregions);
@@ -6761,8 +6715,7 @@ function parse_bam_record(record) {
   }
 
   if (mq == undefined) {
-    console.log("record missing mq");
-    console.log(record);
+    console.warn("record missing mq:", record);
   }
 
   var strand = "+";
@@ -6772,11 +6725,9 @@ function parse_bam_record(record) {
 
   var alignments = [];
 
-  // console.log("parsing SA field");
   if (record.SA != undefined && record.SA != "") {
     alignments = parse_SA_field(record.SA);
   }
-  // console.log("done with SA field, reading primary cigar string");
   alignments.push(read_cigar(raw_cigar, chrom, rstart, strand, mq));
 
   var read_length = alignments[alignments.length - 1].read_length;
@@ -6800,8 +6751,6 @@ function parse_bam_record(record) {
 }
 
 function use_fetched_data(records) {
-  console.log("Bam record finished loading");
-
   show_bam_is_ready();
 
   var parsed_bam_records = [];
@@ -6831,12 +6780,9 @@ function tell_user_how_many_records_loaded() {
       .attr("fill", "white")
       .text("");
   }
-
-  console.log("Total reads mapped in region: " + _Chunk_alignments.length);
 }
 
 function region_submitted(event) {
-
   var chrom = d3.select("#region_chrom").property("value");
   if (chrom == "") {
     user_message_ribbon("Error", "No chromosome given");
@@ -6909,7 +6855,6 @@ d3.select("#region_start").on("keyup", function () {
 
 function submit_bam_url() {
   var url = d3.select("#bam_url_input").property("value");
-  console.log(url);
   read_bam_url(url);
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
@@ -6935,7 +6880,6 @@ var audio = new Audio("Ribbon_finished_automation.m4a");
 var log_number_reads_found = [];
 
 function run_automation() {
-  console.log("run_automation clicked");
   _variant_automation_counter = -1;
   _automation_running = true;
 
@@ -6992,12 +6936,9 @@ $("#draw_focus_rectangle").change(function () {
 
 function load_next_variant() {
   _variant_automation_counter += 1;
-  // console.log("in load_next_variant");
-  // console.log("_variant_automation_counter: ", _variant_automation_counter);
   if (_variant_automation_counter < _Bedpe.length) {
     _chosen_variant = _Bedpe[_variant_automation_counter];
     _ribbon_settings.selected_bedpe_text = _chosen_variant.raw;
-    console.log("CHOSEN VARIANT:", _ribbon_settings.selected_bedpe_text);
     bedpe_row_click(_chosen_variant);
     d3.select("#permalink_name").property(
       "value",
@@ -7010,8 +6951,6 @@ function load_next_variant() {
     _automation_running = false;
     user_message_ribbon("Success", "DONE with automation!");
     audio.play();
-    console.log("Finished: Number of split reads found by variant:");
-    console.log(log_number_reads_found);
   }
 }
 
@@ -7084,7 +7023,6 @@ function screenshot_individual_reads() {
   } else {
     _eligible_read_list = Array.from(Array(_Chunk_alignments.length).keys());
   }
-  console.log("_eligible_read_list:", _eligible_read_list);
   log_number_reads_found.push(_eligible_read_list.length);
 
   if (_ribbon_settings.automation_download_info == true) {
@@ -7107,7 +7045,6 @@ function screenshot_individual_reads() {
       } else {
         extra_tries += 1;
         if (extra_tries > 10) {
-          // console.log("Giving up, too many repeats in random read selection");
           break;
         }
       }
@@ -7149,10 +7086,7 @@ function create_and_download_info(num_split) {
 }
 
 function wait_save_and_repeat(counter) {
-  // console.log("in wait_save_and_repeat");
   if (check_bam_done_fetching() == true) {
-    // console.log("BAM done loading");
-    // console.log(_Chunk_alignments);
     // Wait long enough for all the visuals to render on the screen:
     window.setTimeout(screenshot_top(), 5000);
 
@@ -7426,13 +7360,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ===========================================================================
 
 function go_to_ribbon_mode() {
-  console.log("go_to_ribbon_mode");
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
 }
 
 function go_to_splitthreader_mode() {
-  console.log("go_to_splitthreader_mode");
   d3.select("#ribbon-app-container").style("display", "none");
   d3.select("#splitthreader-app-container").style("display", "block");
 }
