@@ -1,7 +1,7 @@
 {
   "name": "ribbon",
   "version": "2.0.0",
-  "description": "A genome browser designed for long reads and complex variants better",
+  "description": "A genome browser designed for long reads and complex variants",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MariaNattestad/Ribbon.git"

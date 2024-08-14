@@ -2456,14 +2456,14 @@ d3.select("#coords_info_icon").on("click", function () {
 d3.selectAll(".bed_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
-    "Paste or upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
+    "Upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
   );
 });
 
 d3.selectAll(".vcf_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
-    "Paste or upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
+    "Upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
   );
 });
 
@@ -2883,7 +2883,6 @@ function bed_input_changed(bed_input) {
 
   user_message_ribbon("Info", "Loaded " + _Variants.length + " bed entries");
 
-  clear_vcf_input();
   update_variants();
   draw_region_view();
   refresh_ui_elements();
@@ -2973,11 +2972,6 @@ function update_bedpe() {
   show_bedpe_table();
 }
 
-$("#bed_input").bind("input propertychange", function () {
-  remove_variant_file();
-  bed_input_changed(this.value);
-});
-
 function update_features() {
   var color_calculations = calculate_type_colors(_Features_for_ribbon);
   _ribbon_scales.feature_color_scale
@@ -3050,20 +3044,9 @@ function vcf_input_changed(vcf_input) {
   }
 
   user_message_ribbon("Info", "Loaded " + _Variants.length + " vcf entries");
-  clear_bed_input();
   update_variants();
   draw_region_view();
   refresh_ui_elements();
-}
-
-$("#vcf_input").bind("input propertychange", function () {
-  remove_variant_file();
-  vcf_input_changed(this.value);
-});
-
-function remove_variant_file() {
-  // For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
-  d3.select("#variant_file").property("value", "");
 }
 
 function run_ribbon() {
@@ -6204,7 +6187,8 @@ function open_bedpe_file(event) {
     user_message_ribbon("Error", "File extension must be .bedpe");
   }
 }
-function open_variant_file(event) {
+
+function open_variant_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
@@ -6216,7 +6200,6 @@ function open_variant_file(event) {
     reader.readAsText(this.files[0]);
     reader.onload = function (event) {
       raw_data = event.target.result;
-      clear_vcf_input();
       vcf_input_changed(raw_data);
       variants_just_loaded();
     };
@@ -6229,7 +6212,6 @@ function open_variant_file(event) {
     reader.readAsText(this.files[0]);
     reader.onload = function (event) {
       raw_data = event.target.result;
-      clear_bed_input();
       bed_input_changed(raw_data);
       variants_just_loaded();
     };
@@ -6401,14 +6383,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
       wait_then_run_when_bam_file_loaded(counter + 1);
     }, 300);
   }
-}
-
-function clear_bed_input() {
-  d3.select("#bed_input").property("value", "");
-}
-
-function clear_vcf_input() {
-  d3.select("#vcf_input").property("value", "");
 }
 
 function bam_loaded() {

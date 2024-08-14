@@ -95,14 +95,6 @@ svg {
   font-family: "Lato", "Helvetica";
 }
 
-#bed_input,
-#vcf_input {
-  padding: 1vmin 1vmin 1vmin 1vmin;
-  overflow-y: scroll;
-  resize: none;
-  white-space: nowrap;
-}
-
 #coords_info_icon,
 #bam_info_icon,
 .bed_info_icon,
