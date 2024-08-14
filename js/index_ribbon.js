@@ -2551,11 +2551,6 @@ function coords_input_changed(coords_input_value) {
   d3.select("#text_region_output").html("Showing coordinate input");
 }
 
-$("#coords_input").bind("input propertychange", function () {
-  remove_coords_file();
-  coords_input_changed(this.value);
-});
-
 function calculate_type_colors(variant_list) {
   var variant_types = {};
   for (var i in variant_list) {
@@ -5918,8 +5913,6 @@ function load_json_bam(header) {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
 
-  clear_coords_input();
-
   clear_data();
 
   record_bam_header(header);
@@ -6337,7 +6330,7 @@ d3.select("#feature_bed_file").on("change", open_feature_bed_file);
 // == Load coords file
 // ===========================================================================
 
-function open_coords_file(event) {
+function open_coords_file() {
   var raw_data;
   var reader = new FileReader();
 
@@ -6348,7 +6341,6 @@ function open_coords_file(event) {
   reader.readAsText(this.files[0]);
   reader.onload = function (event) {
     raw_data = event.target.result;
-    clear_coords_input();
     coords_input_changed(raw_data);
     d3.select("#collapsible_alignment_input_box").attr(
       "class",
@@ -6411,9 +6403,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
   }
 }
 
-function clear_coords_input() {
-  d3.select("#coords_input").property("value", "");
-}
 function clear_bed_input() {
   d3.select("#bed_input").property("value", "");
 }
@@ -6430,8 +6419,6 @@ function bam_loaded() {
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
-
-  clear_coords_input();
 
   clear_data();
 
@@ -6527,10 +6514,6 @@ function remove_bam_file() {
   // For when sam input changes, clear bam file to prevent confusion and enable switching back to the bam file
   d3.select("#bam_file").property("value", "");
   d3.select("#region_selector_panel").style("display", "none");
-}
-function remove_coords_file() {
-  // For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
-  d3.select("#coords_file").property("value", "");
 }
 
 // ===========================================================================

@@ -95,7 +95,6 @@ svg {
   font-family: "Lato", "Helvetica";
 }
 
-#coords_input,
 #bed_input,
 #vcf_input {
   padding: 1vmin 1vmin 1vmin 1vmin;
