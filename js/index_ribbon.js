@@ -6859,11 +6859,8 @@ function submit_bam_url() {
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
 
-window.addEventListener("beforeunload", function (e) {
-  var confirmationMessage = "Leave Ribbon?";
-
-  (e || window.event).returnValue = confirmationMessage; //Gecko + IE
-  return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+window.addEventListener("beforeunload", function (event) {
+  event.preventDefault();
 });
 
 // ===========================================================================
