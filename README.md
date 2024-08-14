@@ -19,9 +19,8 @@ To deploy Ribbon locally:
 git clone https://github.com/marianattestad/ribbon
 cd ribbon
 
-# Launch a web server to serve the assets
-python3 -m http.server 1234
-# If you only have python2, use python -m SimpleHTTPServer 1234
+# Launch a web server to serve the assets on port 1234
+npm run dev
 ```
 
 Ribbon is now available at http://localhost:1234.
