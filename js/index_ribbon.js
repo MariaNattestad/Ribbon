@@ -2439,69 +2439,6 @@ function consolidate_records(records) {
   }
 }
 
-function sam_input_changed(sam_input_value) {
-  _ribbon_settings.current_input_type = "sam";
-  // Check match refs from region view checkbox by default
-  _ribbon_settings.ref_match_chunk_ref_intervals = true;
-  d3.select("#ref_match_region_view").property("checked", true);
-  refresh_ui_for_new_dataset();
-  reset_settings_for_new_dataset();
-
-  clear_data();
-  clear_coords_input();
-  remove_coords_file();
-  remove_bam_file();
-
-  var input_text = sam_input_value.split("\n");
-  _Ref_sizes_from_header = {};
-  _Chunk_alignments = [];
-  var records = [];
-  for (var i = 0; i < input_text.length; i++) {
-    var columns = input_text[i].split(/\s+/);
-    if (columns[0][0] == "@") {
-      if (columns[0].substr(0, 3) == "@SQ") {
-        _Ref_sizes_from_header[
-          columns[1].split(":")[columns[1].split(":").length - 1]
-        ] = parseInt(columns[2].split(":")[columns[2].split(":").length - 1]);
-      }
-    } else if (columns.length >= 3) {
-      if (columns.length >= 6) {
-        var parsed_line = parse_sam_coordinates(input_text[i]);
-        if (parsed_line != undefined) {
-          records.push(parsed_line);
-        }
-      } else {
-        user_message_ribbon(
-          "Error",
-          "Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments."
-        );
-        return;
-      }
-    }
-  }
-
-  _Chunk_alignments = consolidate_records(records);
-
-  _focal_region = undefined;
-
-  refresh_visibility();
-  chunk_changed();
-  d3.select("#text_region_output").html("Showing sam input");
-}
-
-$("#sam_input").bind("input propertychange", function () {
-  _ribbon_settings.alignment_info_text = "Sam from text field";
-  set_alignment_info_text();
-  sam_input_changed(this.value);
-});
-
-d3.select("#sam_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Create a sam file using an aligner such as BWA. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead."
-  );
-});
-
 d3.select("#bam_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
@@ -2564,7 +2501,6 @@ function coords_input_changed(coords_input_value) {
   reset_settings_for_new_dataset();
 
   clear_data();
-  clear_sam_input();
   remove_bam_file();
 
   var input_text = coords_input_value.split("\n");
@@ -5982,7 +5918,6 @@ function load_json_bam(header) {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
 
-  clear_sam_input();
   clear_coords_input();
 
   clear_data();
@@ -6229,8 +6164,6 @@ function read_permalink(id) {
           }
         } else if (json_data["bam_url"] != undefined) {
           read_bam_url(json_data["bam_url"]);
-        } else if (json_data["sam"] != undefined) {
-          sam_input_changed(json_data["sam"]);
         }
 
         if (json_data["bedpe"] != undefined) {
@@ -6429,38 +6362,6 @@ function open_coords_file(event) {
 
 d3.select("#coords_file").on("change", open_coords_file);
 
-function open_sam_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
-  if (this.files[0].size > 10000000) {
-    user_message_ribbon(
-      "Error",
-      "File larger than 10MB. Please choose a smaller file or load it as a bam file instead"
-    );
-    return;
-  }
-  if (this.files[0].size > 1000000) {
-    user_message_ribbon("Info", "Loading large file may take a little while.");
-  }
-
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    clear_sam_input();
-    sam_input_changed(raw_data);
-    d3.select("#collapsible_alignment_input_box").attr(
-      "class",
-      "panel-collapse collapse"
-    );
-  };
-
-  _ribbon_settings.alignment_info_text = "Sam from file: " + this.files[0].name;
-  set_alignment_info_text();
-}
-
-d3.select("#sam_file").on("change", open_sam_file);
-
 // ===========================================================================
 // == Load bam file
 // ===========================================================================
@@ -6510,10 +6411,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
   }
 }
 
-function clear_sam_input() {
-  d3.select("#sam_input").property("value", "");
-}
-
 function clear_coords_input() {
   d3.select("#coords_input").property("value", "");
 }
@@ -6534,7 +6431,6 @@ function bam_loaded() {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
 
-  clear_sam_input();
   clear_coords_input();
 
   clear_data();

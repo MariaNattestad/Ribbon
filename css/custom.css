@@ -95,7 +95,6 @@ svg {
   font-family: "Lato", "Helvetica";
 }
 
-#sam_input,
 #coords_input,
 #bed_input,
 #vcf_input {
@@ -105,7 +104,6 @@ svg {
   white-space: nowrap;
 }
 
-#sam_info_icon,
 #coords_info_icon,
 #bam_info_icon,
 .bed_info_icon,
