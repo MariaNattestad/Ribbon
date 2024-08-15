@@ -1362,18 +1362,6 @@ function draw_chunk_alignments() {
     return;
   }
 
-  // // Focal region
-  // if (_focal_region != undefined) {
-  // 	_svg2.append("rect").attr("class","focal_region")
-  // 	.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-  // 	.attr("y",_positions.multiread.ref_intervals.y)
-  // 	.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-  // 	.attr("height", _positions.multiread.ref_intervals.height )
-  // 	.attr("fill","none")
-  // 	.style("stroke-width",5)
-  // 	.style("stroke", "black");
-  // }
-
   if (_Additional_ref_intervals.length > 0) {
     for (var i in _Additional_ref_intervals) {
       var d = _Additional_ref_intervals[i];
@@ -4426,12 +4414,9 @@ function refresh_visibility() {
   if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
     d3.select("#svg2_panel").style("visibility", "visible");
     d3.select("#start_panel").style("display", "none");
-
-    // d3.select("#image_capture_test_landing").style("display","none");
   } else {
     d3.select("#svg2_panel").style("visibility", "hidden");
     d3.select("#start_panel").style("display", "block");
-    // d3.select("#image_capture_test_landing").style("display","block");
   }
 
   if (
@@ -4498,8 +4483,6 @@ function reset_svg2() {
     .attr("y", _layout.svg2_height / 2)
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "middle");
-  // .attr("fill","orange")
-  // .text("No reads in the bam file at this location");
 
   d3.select("#svg2_panel").style("visibility", "visible");
 }
@@ -4710,13 +4693,11 @@ function draw_dotplot() {
   }
 
   if (flip == true) {
-    // _scales.read_scale.range([ _positions.read.x+_positions.read.width, _positions.read.x]); // from ribbon plot
     _ribbon_scales.read_scale.range([
       _positions.read.top,
       _positions.read.bottom,
     ]);
   } else {
-    // _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
     _ribbon_scales.read_scale.range([
       _positions.read.bottom,
       _positions.read.top,
@@ -4873,7 +4854,6 @@ function adjust_singleread_layout() {
       _layout.svg_height *
       _ribbon_static.singleread_layout_fractions.bottom_bar,
   };
-  // total_header += _static.singleread_layout_fractions.bottom_bar;
 }
 
 function draw_singleread_header() {
@@ -4968,9 +4948,6 @@ function draw_singleread_header() {
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "bottom")
     .style("font-size", _positions.fontsize);
-  // .attr("height", _positions.singleread.ref_block.height)
-  // .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
-  // .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 
   // Zoom into reference intervals where the read maps:
   _ribbon_svg1
@@ -5277,7 +5254,7 @@ function draw_singleread_header() {
         }
       })
       .attr("d", loop_path_generator)
-      .style("stroke", "black") // function(d){return _scales.variant_color_scale(d.type)}) // colors are hard to see
+      .style("stroke", "black")
       .on("mouseover", function (d) {
         var text = d.name;
         if (d.type != undefined) {
@@ -6019,7 +5996,6 @@ function read_permalink(id) {
               "JSON object has bam, but bam does not contain key: header.sq"
             );
           }
-          // json_data["bam"]["records"] is a list of records fitting parse_bam_record()
           if (json_data["bam"]["records"] != undefined) {
             use_fetched_data(json_data["bam"]["records"]);
           } else {
@@ -6113,7 +6089,6 @@ function open_variant_file() {
 }
 
 function features_just_loaded() {
-  // refresh_visibility();
   d3.select("#collapsible_feature_upload_box").attr(
     "class",
     "panel-collapse collapse"
@@ -6569,7 +6544,6 @@ function region_submitted(event) {
     // Correct any issues with coordinates
     d3.select("#region_chrom").property("value", chrom);
     d3.select("#region_start").property("value", start);
-    // d3.select("#region_end").property("value",end);
 
     flexible_bam_fetch([{ chrom: chrom, start: start, end: end }]);
 
@@ -6593,7 +6567,6 @@ d3.select("#region_start").on("keyup", function () {
     region_submitted();
   }
 });
-// d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 function submit_bam_url() {
   var url = d3.select("#bam_url_input").property("value");
