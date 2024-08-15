@@ -596,7 +596,7 @@ d3.selectAll(".categorization_parameter_input").on("keyup", function () {
 d3.select("#submit_fusion").on("click", submit_fusion);
 
 d3.select("#ribbon_path")
-  .property("value", "http://genomeribbon.com")
+  .property("value", "https://genomeribbon.com")
   .on("change", function () {
     set_ribbon_path(d3.event.target.value);
   });
