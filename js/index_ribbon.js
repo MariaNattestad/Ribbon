@@ -1,6 +1,5 @@
 // URLs
-var URL_SANDBOX = "https://api.genomeribbon.com/v0";
-var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
+var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
 
 // Calculations for drawing and spacing out elements on the screen
 var _ribbon_padding = {};
@@ -51,10 +50,7 @@ _ribbon_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that
 _ribbon_static.read_sort_options = [
   { id: "original", description: "Original order" },
   { id: "longest", description: "Position of longest alignment" },
-  {
-    id: "priamry",
-    description: "Position of primary alignment in SAM/BAM entry",
-  },
+  { id: "primary", description: "Position of primary alignment in SAM/BAM entry" },
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
 ];
@@ -62,10 +58,7 @@ _ribbon_static.read_orientation_options = [
   { id: "original", description: "Original orientation" },
   { id: "reverse", description: "Reverse orientation" },
   { id: "longest", description: "Orientation of longest alignment" },
-  {
-    id: "primary",
-    description: "Orientation of alignment in selected locus (SAM/BAM)",
-  },
+  { id: "primary", description: "Orientation of alignment in selected locus (SAM/BAM)" },
 ];
 _ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -73,81 +66,9 @@ _ribbon_static.color_schemes = [
   { name: "Color scheme 3", colors: 2 },
 ];
 _ribbon_static.color_collections = [
-  [
-    "#ff9896",
-    "#c5b0d5",
-    "#8c564b",
-    "#e377c2",
-    "#bcbd22",
-    "#9edae5",
-    "#c7c7c7",
-    "#d62728",
-    "#ffbb78",
-    "#98df8a",
-    "#ff7f0e",
-    "#f7b6d2",
-    "#c49c94",
-    "#dbdb8d",
-    "#aec7e8",
-    "#17becf",
-    "#2ca02c",
-    "#7f7f7f",
-    "#1f77b4",
-    "#9467bd",
-  ],
-  [
-    "#ffff00",
-    "#ad0000",
-    "#bdadc6",
-    "#00ffff",
-    "#e75200",
-    "#de1052",
-    "#ffa5a5",
-    "#7b7b00",
-    "#7bffff",
-    "#008c00",
-    "#00adff",
-    "#ff00ff",
-    "#ff0000",
-    "#ff527b",
-    "#84d6a5",
-    "#e76b52",
-    "#8400ff",
-    "#6b4242",
-    "#52ff52",
-    "#0029ff",
-    "#ffffad",
-    "#ff94ff",
-    "#004200",
-    "gray",
-    "black",
-  ],
-  [
-    "#E41A1C",
-    "#A73C52",
-    "#6B5F88",
-    "#3780B3",
-    "#3F918C",
-    "#47A266",
-    "#53A651",
-    "#6D8470",
-    "#87638F",
-    "#A5548D",
-    "#C96555",
-    "#ED761C",
-    "#FF9508",
-    "#FFC11A",
-    "#FFEE2C",
-    "#EBDA30",
-    "#CC9F2C",
-    "#AD6428",
-    "#BB614F",
-    "#D77083",
-    "#F37FB8",
-    "#DA88B3",
-    "#B990A6",
-    "#999999",
-  ],
+  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
+  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffffad", "#ff94ff", "#004200", "gray", "black" ],
+  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
 ];
 _ribbon_static.min_indel_size_for_region_view = 50;
 _ribbon_static.show_indels_as_options = [
@@ -651,30 +572,9 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup", function () {
   select_read();
 });
 
-// var image_URIs = [];
-
-// function wait_for_images(callback, counter) {
-// 	if (image_URIs.length == 2 || counter > 10) {
-// 		callback()
-// 	} else {
-// 		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
-// 	}
-// }
-
 d3.select("#generate_permalink_button").on("click", function () {
   write_permalink();
-  // create_image_URIs();
-  // wait_for_images(write_permalink,0);
 });
-
-// function create_image_URIs() {
-// 	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
-// 		image_URIs.push(uri);
-// 	});
-// 	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
-// 		image_URIs.push(uri);
-// 	});
-// }
 
 function get_name() {
   var permalink_name = d3.select("#permalink_name").property("value");
@@ -5964,7 +5864,7 @@ function write_permalink() {
 
   jQuery.ajax({
     type: "POST",
-    url: URL_SANDBOX_STORE,
+    url: URL_API_STORE,
     data: JSON.stringify({
       name: permalink_name,
       ribbon: generate_permalink_data(post_data),
@@ -6000,7 +5900,7 @@ function read_permalink(id) {
   user_message_ribbon("Info", "Loading data from permalink");
 
   jQuery.ajax({
-    url: URL_SANDBOX_STORE + id,
+    url: URL_API_STORE + id,
     success: function (data) {
       // Decompress
       file_content = JSON.parse(
@@ -6027,17 +5927,6 @@ function read_permalink(id) {
           "Cannot read permalink, returned type is not object or string"
         );
       }
-
-      // // If images
-      // if (json_data["ribbon_perma"]["images"] != undefined) {
-      // 	console.log(json_data["ribbon_perma"]["images"].length);
-      // 	console.log(json_data["ribbon_perma"]["images"][0].length);
-      // 	console.log(json_data["ribbon_perma"]["images"][1].length);
-      // 	d3.select("#image_capture_test_landing")
-      // 		.append("img").property("src", json_data["ribbon_perma"]["images"][0]);
-      // 	d3.select("#image_capture_test_landing")
-      // 		.append("img").property("src", json_data["ribbon_perma"]["images"][1]);
-      // }
 
       // Alignments
       if (json_data["ribbon_perma"] != undefined) {
