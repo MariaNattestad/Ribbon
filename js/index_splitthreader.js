@@ -610,7 +610,6 @@ function show_splitthreader_tooltip(text, x, y, parent_object) {
 
 function run_splitthreader() {
   read_annotation_file();
-  set_download_urls();
   wait_then_run_when_all_data_loaded();
 }
 
@@ -842,17 +841,6 @@ function read_annotation_file() {
       }
     );
   }
-}
-
-function set_download_urls() {
-  d3.select("#download_coverage_data").attr(
-    "href",
-    _input_file_prefix + ".copynumber.csv"
-  );
-  d3.select("#download_variant_data").attr(
-    "href",
-    _input_file_prefix + ".variants.csv"
-  );
 }
 
 //////////////  Handle dragging chromosomes from circos onto zoom plots to select chromosomes to show /////////////////
