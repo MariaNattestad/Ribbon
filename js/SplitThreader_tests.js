@@ -49,18 +49,12 @@ var gene2 = {"name":"test2","chromosome":"2","start":1440, "end":1010};
 var test_gf_1_genome = [{"chromosome":"1", "size":100000}, {"chromosome":"2","size":200000}];
 
 
-function dict_length(dictionary) {
-	var num = 0;
-	for (var k in dictionary) {num++;}
-	return num;
-}
-
 QUnit.test ( "graph creation test", function( assert ) {
 	var g = new Graph();
 	g.from_edge_list(fast_graph(test_1));
 
-	assert.equal(dict_length(g.nodes),3);
-	assert.equal(dict_length(g.edges),4);
+	assert.equal(Object.keys(g.nodes).length,3);
+	assert.equal(Object.keys(g.edges).length,4);
 });
 
 QUnit.test ( "glide test", function( assert ) {
@@ -149,8 +143,8 @@ QUnit.test ( "graph creation from genomic variants test", function( assert ) {
 	var g = new Graph();
 	g.from_genomic_variants(test_variants_1,test_genome_1);
 
-	assert.equal(dict_length(g.nodes),4);
-	assert.equal(dict_length(g.edges),3);
+	assert.equal(Object.keys(g.nodes).length,4);
+	assert.equal(Object.keys(g.edges).length,3);
 
 	var a = new Point(g.nodes["1|0"],10000);
 	var b = new Point(g.nodes["2|1"],2000);
@@ -187,8 +181,8 @@ QUnit.test ( "gene fusion detection from genomic variants test", function( asser
 	var g = new Graph();
 	g.from_genomic_variants(test_gf_1, test_gf_1_genome);
 
-	assert.equal(dict_length(g.nodes),10);
-	assert.equal(dict_length(g.edges),12);
+	assert.equal(Object.keys(g.nodes).length,10);
+	assert.equal(Object.keys(g.edges).length,12);
 
 	// var gene1 = {"name":"test1","chromosome":"1","start":50080,"end":50370};
 	// var gene2 = {"name":"test2","chromosome":"2","start":1340, "end":1010};

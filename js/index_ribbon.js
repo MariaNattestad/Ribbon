@@ -2943,14 +2943,6 @@ function run_ribbon() {
   user_message_ribbon("Instructions", "Start by loading alignments below");
 }
 
-function dict_length(dictionary) {
-  var num = 0;
-  for (var k in dictionary) {
-    num++;
-  }
-  return num;
-}
-
 function all_read_analysis() {
   var overall_max_mq = 0;
   var overall_min_mq = 100000000;

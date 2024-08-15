@@ -3737,14 +3737,6 @@ function analyze_copynumber() {
   _Statistics.mean_copynumber = weighted_total_copynumber / total_bases;
 }
 
-function dict_length(dictionary) {
-  var num = 0;
-  for (var k in dictionary) {
-    num++;
-  }
-  return num;
-}
-
 function analyze_variants() {
   // Calculate distance to nearest CNV
   // where CNV is defined as a change in segmented coverage of at least _settings.cov_diff_for_CNV
@@ -3990,9 +3982,7 @@ function analyze_variants() {
         unique_nearby_variants[j] = true;
       }
     }
-    _Filtered_variant_data[i].nearby_variant_count = dict_length(
-      unique_nearby_variants
-    );
+    _Filtered_variant_data[i].nearby_variant_count = Object.keys(unique_nearby_variants).length;
   }
 
   for (var i in _Filtered_variant_data) {
