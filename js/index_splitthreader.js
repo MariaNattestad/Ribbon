@@ -332,8 +332,12 @@ d3.select("#publication_style_plot_checkbox").on("change", function () {
   draw_zoom_plot("bottom");
 });
 
-d3.select("#take_screenshot").on("click", function () {
-  saveSvgAsPng("SplitThreader_image", { scale: 4 });
+d3.select("#take_screenshot").on("click", async function () {
+  await exportViz({
+      format: "png",
+      element: document.querySelector("#svg"),
+      filename: "splitthreader.png"
+  });
 });
 
 d3.select("#adaptive_coverage_scaling").on("change", function () {
@@ -610,7 +614,6 @@ function show_splitthreader_tooltip(text, x, y, parent_object) {
 
 function run_splitthreader() {
   read_annotation_file();
-  set_download_urls();
   wait_then_run_when_all_data_loaded();
 }
 
@@ -842,17 +845,6 @@ function read_annotation_file() {
       }
     );
   }
-}
-
-function set_download_urls() {
-  d3.select("#download_coverage_data").attr(
-    "href",
-    _input_file_prefix + ".copynumber.csv"
-  );
-  d3.select("#download_variant_data").attr(
-    "href",
-    _input_file_prefix + ".variants.csv"
-  );
 }
 
 //////////////  Handle dragging chromosomes from circos onto zoom plots to select chromosomes to show /////////////////

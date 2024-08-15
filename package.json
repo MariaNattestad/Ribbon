@@ -18,6 +18,7 @@
     "d3": "3.5.6",
     "jquery": "3.5.1",
     "jquery-ui-dist": "1.12.1",
+    "js-priority-queue": "^0.1.5",
     "moment": "^2.29.4",
     "pako": "^1.0.11",
     "papaparse": "^5.4.1"

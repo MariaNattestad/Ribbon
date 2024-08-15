@@ -11,13 +11,11 @@ function fast_graph(edgelist) {
 	return output;
 }
 
-
 // Circular genome with one tandem repeat
 var test_1 = ["A|e-B|e","B|e-C|e","C|s-B|s","B|s-A|s"]; // same as above
 
 // Linear genome
 var test_linear = ["A|e-B|s","B|e-C|s"];
-
 
 // Linear genome with tandem repeat
 var test_tr_1 = ["A|e-B|s","B|e-B|s","B|e-C|s"];
@@ -25,12 +23,9 @@ var test_tr_2 = ["A|e-B|s","B|s-E|s","E|e-C|e","B|e-C|s","C|e-D|s"];
 var test_tr_3 = ["A|e-B|s","B|e-B|s","B|e-C|s","C|e-D|s","C|s-C|e"];
 var test_tr_4 = ["A|e-B|s","B|e-C|s","C|e-D|s","D|e-E|s","B|s-D|e","C|s-C|e"];
 
-
 // Three connected components
 var test_cc_3 = ["A|s-C|e","D|e-D|s","B|s-B|e"];
-
 var search_past_cycle_test = ["A|e-B|s","B|e-C|e","C|s-B|s","B|e-D|s"];
-
 
 // One genomic variant
 var test_variants_1 = [{"variant_name":"variant1", "chrom1":"1", "pos1":30000, "strand1":"+", "chrom2":"2", "pos2":8000, "strand2": "-"}];
@@ -48,7 +43,6 @@ var gene1 = {"name":"test1","chromosome":"1","start":50080,"end":50370};
 var gene2 = {"name":"test2","chromosome":"2","start":1440, "end":1010};
 var test_gf_1_genome = [{"chromosome":"1", "size":100000}, {"chromosome":"2","size":200000}];
 
-
 QUnit.test ( "graph creation test", function( assert ) {
 	var g = new Graph();
 	g.from_edge_list(fast_graph(test_1));
@@ -58,7 +52,6 @@ QUnit.test ( "graph creation test", function( assert ) {
 });
 
 QUnit.test ( "glide test", function( assert ) {
-	
 	var g = new Graph();
 	g.from_edge_list(fast_graph(test_1));
 
@@ -70,14 +63,12 @@ QUnit.test ( "glide test", function( assert ) {
 });
 
 QUnit.test ( "travel test", function( assert ) {
-	
 	var g = new Graph();
 	g.from_edge_list(fast_graph(test_1));
 	// Edge coming out of A|e matches one of the edges coming out of B|e (specific to this toy example)
 	assert.ok(g.nodes["A"].end.edges[0].edge == g.nodes["B"].end.edges[0].edge || g.nodes["A"].end.edges[0].edge == g.nodes["B"].end.edges[1].edge);
 	// Port A|e matches Port A|e from B|e's edge list
 	assert.ok(g.nodes["A"].end == g.nodes["A"].end.edges[0].port.edges[0].port || g.nodes["A"].end == g.nodes["A"].end.edges[0].port.edges[1].port);
-
 });
 
 QUnit.test ( "simple bfs test", function (assert) {
@@ -92,9 +83,7 @@ QUnit.test ( "simple bfs test", function (assert) {
 	assert.equal(g.distance_between_2_points(c,a).distance,g.distance_between_2_points(a,c).distance, "reversible");
 	assert.equal(g.distance_between_2_points(c,b).distance,g.distance_between_2_points(b,c).distance, "reversible");
 	assert.equal(g.distance_between_2_points(a,b).distance,g.distance_between_2_points(b,a).distance, "reversible");
-
 });
-
 
 QUnit.test ("cycle robust bfs test", function (assert) {
 	var g = new Graph();
@@ -107,7 +96,6 @@ QUnit.test ("cycle robust bfs test", function (assert) {
 	var output = g.distance_between_2_points(a,b);
 	assert.equal(output.distance, 201, "finds answer");
 	assert.equal(output.path.length,3, "path has length 3");
-
 });
 
 QUnit.test ( "basic traversal test", function (assert) {
@@ -122,9 +110,7 @@ QUnit.test ( "basic traversal test", function (assert) {
 	assert.equal(tandem_1.get_unvisited().length,6,"before traversal");
 	tandem_1.df_traverse();
 	assert.equal(tandem_1.get_unvisited().length,0,"after traversal");
-
 });
-
 
 QUnit.test ( "count connected components test", function (assert) {
 	var linear = new Graph();
@@ -134,7 +120,6 @@ QUnit.test ( "count connected components test", function (assert) {
 	var cc_3 = new Graph();
 	cc_3.from_edge_list(fast_graph(test_cc_3));
 	assert.equal(cc_3.count_connected_components(),3);
-
 });
 
 /////////////////////////    Testing graph creation from genomic coordinates    //////////////////////////////
@@ -154,7 +139,6 @@ QUnit.test ( "graph creation from genomic variants test", function( assert ) {
 	assert.equal(g.distance_between_2_points(a,c),null, "matches no path found");
 });
 
-
 QUnit.test ( "finding nodes from genomic location test", function( assert ) {
 	var g = new Graph();
 	g.from_genomic_variants(test_variants_1,test_genome_1);
@@ -170,13 +154,9 @@ QUnit.test ( "finding nodes from genomic location test", function( assert ) {
 	var c = g.point_by_genomic_location("2",3000);
 	assert.equal(c.node.id,"2|0");
 	assert.equal(c.pos,3000);
-
 });
 
-
 // gene fusions w/ PQ BFS robust to cycles
-
-
 QUnit.test ( "gene fusion detection from genomic variants test", function( assert ) {
 	var g = new Graph();
 	g.from_genomic_variants(test_gf_1, test_gf_1_genome);
@@ -184,15 +164,11 @@ QUnit.test ( "gene fusion detection from genomic variants test", function( asser
 	assert.equal(Object.keys(g.nodes).length,10);
 	assert.equal(Object.keys(g.edges).length,12);
 
-	// var gene1 = {"name":"test1","chromosome":"1","start":50080,"end":50370};
-	// var gene2 = {"name":"test2","chromosome":"2","start":1340, "end":1010};
-
 	var b = g.port_list_by_interval(gene1);
 	assert.equal(b.length,6);
 	for (var i = 0; i < b.length; i++) {
 		assert.ok(b[i][1]!=undefined, "list contains Ports");
 	}
-	
 
 	var c = g.port_list_by_interval(gene2);
 	assert.equal(c.length,6);
@@ -210,8 +186,6 @@ QUnit.test ( "gene fusion detection from genomic variants test", function( asser
 QUnit.test ( "general graph search", function(assert) {
 	var g = new Graph();
 	g.from_genomic_variants(test_gf_1,test_gf_1_genome);
-
-	// var gene1 = {"name":"test1","chromosome":"1","start":50080,"end":50370};
 
 	var fusion_output = g.search([gene1],[gene2]);
 	assert.equal(fusion_output.distance, 0);
@@ -238,19 +212,4 @@ QUnit.test ( "general graph search", function(assert) {
 	var fusion_output = g.search([gene1],[{"name":"test1","chromosome":"1","start":50210,"end":50430}]);
 	assert.equal(fusion_output.distance, 0, "Overlap detected (end of gene)");
 	assert.equal(fusion_output.variant_names.length, 0, "No variants");
-
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-

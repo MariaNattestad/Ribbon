@@ -584,25 +584,23 @@ function get_name() {
   return permalink_name;
 }
 
-function screenshot_top() {
-  saveSvgAsPng(
-    document.getElementById("svg_multi_read"),
-    get_name() + "_multi-read.png",
-    { scale: 4 }
-  );
+async function screenshot_top() {
+  await exportViz({
+      format: "png",
+      element: document.querySelector("#svg_multi_read"),
+      filename: `${get_name()}_multi-read.png`
+  });
 }
-function screenshot_bottom(read_name) {
-  if (read_name == undefined) {
-    read_name = "single-read";
-  }
-  saveSvgAsPng(
-    document.getElementById("svg_single_read"),
-    get_name() + "_" + read_name + ".png",
-    { scale: 4 }
-  );
-}
-d3.select("#screenshot_top").on("click", screenshot_top);
 
+async function screenshot_bottom(read_name = "single-read") {
+  await exportViz({
+      format: "png",
+      element: document.querySelector("#svg_single_read"),
+      filename: `${get_name()}_${read_name}.png`
+  });
+}
+
+d3.select("#screenshot_top").on("click", screenshot_top);
 d3.select("#screenshot_bottom").on("click", screenshot_bottom);
 
 $("#show_all_refs").click(function () {
@@ -6757,14 +6755,6 @@ function screenshot_individual_reads() {
 
   _index_within_read_index_list = 0;
   load_next_read();
-}
-
-function download(filename, text) {
-  const blob = new Blob([text]);
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
 }
 
 function create_and_download_info(num_split) {
