@@ -117,6 +117,8 @@ _splitthreader_settings.show_gene_types = {};
 _splitthreader_settings.show_variant_types = {};
 _splitthreader_settings.show_local_gene_names = true;
 _splitthreader_settings.color_index = 0;
+// Updated 2024: there's only one coverage, so we'll use "segmented" in the code but
+// it's just whatever the user loads.
 _splitthreader_settings.segment_copy_number = "segmented";
 _splitthreader_settings.adaptive_coverage_scaling = true;
 _splitthreader_settings.min_variant_size = -1;
@@ -387,36 +389,6 @@ d3.select("#show_features").on("change", function () {
   draw_features("top");
   draw_features("bottom");
 });
-
-// Updated 2024: there's only one coverage, so we'll use "segmented" in the code but
-// it's just whatever the user loads.
-// d3.select("#show_segmented_coverage").on("change", function () {
-//   if (d3.event.target.checked) {
-//     _settings.segment_copy_number = "segmented";
-//   } else {
-//     _settings.segment_copy_number = "unsegmented";
-//   }
-
-//   var signs = ["top", "bottom"];
-//   for (var i in signs) {
-//     var top_or_bottom = signs[i];
-//     if (
-//       _Coverage_by_chromosome[_settings.segment_copy_number][
-//         _chosen_chromosomes[top_or_bottom]
-//       ] == undefined
-//     ) {
-//       _data_ready.coverage[_settings.segment_copy_number][
-//         top_or_bottom
-//       ] = false;
-//       if (_settings.segment_copy_number == "unsegmented") {
-//         load_coverage(_chosen_chromosomes[top_or_bottom], top_or_bottom);
-//       }
-//       wait_then_update(top_or_bottom);
-//     } else {
-//       update_coverage(top_or_bottom);
-//     }
-//   }
-// });
 
 d3.select("#publication_style_plot_checkbox").on("change", function () {
   _splitthreader_settings.publication_style_plot = d3.event.target.checked;
