@@ -18,6 +18,7 @@ JS_MODULES=(
     "moment/min/moment.min.js"
     "jquery-ui-dist/jquery-ui.min.js"
     "papaparse/papaparse.min.js"
+    "js-priority-queue/priority-queue.min.js"
 )
 
 echo -n > "$OUTPUT_CSS"
