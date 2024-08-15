@@ -332,8 +332,12 @@ d3.select("#publication_style_plot_checkbox").on("change", function () {
   draw_zoom_plot("bottom");
 });
 
-d3.select("#take_screenshot").on("click", function () {
-  saveSvgAsPng(document.querySelector("#svg"), "splitthreader.png", { scale: 4 });
+d3.select("#take_screenshot").on("click", async function () {
+  await exportViz({
+      format: "png",
+      element: document.querySelector("#svg"),
+      filename: "splitthreader.png"
+  });
 });
 
 d3.select("#adaptive_coverage_scaling").on("change", function () {
