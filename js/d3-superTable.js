@@ -4,6 +4,7 @@ d3.superTable = function() {
 	var table_header = undefined;
 	var num_rows_to_show = undefined;
 	var click_function = undefined;
+	var run_on_filtered_data_function = undefined;
 	var element = null;
 	var requirements = {}; //{"chrom": [{"op":"=","arg":"17"}], "start":[{"op":">","arg":38000000}, {"op":"<","arg":42000000}]};
 	var previous_sort = {"column":null, "direction":"forward"};
@@ -37,15 +38,21 @@ d3.superTable = function() {
 				table.append("tr").attr("class","d3-superTable-filter-row").selectAll("td")
 					.data(table_header).enter()
 					.append("td").append("input").property("type","text")
+					.attr("column_name",function(d) {return d})
 					.property("value",function(d) {var text = ""; for (r in requirements[d]) {text += requirements[d][r].op + requirements[d][r].arg + " "}; return text;})
 					.on("change", my.typing_advanced_filter);
 			}
 
+			var run_function_on_filtered_data = false;
+			if (typeof(run_on_filtered_data_function) === "function") {
+				run_function_on_filtered_data = true;
+			}
 			var table_data_subset = table_data;
 			var counter = 0;
-
+			var filtered_data = table_data;
 			if (Object.keys(requirements) != 0 || (num_rows_to_show != undefined && num_rows_to_show < table_data.length)) {
 				table_data_subset = [];
+				filtered_data = [];
 				for (var i = 0; i < table_data.length; i++) {
 					var good = true;
 					for (var column in requirements){
@@ -76,9 +83,14 @@ d3.superTable = function() {
 					}
 
 					if (good) {
-						table_data_subset.push(table_data[i]);
-						counter++;
-						if (num_rows_to_show != undefined && counter >= num_rows_to_show) {
+						if (num_rows_to_show === undefined || counter < num_rows_to_show) {
+							table_data_subset.push(table_data[i]);
+							counter++;
+						}
+						if (run_function_on_filtered_data) {
+							filtered_data.push(table_data[i]);
+							// Don't break if we need all the data for another function
+						} else if (num_rows_to_show != undefined && counter >= num_rows_to_show) {
 							break;
 						}
 					}
@@ -89,13 +101,17 @@ d3.superTable = function() {
 			if (typeof(click_function) === "function") {
 				rows.on("click", function (d) {
 					if (typeof(check_ready_function) != "function" || check_ready_function() == true) {
-						element.selectAll("tr").attr("class","unselected");
+						element.selectAll("tr.selected").attr("class","unselected");
 						d3.select(this).attr("class", "selected");
-						click_function(d);    
+						click_function(d);
 					}
 				}).style("cursor","pointer");
 			}
 			rows.selectAll("td").data(table_header).enter().append("td").html(function(d) { return d3.select(this.parentNode).datum()[d]});
+
+			if (run_function_on_filtered_data) {
+				run_on_filtered_data_function(filtered_data);
+			}
 	}
 
 	my.click_header = function(d) {
@@ -119,10 +135,9 @@ d3.superTable = function() {
 		my.create_table();
 	};
 
-	my.typing_advanced_filter = function(d) {
+	my.filter_rows = function(d,text) {
 		requirements[d] = [];
 
-		var text = d3.event.target.value;
 		var reqs = text.split(/\s+/);
 		var acceptable_types = [">","<","="];
 		for (i in reqs) {
@@ -140,7 +155,12 @@ d3.superTable = function() {
 			delete requirements[d];
 		}
 		my.create_table();
-	}
+	};
+	
+	my.typing_advanced_filter = function(d) {
+		my.filter_rows(d, d3.event.target.value);
+
+	};
 
 	my.table_data = function(value) {
 		if (!arguments.length) return table_data;
@@ -170,6 +190,11 @@ d3.superTable = function() {
 	my.show_advanced_filters = function(value) {
 		if (!arguments.length) return show_advanced_filters;
 		show_advanced_filters = value;
+		return my;
+	};
+	my.run_on_filtered_data_function = function(value) {
+		if (!arguments.length) return run_on_filtered_data_function;
+		run_on_filtered_data_function = value;
 		return my;
 	};
 	var natural_sort = function(a,b) {
