@@ -333,7 +333,7 @@ d3.select("#publication_style_plot_checkbox").on("change", function () {
 });
 
 d3.select("#take_screenshot").on("click", function () {
-  saveSvgAsPng("SplitThreader_image", { scale: 4 });
+  saveSvgAsPng(document.querySelector("#svg"), "splitthreader.png", { scale: 4 });
 });
 
 d3.select("#adaptive_coverage_scaling").on("change", function () {
