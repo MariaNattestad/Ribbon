@@ -242,16 +242,9 @@ Graph.prototype.bfs = function(list1, search_limits) {
 	for (var i = 0; i < list1.length; i++) {
 		// if list1[i] is on a node that already has a target mark, calculate linear distance and check for direct overlaps to add these to the priority queue
 		if (list1[i][1].targets != undefined && list1[i][1].targets.length > 0) {
-			// console.log("source:");
-			// console.log(list1[i]);
 			if (list1_partners[list1[i][1].glide.id] == undefined) {
 				list1_partners[list1[i][1].id] = list1[i];
-				// console.log(list1[i][1].id, "added");
 			} else {
-				// console.log("pair found: ", list1[i][1].id, "and", list1[i][1].glide.id);
-				// console.log(list1[i]);
-				// console.log(list1_partners[list1[i][1].glide.id]);
-
 				var node_length = list1[i][1].node.length;
 
 				var source_mark1 = list1[i];
@@ -277,40 +270,29 @@ Graph.prototype.bfs = function(list1, search_limits) {
 					source_end_pos = node_length - source_mark1[0];
 					end_port = source_mark1[1];
 				}
-				// console.log("source_start_pos: ", source_start_pos);
-				// console.log("source_end_pos: ", source_end_pos);
+
 				if (source_start_pos > source_end_pos) {
 					console.log("ERROR: start greater than end for source positions");
 				}
-				// console.log(start_port.targets.length);
 
 				for (var t in start_port.targets) {
-					// console.log("target:");
-					// console.log(start_port.targets[t]);
-					// for (var s in end_port.targets) {
 					var s = t; 
 					if (end_port.targets[s][2] == start_port.targets[t][2]) {
-						// console.log("matching targets: ", t, s);
 						var target_start_pos = start_port.targets[t][0];
 						var target_end_pos = node_length - end_port.targets[s][0];
 
-						// console.log("target_start_pos: ", target_start_pos);
-						// console.log("target_end_pos: ", target_end_pos);
 						if (target_start_pos > target_end_pos) {
 							console.log("ERROR: start greater than end for target positions");
 						}
 
 						if (target_start_pos > source_end_pos) {
 							// Target is after source
-							// console.log("target is after source");
 							priority_queue.queue({"distance":target_start_pos-source_end_pos,"next_port":0,"path":[], "source_id":list1[i][2], "target_id":start_port.targets[t][2]});
 						} else if (source_start_pos > target_end_pos) {
 							// Source is after target
-							// console.log("source is after target");
 							priority_queue.queue({"distance":source_start_pos-target_end_pos,"next_port":0,"path":[], "source_id":list1[i][2], "target_id":start_port.targets[t][2]});
 						} else {
 							// Overlap
-							// console.log("overlap");
 							if (search_limits == undefined) {
 								return {"distance":0,"path":[], "source_id":list1[i][2],"target_id":start_port.targets[t][2]};
 							}
@@ -325,8 +307,6 @@ Graph.prototype.bfs = function(list1, search_limits) {
 		}
 
 		priority_queue.queue({"distance":list1[i][0],"next_port":list1[i][1],"path":[list1[i][1]], "source_id":list1[i][2]});	
-		// console.log("PUSH:");
-		// console.log({"distance":list1[i][0],"next_port":list1[i][1],"path":[list1[i][1]]});
 		list1[i][1].visited = true;
 	}
 	
@@ -430,7 +410,6 @@ Graph.prototype.count_connected_components = function() {
 
 Graph.prototype.binary_search = function(chrom,pos,i,j) {
 	var mid = Math.round((i+j)/2);
-	// console.log("pos=",pos,", i=", i, " j=",j,"mid=", mid);
 	if (i == j) {
 		return i;
 	}
@@ -475,9 +454,6 @@ Graph.prototype.nearby_port = function(chrom,pos,nearest_breakpoint) {
 	if (port == "s") {
 		relative_position = pos - nearest_breakpoint;
 	} else {
-		// console.log("node_length: ", this.nodes[node_name].length);
-		// console.log("pos: ", pos);
-		// console.log("nearest_breakpoint: ", nearest_breakpoint);
 		relative_position = this.nodes[node_name].length - (nearest_breakpoint-pos)
 	}
 
@@ -485,7 +461,6 @@ Graph.prototype.nearby_port = function(chrom,pos,nearest_breakpoint) {
 }
 
 Graph.prototype.point_by_genomic_location = function(chrom,pos) {
-	
 	// using a dictionary by chromosome containing sorted lists of the breakpoint locations for binary searching
 	if (this.genomic_sorted_positions.hasOwnProperty(chrom)) {
 		var index = this.binary_search(chrom, pos, 0, this.genomic_sorted_positions[chrom].length-1);
@@ -562,14 +537,9 @@ Graph.prototype.details_from_path = function(results) {
 	output.path_chromosomes = [];
 	output.path_chromosomes.push(current_port.node.genomic_coordinates.chrom);
 	for (var i = 1; i < output.path.length; i++) {
-		// console.log(i);
-		// console.log(output.path[i]);
 		for (var j = 0; j < current_port.edges.length; j++) {
-			// console.log("j = ", j);
 			var item = current_port.edges[j];
 			if (item.port.id == output.path[i].glide.id) {
-				// console.log(item.port.id);
-				// console.log(output.path[i].glide.id);
 				output.edges.push(item.edge);
 				if (item.edge.variant_name != null) {
 					output.variant_names.push(item.edge.variant_name);
@@ -586,24 +556,17 @@ Graph.prototype.details_from_path = function(results) {
 }
 
 Graph.prototype.gene_fusion = function(gene1,gene2, max_distance) {
-	// var gene1 = {"name":"test1","chromosome":"1","start":50080,"end":50370};
-	// var gene2 = {"name":"test2","chromosome":"2","start":1340, "end":1010};
-
 	if (gene1.name == undefined || gene2.name == undefined) {
 		throw "Gene annotion does not have key: name";
-		return null;
 	}
 	if (gene1.chromosome == undefined || gene2.chromosome == undefined) {
 		throw "Gene annotion does not have key: chromosome";
-		return null;
 	}
 	if (gene1.start == undefined || gene2.start == undefined) {
 		throw "Gene annotion does not have key: start";
-		return null;
 	}
 	if (gene1.end == undefined || gene2.end == undefined) {
 		throw "Gene annotion does not have key: end";
-		return null;
 	}
 
 	var list1 = this.port_list_by_interval(gene1);
@@ -704,5 +667,3 @@ Graph.prototype.search = function(interval_list_1, interval_list_2,run_starts_in
 		}
 	}
 }
-
-

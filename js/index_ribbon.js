@@ -1,6 +1,5 @@
 // URLs
-var URL_SANDBOX = "https://api.genomeribbon.com/v0";
-var URL_SANDBOX_STORE = URL_SANDBOX + "/store/";
+var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
 
 // Calculations for drawing and spacing out elements on the screen
 var _ribbon_padding = {};
@@ -51,10 +50,7 @@ _ribbon_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that
 _ribbon_static.read_sort_options = [
   { id: "original", description: "Original order" },
   { id: "longest", description: "Position of longest alignment" },
-  {
-    id: "priamry",
-    description: "Position of primary alignment in SAM/BAM entry",
-  },
+  { id: "primary", description: "Position of primary alignment in SAM/BAM entry" },
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
 ];
@@ -62,10 +58,7 @@ _ribbon_static.read_orientation_options = [
   { id: "original", description: "Original orientation" },
   { id: "reverse", description: "Reverse orientation" },
   { id: "longest", description: "Orientation of longest alignment" },
-  {
-    id: "primary",
-    description: "Orientation of alignment in selected locus (SAM/BAM)",
-  },
+  { id: "primary", description: "Orientation of alignment in selected locus (SAM/BAM)" },
 ];
 _ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -73,81 +66,9 @@ _ribbon_static.color_schemes = [
   { name: "Color scheme 3", colors: 2 },
 ];
 _ribbon_static.color_collections = [
-  [
-    "#ff9896",
-    "#c5b0d5",
-    "#8c564b",
-    "#e377c2",
-    "#bcbd22",
-    "#9edae5",
-    "#c7c7c7",
-    "#d62728",
-    "#ffbb78",
-    "#98df8a",
-    "#ff7f0e",
-    "#f7b6d2",
-    "#c49c94",
-    "#dbdb8d",
-    "#aec7e8",
-    "#17becf",
-    "#2ca02c",
-    "#7f7f7f",
-    "#1f77b4",
-    "#9467bd",
-  ],
-  [
-    "#ffff00",
-    "#ad0000",
-    "#bdadc6",
-    "#00ffff",
-    "#e75200",
-    "#de1052",
-    "#ffa5a5",
-    "#7b7b00",
-    "#7bffff",
-    "#008c00",
-    "#00adff",
-    "#ff00ff",
-    "#ff0000",
-    "#ff527b",
-    "#84d6a5",
-    "#e76b52",
-    "#8400ff",
-    "#6b4242",
-    "#52ff52",
-    "#0029ff",
-    "#ffffad",
-    "#ff94ff",
-    "#004200",
-    "gray",
-    "black",
-  ],
-  [
-    "#E41A1C",
-    "#A73C52",
-    "#6B5F88",
-    "#3780B3",
-    "#3F918C",
-    "#47A266",
-    "#53A651",
-    "#6D8470",
-    "#87638F",
-    "#A5548D",
-    "#C96555",
-    "#ED761C",
-    "#FF9508",
-    "#FFC11A",
-    "#FFEE2C",
-    "#EBDA30",
-    "#CC9F2C",
-    "#AD6428",
-    "#BB614F",
-    "#D77083",
-    "#F37FB8",
-    "#DA88B3",
-    "#B990A6",
-    "#999999",
-  ],
+  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
+  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffffad", "#ff94ff", "#004200", "gray", "black" ],
+  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
 ];
 _ribbon_static.min_indel_size_for_region_view = 50;
 _ribbon_static.show_indels_as_options = [
@@ -651,30 +572,9 @@ d3.select("#margin_to_merge_ref_intervals").on("keyup", function () {
   select_read();
 });
 
-// var image_URIs = [];
-
-// function wait_for_images(callback, counter) {
-// 	if (image_URIs.length == 2 || counter > 10) {
-// 		callback()
-// 	} else {
-// 		window.setTimeout(function () {wait_for_images(callback, counter+1)},300);
-// 	}
-// }
-
 d3.select("#generate_permalink_button").on("click", function () {
   write_permalink();
-  // create_image_URIs();
-  // wait_for_images(write_permalink,0);
 });
-
-// function create_image_URIs() {
-// 	svgAsPngUri(document.getElementById("svg_single_read"), {backgroundColor: 'white'}, function(uri) {
-// 		image_URIs.push(uri);
-// 	});
-// 	svgAsPngUri(document.getElementById("svg_multi_read"), {backgroundColor: 'white'}, function(uri) {
-// 		image_URIs.push(uri);
-// 	});
-// }
 
 function get_name() {
   var permalink_name = d3.select("#permalink_name").property("value");
@@ -822,7 +722,7 @@ function draw_chunk_ref() {
         d.filtered_cum_pos + d.size / 2
       );
       var y = _positions.multiread.ref_block.y - _ribbon_padding.text * 3;
-      show_tooltip(text, x, y, _ribbon_svg2);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg2);
     });
 
   ref_blocks
@@ -929,7 +829,7 @@ function draw_chunk_ref_intervals() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.multiread.ref_intervals.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg2);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg2);
     })
     .on("mouseout", function (d) {
       _ribbon_svg2.selectAll("g.tip").remove();
@@ -1073,7 +973,7 @@ function draw_chunk_features() {
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
               _ribbon_padding.text;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1152,7 +1052,7 @@ function draw_chunk_features() {
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
               _ribbon_padding.text;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1272,7 +1172,7 @@ function draw_chunk_variants() {
             (_positions.multiread.variants.rect_height * d.offset) /
               max_overlaps -
             _ribbon_padding.text;
-          show_tooltip(text, x, y, _ribbon_svg2);
+          show_ribbon_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
           _ribbon_svg2.selectAll("g.tip").remove();
@@ -1448,7 +1348,7 @@ function draw_chunk_variants() {
           }
           var x = (d.cum_pos1 + d.cum_pos2) / 2;
           var y = _positions.multiread.variants.y - _ribbon_padding.text;
-          show_tooltip(text, x, y, _ribbon_svg2);
+          show_ribbon_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
           _ribbon_svg2.selectAll("g.tip").remove();
@@ -1461,18 +1361,6 @@ function draw_chunk_alignments() {
   if (_Chunk_alignments.length == 0) {
     return;
   }
-
-  // // Focal region
-  // if (_focal_region != undefined) {
-  // 	_svg2.append("rect").attr("class","focal_region")
-  // 	.attr("x",function(d) { return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start)); })
-  // 	.attr("y",_positions.multiread.ref_intervals.y)
-  // 	.attr("width", function(d) {return _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.end)) - _scales.chunk_ref_interval_scale(map_chunk_ref_interval(_focal_region.chrom,_focal_region.start));})
-  // 	.attr("height", _positions.multiread.ref_intervals.height )
-  // 	.attr("fill","none")
-  // 	.style("stroke-width",5)
-  // 	.style("stroke", "black");
-  // }
 
   if (_Additional_ref_intervals.length > 0) {
     for (var i in _Additional_ref_intervals) {
@@ -1718,7 +1606,7 @@ function draw_chunk_alignments() {
         );
         var y =
           d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
-        show_tooltip(text, x, y, _ribbon_svg2);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
         _ribbon_svg2.selectAll("g.tip").remove();
@@ -1781,7 +1669,7 @@ function draw_chunk_alignments() {
         );
         var y =
           d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
-        show_tooltip(text, x, y, _ribbon_svg2);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
         _ribbon_svg2.selectAll("g.tip").remove();
@@ -1857,7 +1745,7 @@ function draw_chunk_alignments() {
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
               _ribbon_tooltip.height;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1918,7 +1806,7 @@ function draw_chunk_alignments() {
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
               _ribbon_tooltip.height;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -2439,69 +2327,6 @@ function consolidate_records(records) {
   }
 }
 
-function sam_input_changed(sam_input_value) {
-  _ribbon_settings.current_input_type = "sam";
-  // Check match refs from region view checkbox by default
-  _ribbon_settings.ref_match_chunk_ref_intervals = true;
-  d3.select("#ref_match_region_view").property("checked", true);
-  refresh_ui_for_new_dataset();
-  reset_settings_for_new_dataset();
-
-  clear_data();
-  clear_coords_input();
-  remove_coords_file();
-  remove_bam_file();
-
-  var input_text = sam_input_value.split("\n");
-  _Ref_sizes_from_header = {};
-  _Chunk_alignments = [];
-  var records = [];
-  for (var i = 0; i < input_text.length; i++) {
-    var columns = input_text[i].split(/\s+/);
-    if (columns[0][0] == "@") {
-      if (columns[0].substr(0, 3) == "@SQ") {
-        _Ref_sizes_from_header[
-          columns[1].split(":")[columns[1].split(":").length - 1]
-        ] = parseInt(columns[2].split(":")[columns[2].split(":").length - 1]);
-      }
-    } else if (columns.length >= 3) {
-      if (columns.length >= 6) {
-        var parsed_line = parse_sam_coordinates(input_text[i]);
-        if (parsed_line != undefined) {
-          records.push(parsed_line);
-        }
-      } else {
-        user_message_ribbon(
-          "Error",
-          "Lines from a sam file must have at least 6 columns, and must contain SA tags in order to show secondary/supplementary alignments."
-        );
-        return;
-      }
-    }
-  }
-
-  _Chunk_alignments = consolidate_records(records);
-
-  _focal_region = undefined;
-
-  refresh_visibility();
-  chunk_changed();
-  d3.select("#text_region_output").html("Showing sam input");
-}
-
-$("#sam_input").bind("input propertychange", function () {
-  _ribbon_settings.alignment_info_text = "Sam from text field";
-  set_alignment_info_text();
-  sam_input_changed(this.value);
-});
-
-d3.select("#sam_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Create a sam file using an aligner such as BWA. Upload it here if it a small file (less than 10MB) or paste a few lines from the sam file into the text box. For larger files, load it as a bam file instead."
-  );
-});
-
 d3.select("#bam_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
@@ -2519,14 +2344,14 @@ d3.select("#coords_info_icon").on("click", function () {
 d3.selectAll(".bed_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
-    "Paste or upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
+    "Upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
   );
 });
 
 d3.selectAll(".vcf_info_icon").on("click", function () {
   user_message_ribbon(
     "Instructions",
-    "Paste or upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
+    "Upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
   );
 });
 
@@ -2564,7 +2389,6 @@ function coords_input_changed(coords_input_value) {
   reset_settings_for_new_dataset();
 
   clear_data();
-  clear_sam_input();
   remove_bam_file();
 
   var input_text = coords_input_value.split("\n");
@@ -2614,11 +2438,6 @@ function coords_input_changed(coords_input_value) {
   chunk_changed();
   d3.select("#text_region_output").html("Showing coordinate input");
 }
-
-$("#coords_input").bind("input propertychange", function () {
-  remove_coords_file();
-  coords_input_changed(this.value);
-});
 
 function calculate_type_colors(variant_list) {
   var variant_types = {};
@@ -2952,7 +2771,6 @@ function bed_input_changed(bed_input) {
 
   user_message_ribbon("Info", "Loaded " + _Variants.length + " bed entries");
 
-  clear_vcf_input();
   update_variants();
   draw_region_view();
   refresh_ui_elements();
@@ -3042,11 +2860,6 @@ function update_bedpe() {
   show_bedpe_table();
 }
 
-$("#bed_input").bind("input propertychange", function () {
-  remove_variant_file();
-  bed_input_changed(this.value);
-});
-
 function update_features() {
   var color_calculations = calculate_type_colors(_Features_for_ribbon);
   _ribbon_scales.feature_color_scale
@@ -3119,34 +2932,15 @@ function vcf_input_changed(vcf_input) {
   }
 
   user_message_ribbon("Info", "Loaded " + _Variants.length + " vcf entries");
-  clear_bed_input();
   update_variants();
   draw_region_view();
   refresh_ui_elements();
-}
-
-$("#vcf_input").bind("input propertychange", function () {
-  remove_variant_file();
-  vcf_input_changed(this.value);
-});
-
-function remove_variant_file() {
-  // For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
-  d3.select("#variant_file").property("value", "");
 }
 
 function run_ribbon() {
   resize_ribbon_views();
   refresh_visibility();
   user_message_ribbon("Instructions", "Start by loading alignments below");
-}
-
-function dict_length(dictionary) {
-  var num = 0;
-  for (var k in dictionary) {
-    num++;
-  }
-  return num;
 }
 
 function all_read_analysis() {
@@ -4612,12 +4406,9 @@ function refresh_visibility() {
   if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
     d3.select("#svg2_panel").style("visibility", "visible");
     d3.select("#start_panel").style("display", "none");
-
-    // d3.select("#image_capture_test_landing").style("display","none");
   } else {
     d3.select("#svg2_panel").style("visibility", "hidden");
     d3.select("#start_panel").style("display", "block");
-    // d3.select("#image_capture_test_landing").style("display","block");
   }
 
   if (
@@ -4684,8 +4475,6 @@ function reset_svg2() {
     .attr("y", _layout.svg2_height / 2)
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "middle");
-  // .attr("fill","orange")
-  // .text("No reads in the bam file at this location");
 
   d3.select("#svg2_panel").style("visibility", "visible");
 }
@@ -4866,7 +4655,7 @@ function draw_dotplot() {
         _positions.dotplot.canvas.y +
         _positions.dotplot.canvas.height +
         _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -4896,13 +4685,11 @@ function draw_dotplot() {
   }
 
   if (flip == true) {
-    // _scales.read_scale.range([ _positions.read.x+_positions.read.width, _positions.read.x]); // from ribbon plot
     _ribbon_scales.read_scale.range([
       _positions.read.top,
       _positions.read.bottom,
     ]);
   } else {
-    // _scales.read_scale.range([_positions.read.x, _positions.read.x+_positions.read.width]); // from ribbon plot
     _ribbon_scales.read_scale.range([
       _positions.read.bottom,
       _positions.read.top,
@@ -4945,7 +4732,7 @@ function draw_dotplot() {
         _ribbon_padding.text * -3 +
         _positions.dotplot.canvas.y +
         _ribbon_scales.read_scale((d.qs + d.qe) / 2);
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5059,7 +4846,6 @@ function adjust_singleread_layout() {
       _layout.svg_height *
       _ribbon_static.singleread_layout_fractions.bottom_bar,
   };
-  // total_header += _static.singleread_layout_fractions.bottom_bar;
 }
 
 function draw_singleread_header() {
@@ -5124,7 +4910,7 @@ function draw_singleread_header() {
       var text = d.chrom + ": " + bp_format(d.size);
       var x = _ribbon_scales.whole_ref_scale(d.cum_pos + d.size / 2);
       var y = _positions.singleread.ref_block.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5154,9 +4940,6 @@ function draw_singleread_header() {
     .style("text-anchor", "middle")
     .attr("dominant-baseline", "bottom")
     .style("font-size", _positions.fontsize);
-  // .attr("height", _positions.singleread.ref_block.height)
-  // .attr("width", function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos));})
-  // .attr("font-size",function(d) {return (_scales.whole_ref_scale(d.cum_pos + d.size)-_scales.whole_ref_scale(d.cum_pos))/2;});
 
   // Zoom into reference intervals where the read maps:
   _ribbon_svg1
@@ -5199,7 +4982,7 @@ function draw_singleread_header() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.singleread.top_bar.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5241,7 +5024,7 @@ function draw_singleread_header() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.singleread.bottom_bar.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5328,7 +5111,7 @@ function draw_singleread_header() {
           _positions.singleread.variants.y +
           _positions.singleread.ref_intervals.height / max_overlaps +
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5463,7 +5246,7 @@ function draw_singleread_header() {
         }
       })
       .attr("d", loop_path_generator)
-      .style("stroke", "black") // function(d){return _scales.variant_color_scale(d.type)}) // colors are hard to see
+      .style("stroke", "black")
       .on("mouseover", function (d) {
         var text = d.name;
         if (d.type != undefined) {
@@ -5471,7 +5254,7 @@ function draw_singleread_header() {
         }
         var x = (d.cum_pos1 + d.cum_pos2) / 2;
         var y = _positions.singleread.variants.y - _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5529,7 +5312,7 @@ function draw_singleread_features() {
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5608,7 +5391,7 @@ function draw_singleread_features() {
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5719,7 +5502,7 @@ function draw_ribbons() {
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5780,7 +5563,7 @@ function draw_ribbons() {
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5828,7 +5611,7 @@ function draw_ribbons() {
       var text = Math.abs(d.qe - d.qs) + " bp";
       var x = _ribbon_scales.read_scale((d.qs + d.qe) / 2);
       var y = _positions.read.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5982,9 +5765,6 @@ function load_json_bam(header) {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
 
-  clear_sam_input();
-  clear_coords_input();
-
   clear_data();
 
   record_bam_header(header);
@@ -6053,7 +5833,7 @@ function write_permalink() {
 
   jQuery.ajax({
     type: "POST",
-    url: URL_SANDBOX_STORE,
+    url: URL_API_STORE,
     data: JSON.stringify({
       name: permalink_name,
       ribbon: generate_permalink_data(post_data),
@@ -6089,7 +5869,7 @@ function read_permalink(id) {
   user_message_ribbon("Info", "Loading data from permalink");
 
   jQuery.ajax({
-    url: URL_SANDBOX_STORE + id,
+    url: URL_API_STORE + id,
     success: function (data) {
       // Decompress
       file_content = JSON.parse(
@@ -6116,17 +5896,6 @@ function read_permalink(id) {
           "Cannot read permalink, returned type is not object or string"
         );
       }
-
-      // // If images
-      // if (json_data["ribbon_perma"]["images"] != undefined) {
-      // 	console.log(json_data["ribbon_perma"]["images"].length);
-      // 	console.log(json_data["ribbon_perma"]["images"][0].length);
-      // 	console.log(json_data["ribbon_perma"]["images"][1].length);
-      // 	d3.select("#image_capture_test_landing")
-      // 		.append("img").property("src", json_data["ribbon_perma"]["images"][0]);
-      // 	d3.select("#image_capture_test_landing")
-      // 		.append("img").property("src", json_data["ribbon_perma"]["images"][1]);
-      // }
 
       // Alignments
       if (json_data["ribbon_perma"] != undefined) {
@@ -6219,7 +5988,6 @@ function read_permalink(id) {
               "JSON object has bam, but bam does not contain key: header.sq"
             );
           }
-          // json_data["bam"]["records"] is a list of records fitting parse_bam_record()
           if (json_data["bam"]["records"] != undefined) {
             use_fetched_data(json_data["bam"]["records"]);
           } else {
@@ -6229,8 +5997,6 @@ function read_permalink(id) {
           }
         } else if (json_data["bam_url"] != undefined) {
           read_bam_url(json_data["bam_url"]);
-        } else if (json_data["sam"] != undefined) {
-          sam_input_changed(json_data["sam"]);
         }
 
         if (json_data["bedpe"] != undefined) {
@@ -6278,7 +6044,8 @@ function open_bedpe_file(event) {
     user_message_ribbon("Error", "File extension must be .bedpe");
   }
 }
-function open_variant_file(event) {
+
+function open_variant_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
@@ -6290,7 +6057,6 @@ function open_variant_file(event) {
     reader.readAsText(this.files[0]);
     reader.onload = function (event) {
       raw_data = event.target.result;
-      clear_vcf_input();
       vcf_input_changed(raw_data);
       variants_just_loaded();
     };
@@ -6303,7 +6069,6 @@ function open_variant_file(event) {
     reader.readAsText(this.files[0]);
     reader.onload = function (event) {
       raw_data = event.target.result;
-      clear_bed_input();
       bed_input_changed(raw_data);
       variants_just_loaded();
     };
@@ -6316,7 +6081,6 @@ function open_variant_file(event) {
 }
 
 function features_just_loaded() {
-  // refresh_visibility();
   d3.select("#collapsible_feature_upload_box").attr(
     "class",
     "panel-collapse collapse"
@@ -6404,7 +6168,7 @@ d3.select("#feature_bed_file").on("change", open_feature_bed_file);
 // == Load coords file
 // ===========================================================================
 
-function open_coords_file(event) {
+function open_coords_file() {
   var raw_data;
   var reader = new FileReader();
 
@@ -6415,7 +6179,6 @@ function open_coords_file(event) {
   reader.readAsText(this.files[0]);
   reader.onload = function (event) {
     raw_data = event.target.result;
-    clear_coords_input();
     coords_input_changed(raw_data);
     d3.select("#collapsible_alignment_input_box").attr(
       "class",
@@ -6428,38 +6191,6 @@ function open_coords_file(event) {
 }
 
 d3.select("#coords_file").on("change", open_coords_file);
-
-function open_sam_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
-  if (this.files[0].size > 10000000) {
-    user_message_ribbon(
-      "Error",
-      "File larger than 10MB. Please choose a smaller file or load it as a bam file instead"
-    );
-    return;
-  }
-  if (this.files[0].size > 1000000) {
-    user_message_ribbon("Info", "Loading large file may take a little while.");
-  }
-
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    clear_sam_input();
-    sam_input_changed(raw_data);
-    d3.select("#collapsible_alignment_input_box").attr(
-      "class",
-      "panel-collapse collapse"
-    );
-  };
-
-  _ribbon_settings.alignment_info_text = "Sam from file: " + this.files[0].name;
-  set_alignment_info_text();
-}
-
-d3.select("#sam_file").on("change", open_sam_file);
 
 // ===========================================================================
 // == Load bam file
@@ -6510,21 +6241,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
   }
 }
 
-function clear_sam_input() {
-  d3.select("#sam_input").property("value", "");
-}
-
-function clear_coords_input() {
-  d3.select("#coords_input").property("value", "");
-}
-function clear_bed_input() {
-  d3.select("#bed_input").property("value", "");
-}
-
-function clear_vcf_input() {
-  d3.select("#vcf_input").property("value", "");
-}
-
 function bam_loaded() {
   _ribbon_settings.current_input_type = "bam";
 
@@ -6533,9 +6249,6 @@ function bam_loaded() {
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
-
-  clear_sam_input();
-  clear_coords_input();
 
   clear_data();
 
@@ -6631,10 +6344,6 @@ function remove_bam_file() {
   // For when sam input changes, clear bam file to prevent confusion and enable switching back to the bam file
   d3.select("#bam_file").property("value", "");
   d3.select("#region_selector_panel").style("display", "none");
-}
-function remove_coords_file() {
-  // For when sam input or coords text input changes, clear bam file to prevent confusion and enable switching back to the bam file
-  d3.select("#coords_file").property("value", "");
 }
 
 // ===========================================================================
@@ -6827,7 +6536,6 @@ function region_submitted(event) {
     // Correct any issues with coordinates
     d3.select("#region_chrom").property("value", chrom);
     d3.select("#region_start").property("value", start);
-    // d3.select("#region_end").property("value",end);
 
     flexible_bam_fetch([{ chrom: chrom, start: start, end: end }]);
 
@@ -6851,7 +6559,6 @@ d3.select("#region_start").on("keyup", function () {
     region_submitted();
   }
 });
-// d3.select("#region_end").on("keyup",function(){ if (d3.event.keyCode == 13) {region_submitted()} });
 
 function submit_bam_url() {
   var url = d3.select("#bam_url_input").property("value");
@@ -6859,11 +6566,8 @@ function submit_bam_url() {
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
 
-window.addEventListener("beforeunload", function (e) {
-  var confirmationMessage = "Leave Ribbon?";
-
-  (e || window.event).returnValue = confirmationMessage; //Gecko + IE
-  return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+window.addEventListener("beforeunload", function (event) {
+  event.preventDefault();
 });
 
 // ===========================================================================
@@ -7054,22 +6758,13 @@ function screenshot_individual_reads() {
   _index_within_read_index_list = 0;
   load_next_read();
 }
-// Thanks to http://stackoverflow.com/questions/2897619/using-html5-javascript-to-generate-and-save-a-file
-function download(filename, text) {
-  var pom = document.createElement("a");
-  pom.setAttribute(
-    "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(text)
-  );
-  pom.setAttribute("download", filename);
 
-  if (document.createEvent) {
-    var event = document.createEvent("MouseEvents");
-    event.initEvent("click", true, true);
-    pom.dispatchEvent(event);
-  } else {
-    pom.click();
-  }
+function download(filename, text) {
+  const blob = new Blob([text]);
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
 }
 
 function create_and_download_info(num_split) {

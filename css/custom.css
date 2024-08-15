@@ -63,10 +63,6 @@ hr {
   padding: 1vmin 1vmin 0vmin 1vmin;
 }
 
-/*#region_box {
-	padding: 2vmin 2vmin 2vmin 2vmin;
-}*/
-
 .tiny_input {
   width: 15%;
 }
@@ -95,17 +91,6 @@ svg {
   font-family: "Lato", "Helvetica";
 }
 
-#sam_input,
-#coords_input,
-#bed_input,
-#vcf_input {
-  padding: 1vmin 1vmin 1vmin 1vmin;
-  overflow-y: scroll;
-  resize: none;
-  white-space: nowrap;
-}
-
-#sam_info_icon,
 #coords_info_icon,
 #bam_info_icon,
 .bed_info_icon,
@@ -178,9 +163,7 @@ text {
 .settings_table table,
 .settings_table th,
 .settings_table td {
-  /* top right bottom left */
   padding: 0.2vmin 0.2vmin 0.2vmin 0.2vmin;
-  border: 0; /*.2px solid blue;*/
 }
 
 div.input-group {
@@ -190,7 +173,6 @@ div.input-group {
 .table_title {
   text-align: center;
   font-weight: 900;
-  /*font-size: 2vmin;*/
 }
 
 #ribbon_vs_dotplot_container,
@@ -219,7 +201,6 @@ div.input-group {
 textarea #notes {
   padding: 1vmin 1vmin 1vmin 1vmin;
   overflow: scroll;
-  /*word-wrap: break-word;*/
 }
 
 rect.variants {

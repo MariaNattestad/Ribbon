@@ -4,7 +4,7 @@ const fs = require('fs');
 const pako = require('pako');
 
 if(process.argv.length < 4) {
-    console.log('Usage: node permalink.js ../path/to/json "Permalink Description"');
+    console.log('Usage: node create-permalink.js ../path/to/json "Permalink Description"');
     return;
 }
 

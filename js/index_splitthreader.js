@@ -12,81 +12,9 @@ var _splitthreader_padding = {};
 
 var _splitthreader_static = {};
 _splitthreader_static.color_collections = [
-  [
-    "#E41A1C",
-    "#A73C52",
-    "#6B5F88",
-    "#3780B3",
-    "#3F918C",
-    "#47A266",
-    "#53A651",
-    "#6D8470",
-    "#87638F",
-    "#A5548D",
-    "#C96555",
-    "#ED761C",
-    "#FF9508",
-    "#FFC11A",
-    "#FFEE2C",
-    "#EBDA30",
-    "#CC9F2C",
-    "#AD6428",
-    "#BB614F",
-    "#D77083",
-    "#F37FB8",
-    "#DA88B3",
-    "#B990A6",
-    "#999999",
-  ],
-  [
-    "#ffff00",
-    "#ad0000",
-    "#bdadc6",
-    "#00ffff",
-    "#e75200",
-    "#de1052",
-    "#ffa5a5",
-    "#7b7b00",
-    "#7bffff",
-    "#008c00",
-    "#00adff",
-    "#ff00ff",
-    "#ff0000",
-    "#ff527b",
-    "#84d6a5",
-    "#e76b52",
-    "#8400ff",
-    "#6b4242",
-    "#52ff52",
-    "#0029ff",
-    "#ffcc66",
-    "#ff94ff",
-    "#004200",
-    "gray",
-    "black",
-  ],
-  [
-    "#ff9896",
-    "#c5b0d5",
-    "#8c564b",
-    "#e377c2",
-    "#bcbd22",
-    "#9edae5",
-    "#c7c7c7",
-    "#d62728",
-    "#ffbb78",
-    "#98df8a",
-    "#ff7f0e",
-    "#f7b6d2",
-    "#c49c94",
-    "#dbdb8d",
-    "#aec7e8",
-    "#17becf",
-    "#2ca02c",
-    "#7f7f7f",
-    "#1f77b4",
-    "#9467bd",
-  ],
+  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
+  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffcc66", "#ff94ff", "#004200", "gray", "black" ],
+  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
 ];
 _splitthreader_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -117,6 +45,8 @@ _splitthreader_settings.show_gene_types = {};
 _splitthreader_settings.show_variant_types = {};
 _splitthreader_settings.show_local_gene_names = true;
 _splitthreader_settings.color_index = 0;
+// Updated 2024: there's only one coverage, so we'll use "segmented" in the code but
+// it's just whatever the user loads.
 _splitthreader_settings.segment_copy_number = "segmented";
 _splitthreader_settings.adaptive_coverage_scaling = true;
 _splitthreader_settings.min_variant_size = -1;
@@ -388,36 +318,6 @@ d3.select("#show_features").on("change", function () {
   draw_features("bottom");
 });
 
-// Updated 2024: there's only one coverage, so we'll use "segmented" in the code but
-// it's just whatever the user loads.
-// d3.select("#show_segmented_coverage").on("change", function () {
-//   if (d3.event.target.checked) {
-//     _settings.segment_copy_number = "segmented";
-//   } else {
-//     _settings.segment_copy_number = "unsegmented";
-//   }
-
-//   var signs = ["top", "bottom"];
-//   for (var i in signs) {
-//     var top_or_bottom = signs[i];
-//     if (
-//       _Coverage_by_chromosome[_settings.segment_copy_number][
-//         _chosen_chromosomes[top_or_bottom]
-//       ] == undefined
-//     ) {
-//       _data_ready.coverage[_settings.segment_copy_number][
-//         top_or_bottom
-//       ] = false;
-//       if (_settings.segment_copy_number == "unsegmented") {
-//         load_coverage(_chosen_chromosomes[top_or_bottom], top_or_bottom);
-//       }
-//       wait_then_update(top_or_bottom);
-//     } else {
-//       update_coverage(top_or_bottom);
-//     }
-//   }
-// });
-
 d3.select("#publication_style_plot_checkbox").on("change", function () {
   _splitthreader_settings.publication_style_plot = d3.event.target.checked;
   if (_splitthreader_settings.publication_style_plot) {
@@ -624,7 +524,7 @@ d3.selectAll(".categorization_parameter_input").on("keyup", function () {
 d3.select("#submit_fusion").on("click", submit_fusion);
 
 d3.select("#ribbon_path")
-  .property("value", "http://genomeribbon.com")
+  .property("value", "https://genomeribbon.com")
   .on("change", function () {
     set_ribbon_path(d3.event.target.value);
   });
@@ -969,15 +869,7 @@ function dragmove(d) {
 
   var now_x = current_x + d3.event.dx;
   var now_y = current_y + d3.event.dy;
-  // var now_x = d3.mouse(this)[0];
-  // var now_y = d3.mouse(this)[1];
-  // var current_x = d3.select(this).attr("transform")
-  // var current_y = d3.select(this).attr("y");
-
-  d3.select(this)
-    // .attr("x", function(d){ return (Number(current_x) + d3.event.dx)})
-    // .attr("y", function(d){ return (Number(current_y) + d3.event.dy)})
-    .attr("transform", "translate(" + now_x + "," + now_y + ")");
+  d3.select(this).attr("transform", "translate(" + now_x + "," + now_y + ")");
 }
 
 ////////////   Draw circos plot chromosome labels  ////////////
@@ -1019,7 +911,7 @@ function draw_circos() {
     .call(drag)
     .on("mouseover", function (d) {
       var text = "drag onto coverage plot to show";
-      show_tooltip(text, 0, 0, _circos_canvas);
+      show_splitthreader_tooltip(text, 0, 0, _circos_canvas);
     })
     .on("mouseout", function (d) {
       _circos_canvas.selectAll("g.tip").remove();
@@ -1435,8 +1327,6 @@ function draw_zoom_plot(top_or_bottom) {
 
   _zoom_behaviors[top_or_bottom]
     .x(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-    // .y(_scales.zoom_plots[top_or_bottom].y)
-    // .scaleExtent([1,50]) // 50 = Max number of pixels a genomic bin can be zoomed to (used to be 1 pixel per bin, this allows greater zooming to see variants even if coverage information doesn't go down below 1 pixel per bin)
     .duration(200)
     .on("zoom", zoom_handler)
     .center([
@@ -1736,10 +1626,7 @@ function reverse_chrom1_and_chrom2(d) {
   var tmp = reversed.strand1;
   reversed.strand1 = reversed.strand2;
   reversed.strand2 = tmp;
-  // Flip span counts around
-  // var tmp = reversed.span1;
-  // reversed.span1=reversed.span2;
-  // reversed.span2=tmp;
+
   return reversed;
 }
 
@@ -2079,7 +1966,6 @@ function draw_connections() {
           Math.abs(d.pos1 - d.pos2)
         );
     }
-    // ymid = y1 + loop_scale(Math.abs(d.pos1-d.pos2))*(Number(top_or_bottom=="top")*2-1),
 
     var direction1 = Number(d.strand1 == "-") * 2 - 1, // negative strands means the read is mappping to the right of the breakpoint
       direction2 = Number(d.strand2 == "-") * 2 - 1;
@@ -2137,7 +2023,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2177,7 +2063,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2203,7 +2089,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
         y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2230,7 +2116,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2256,7 +2142,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
         y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2406,7 +2292,7 @@ function draw_features(top_or_bottom) {
               _splitthreader_layout.zoom_plot.height -
               _splitthreader_padding.gene_offset / 2 +
               _splitthreader_padding.tooltip;
-        show_tooltip(text, x, y, _splitthreader_svg);
+        show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
       })
       .on("mouseout", function (d) {
         _splitthreader_svg.selectAll("g.tip").remove();
@@ -2475,7 +2361,7 @@ function draw_genes(top_or_bottom) {
               _splitthreader_layout.zoom_plot.height -
               _splitthreader_padding.gene_offset / 2 +
               _splitthreader_padding.tooltip;
-        show_tooltip(text, x, y, _splitthreader_svg);
+        show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
       })
       .on("mouseout", function (d) {
         _splitthreader_svg.selectAll("g.tip").remove();
@@ -2548,7 +2434,7 @@ function draw_genes(top_or_bottom) {
             _splitthreader_layout.zoom_plot.height -
             _splitthreader_padding.gene_offset / 2 +
             _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2709,9 +2595,6 @@ function highlight_gene_fusion(d) {
   highlight_gene(d.annotation2);
   jump_to_gene(d.annotation1, "top");
   jump_to_gene(d.annotation2, "bottom");
-
-  // select_chrom_for_zoom_plot(d.chrom1,"top");
-  // select_chrom_for_zoom_plot(d.chrom2,"bottom");
 
   user_message_splitthreader(
     "Info",
@@ -2929,8 +2812,7 @@ function make_variant_table() {
         "CNV_category",
         "category",
         "nearby_variant_count",
-      ]) // , "paired","neighborhood","simple"])
-      // .table_header(["chrom1","pos1","strand1","CNV_distance1","CNV_diff1","chrom2","pos2","strand2","CNV_distance2","CNV_diff2","variant_name","variant_type","split","size", "CNV_category", "category"]) // , "paired","neighborhood","simple"])
+      ])
       .num_rows_to_show(15)
       .show_advanced_filters(true)
       .click_function(choose_row)
@@ -3190,13 +3072,6 @@ function make_gene_type_table() {
       type_counts[_Annotation_data[i].type]++;
     }
   }
-  // type_counts["other"] = 0;
-  // for (var type in type_counts) {
-  // 	if (type_counts[type] < min_to_show_separately) {
-  // 		type_counts["other"] += type_counts[type];
-  // 		delete type_counts[type];
-  // 	}
-  // }
 
   // Put into list so we can sort it
   var data_for_table = [];
@@ -3257,10 +3132,6 @@ function thickness_of_connections(d) {
 
 function jump_to_location(chrom, pos, top_or_bottom) {
   select_chrom_for_zoom_plot(chrom, top_or_bottom);
-
-  // _scales.zoom_plots[top_or_bottom].x.domain([pos-10000,pos+10000]);
-  // _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom].event);
-  // _zoom_behaviors[top_or_bottom].translate([pos-10000,pos+10000]);
 
   var chrom_size = 0;
   for (var i in _Genome_data) {
@@ -3581,33 +3452,6 @@ function run_graph_search() {
     }
   }
 
-  // if (run_starts_individually) {
-  // 	for (var i in _Starting_intervals_for_search) {
-  // 		var result = _SplitThreader_graph.search([_Starting_intervals_for_search[i]], _Ending_intervals_for_search);
-  // 		if (result != null) {
-  // 			result.source = _Starting_intervals_for_search[result.source_id];
-  // 			result.target = _Ending_intervals_for_search[result.target_id];
-
-  // 			result.from = _Starting_intervals_for_search[result.source_id].gene;
-  // 			if (result.from == undefined) {
-  // 				result.from = _Starting_intervals_for_search[result.source_id].name;
-  // 			}
-  // 			result.from_type = _Starting_intervals_for_search[result.source_id].type;
-
-  // 			result.to = _Ending_intervals_for_search[result.target_id].gene;
-  // 			if (result.to == undefined) {
-  // 				result.to = _Ending_intervals_for_search[result.target_id].name;
-  // 			}
-  // 			result.to_type = _Ending_intervals_for_search[result.target_id].type;
-  // 			_Feature_search_results.push(result);
-  // 		}
-  // 	}
-  // } else {
-  // 	var result = _SplitThreader_graph.search(_Starting_intervals_for_search, _Ending_intervals_for_search);
-  // 	if (result != null) {
-  // 		_Feature_search_results.push(result);
-  // 	}
-  // }
   d3.selectAll(".show_after_graph_search").style("display", "inline");
   d3.select("#froms_matched_count").html(_Feature_search_results.length);
   d3.select("#total_froms_count").html(_Starting_intervals_for_search.length);
@@ -3865,8 +3709,6 @@ function show_statistics() {
       ).toFixed(2) +
       "%)"
   );
-
-  // d3.select("#statistics_landing").selectAll("p").data(d3.keys(_Statistics)).enter().append("p").html(function(d) {return d + ": " + Math.round(_Statistics[d])});
 }
 
 function analyze_copynumber() {
@@ -3892,17 +3734,7 @@ function analyze_copynumber() {
     weighted_total_copynumber += weighted_total_copynumber_this_chrom;
   }
 
-  // _Statistics.copynumber_by_chrom = mean_by_chrom;
-
   _Statistics.mean_copynumber = weighted_total_copynumber / total_bases;
-}
-
-function dict_length(dictionary) {
-  var num = 0;
-  for (var k in dictionary) {
-    num++;
-  }
-  return num;
 }
 
 function analyze_variants() {
@@ -3993,7 +3825,6 @@ function analyze_variants() {
     }
 
     // Categorize variants by whether other variants are nearby
-
     // 1. Add all individual breakpoints to a list, mark each with its original index in _Filtered_variant_data
 
     var break_list_by_chrom = [];
@@ -4050,7 +3881,6 @@ function analyze_variants() {
             variants_within_margin[break_list_by_chrom[chrom][walker].idx].push(
               break_list_by_chrom[chrom][walker].side
             );
-            // variants_within_margin[break_list_by_chrom[chrom][walker].idx] = break_list_by_chrom[chrom][walker].side;
           } else if (Math.abs(walker - current) == 1) {
             _Filtered_variant_data[
               break_list_by_chrom[chrom][current].idx
@@ -4152,18 +3982,7 @@ function analyze_variants() {
         unique_nearby_variants[j] = true;
       }
     }
-    _Filtered_variant_data[i].nearby_variant_count = dict_length(
-      unique_nearby_variants
-    );
-    // if (_Filtered_variant_data[i].nearby_variant_count == 0) {
-    // 	_Filtered_variant_data[i].neighborhood = "alone";
-    // } else if (_Filtered_variant_data[i].nearby_variant_count == 1) {
-    // 	_Filtered_variant_data[i].neighborhood = "1";
-    // } else if (_Filtered_variant_data[i].nearby_variant_count < 5) {
-    // 	_Filtered_variant_data[i].neighborhood = "under_5";
-    // } else {
-    // 	_Filtered_variant_data[i].neighborhood = "at_least_5";
-    // }
+    _Filtered_variant_data[i].nearby_variant_count = Object.keys(unique_nearby_variants).length;
   }
 
   for (var i in _Filtered_variant_data) {
@@ -4215,11 +4034,8 @@ function summarize_variants() {
   var column_title = "Variant neighborhood category";
   var row_title = "Copy number concordance category";
 
-  // var row_names = {};
-  // var column_names = {};
-
-  var row_names = ["matching", "partial", "non-matching", "neutral"]; //d3.keys(row_names);
-  var column_names = ["simple", "reciprocal", "solo", "crowded"]; //d3.keys(column_names);
+  var row_names = ["matching", "partial", "non-matching", "neutral"];
+  var column_names = ["simple", "reciprocal", "solo", "crowded"];
 
   var type_counts = {};
   for (var i in row_names) {
@@ -4235,8 +4051,6 @@ function summarize_variants() {
     if (type_counts[my_list[i][row_key]][my_list[i][column_key]] == undefined) {
       type_counts[my_list[i][row_key]][my_list[i][column_key]] = 0;
     }
-    // row_names[my_list[i][row_key]] = true;
-    // column_names[my_list[i][column_key]] = true;
     type_counts[my_list[i][row_key]][my_list[i][column_key]]++;
   }
 
