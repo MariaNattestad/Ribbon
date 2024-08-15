@@ -722,7 +722,7 @@ function draw_chunk_ref() {
         d.filtered_cum_pos + d.size / 2
       );
       var y = _positions.multiread.ref_block.y - _ribbon_padding.text * 3;
-      show_tooltip(text, x, y, _ribbon_svg2);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg2);
     });
 
   ref_blocks
@@ -829,7 +829,7 @@ function draw_chunk_ref_intervals() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.multiread.ref_intervals.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg2);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg2);
     })
     .on("mouseout", function (d) {
       _ribbon_svg2.selectAll("g.tip").remove();
@@ -973,7 +973,7 @@ function draw_chunk_features() {
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
               _ribbon_padding.text;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1052,7 +1052,7 @@ function draw_chunk_features() {
               (_positions.multiread.features.rect_height * d.offset) /
                 max_overlaps -
               _ribbon_padding.text;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1172,7 +1172,7 @@ function draw_chunk_variants() {
             (_positions.multiread.variants.rect_height * d.offset) /
               max_overlaps -
             _ribbon_padding.text;
-          show_tooltip(text, x, y, _ribbon_svg2);
+          show_ribbon_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
           _ribbon_svg2.selectAll("g.tip").remove();
@@ -1348,7 +1348,7 @@ function draw_chunk_variants() {
           }
           var x = (d.cum_pos1 + d.cum_pos2) / 2;
           var y = _positions.multiread.variants.y - _ribbon_padding.text;
-          show_tooltip(text, x, y, _ribbon_svg2);
+          show_ribbon_tooltip(text, x, y, _ribbon_svg2);
         })
         .on("mouseout", function (d) {
           _ribbon_svg2.selectAll("g.tip").remove();
@@ -1618,7 +1618,7 @@ function draw_chunk_alignments() {
         );
         var y =
           d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
-        show_tooltip(text, x, y, _ribbon_svg2);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
         _ribbon_svg2.selectAll("g.tip").remove();
@@ -1681,7 +1681,7 @@ function draw_chunk_alignments() {
         );
         var y =
           d3.select(this.parentNode).datum().read_y - _ribbon_tooltip.height;
-        show_tooltip(text, x, y, _ribbon_svg2);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg2);
       })
       .on("mouseout", function (d) {
         _ribbon_svg2.selectAll("g.tip").remove();
@@ -1757,7 +1757,7 @@ function draw_chunk_alignments() {
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
               _ribbon_tooltip.height;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -1818,7 +1818,7 @@ function draw_chunk_alignments() {
             var y =
               d3.select(this.parentNode.parentNode).datum().read_y -
               _ribbon_tooltip.height;
-            show_tooltip(text, x, y, _ribbon_svg2);
+            show_ribbon_tooltip(text, x, y, _ribbon_svg2);
           })
           .on("mouseout", function (d) {
             _ribbon_svg2.selectAll("g.tip").remove();
@@ -4680,7 +4680,7 @@ function draw_dotplot() {
         _positions.dotplot.canvas.y +
         _positions.dotplot.canvas.height +
         _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -4759,7 +4759,7 @@ function draw_dotplot() {
         _ribbon_padding.text * -3 +
         _positions.dotplot.canvas.y +
         _ribbon_scales.read_scale((d.qs + d.qe) / 2);
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -4938,7 +4938,7 @@ function draw_singleread_header() {
       var text = d.chrom + ": " + bp_format(d.size);
       var x = _ribbon_scales.whole_ref_scale(d.cum_pos + d.size / 2);
       var y = _positions.singleread.ref_block.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5013,7 +5013,7 @@ function draw_singleread_header() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.singleread.top_bar.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5055,7 +5055,7 @@ function draw_singleread_header() {
         d.cum_pos + (d.end - d.start) / 2
       );
       var y = _positions.singleread.bottom_bar.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();
@@ -5142,7 +5142,7 @@ function draw_singleread_header() {
           _positions.singleread.variants.y +
           _positions.singleread.ref_intervals.height / max_overlaps +
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5285,7 +5285,7 @@ function draw_singleread_header() {
         }
         var x = (d.cum_pos1 + d.cum_pos2) / 2;
         var y = _positions.singleread.variants.y - _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5343,7 +5343,7 @@ function draw_singleread_features() {
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5422,7 +5422,7 @@ function draw_singleread_features() {
           (_positions.singleread.features.rect_height * d.offset) /
             max_overlaps -
           _ribbon_padding.text;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5533,7 +5533,7 @@ function draw_ribbons() {
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5594,7 +5594,7 @@ function draw_ribbons() {
           "read: " + _Alignments[_Alignments.length - 1].read_length + " bp";
         var x = _positions.read.x + _positions.read.width / 2;
         var y = _positions.read.y + _positions.read.height * 3.5;
-        show_tooltip(text, x, y, _ribbon_svg1);
+        show_ribbon_tooltip(text, x, y, _ribbon_svg1);
       })
       .on("mouseout", function (d) {
         _ribbon_svg1.selectAll("g.tip").remove();
@@ -5642,7 +5642,7 @@ function draw_ribbons() {
       var text = Math.abs(d.qe - d.qs) + " bp";
       var x = _ribbon_scales.read_scale((d.qs + d.qe) / 2);
       var y = _positions.read.y - _ribbon_padding.text;
-      show_tooltip(text, x, y, _ribbon_svg1);
+      show_ribbon_tooltip(text, x, y, _ribbon_svg1);
     })
     .on("mouseout", function (d) {
       _ribbon_svg1.selectAll("g.tip").remove();

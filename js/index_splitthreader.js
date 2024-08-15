@@ -991,7 +991,7 @@ function draw_circos() {
     .call(drag)
     .on("mouseover", function (d) {
       var text = "drag onto coverage plot to show";
-      show_tooltip(text, 0, 0, _circos_canvas);
+      show_splitthreader_tooltip(text, 0, 0, _circos_canvas);
     })
     .on("mouseout", function (d) {
       _circos_canvas.selectAll("g.tip").remove();
@@ -2109,7 +2109,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2149,7 +2149,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2175,7 +2175,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
         y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2202,7 +2202,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
       var y =
         y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2228,7 +2228,7 @@ function draw_connections() {
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
         y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
@@ -2378,7 +2378,7 @@ function draw_features(top_or_bottom) {
               _splitthreader_layout.zoom_plot.height -
               _splitthreader_padding.gene_offset / 2 +
               _splitthreader_padding.tooltip;
-        show_tooltip(text, x, y, _splitthreader_svg);
+        show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
       })
       .on("mouseout", function (d) {
         _splitthreader_svg.selectAll("g.tip").remove();
@@ -2447,7 +2447,7 @@ function draw_genes(top_or_bottom) {
               _splitthreader_layout.zoom_plot.height -
               _splitthreader_padding.gene_offset / 2 +
               _splitthreader_padding.tooltip;
-        show_tooltip(text, x, y, _splitthreader_svg);
+        show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
       })
       .on("mouseout", function (d) {
         _splitthreader_svg.selectAll("g.tip").remove();
@@ -2520,7 +2520,7 @@ function draw_genes(top_or_bottom) {
             _splitthreader_layout.zoom_plot.height -
             _splitthreader_padding.gene_offset / 2 +
             _splitthreader_padding.tooltip;
-      show_tooltip(text, x, y, _splitthreader_svg);
+      show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
       _splitthreader_svg.selectAll("g.tip").remove();
