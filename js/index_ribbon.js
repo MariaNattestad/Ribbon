@@ -388,12 +388,6 @@ function open_any_url_files() {
   if (url_vars["perma"] != undefined) {
     read_permalink(url_vars["perma"]);
   }
-
-  if (url_vars["bam"] != undefined) {
-    // "http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam"
-    // http://localhost/ribbon/?bam=http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam
-    read_bam_url(url_vars["bam"]);
-  }
 }
 
 //////////////////// Region settings /////////////////////////
