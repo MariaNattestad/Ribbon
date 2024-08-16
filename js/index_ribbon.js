@@ -5733,6 +5733,15 @@ function set_variant_info_text() {
 }
 
 async function read_bam_url(url, in_background = false) {
+  if (url.startsWith("s3://")) {
+    url = url.replace("s3://", "https://42basepairs.com/download/s3/");
+  } else if (url.startsWith("gs://")) {
+    url = url.replace("gs://", "https://42basepairs.com/download/gs/");
+  } else if (!url.startsWith("https://")) {
+    alert("We only support HTTPS, s3:// or gs:// paths");
+    return;
+  }
+
   _ribbon_settings.alignment_info_text = "Bam from url: " + url;
   _ribbon_settings.bam_url = url;
   if (!in_background) {
