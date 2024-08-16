@@ -7034,7 +7034,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load assets locally instead of using the CDN.
   _CLI = await new Aioli({
     tool: "samtools",
-    version: "1.10",
+    version: "1.17",
     urlPrefix: `${window.location.origin}/wasm`,
   });
 
