@@ -388,12 +388,6 @@ function open_any_url_files() {
   if (url_vars["perma"] != undefined) {
     read_permalink(url_vars["perma"]);
   }
-
-  if (url_vars["bam"] != undefined) {
-    // "http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam"
-    // http://localhost/ribbon/?bam=http://labshare.cshl.edu/shares/schatzlab/www-data/ribbon/SKBR3_hg19_alignments_near_longrange_variants.chr1.bam
-    read_bam_url(url_vars["bam"]);
-  }
 }
 
 //////////////////// Region settings /////////////////////////
@@ -5738,22 +5732,26 @@ function set_variant_info_text() {
   );
 }
 
-function load_bam_url_in_background(url) {
-  _Bam = new Bam(url, url + ".bai");
-  _Bam.mount().then(() => console.log("got header from url bam"));
+async function read_bam_url(url, in_background = false) {
+  if (url.startsWith("s3://")) {
+    url = url.replace("s3://", "https://42basepairs.com/download/s3/");
+  } else if (url.startsWith("gs://")) {
+    url = url.replace("gs://", "https://42basepairs.com/download/gs/");
+  } else if (!url.startsWith("https://")) {
+    alert("We only support HTTPS, s3:// or gs:// paths");
+    return;
+  }
 
   _ribbon_settings.alignment_info_text = "Bam from url: " + url;
   _ribbon_settings.bam_url = url;
-}
-
-function read_bam_url(url) {
-  _Bam = new Bam(url, url + ".bai");
-  _Bam.mount().then(() => console.log("got header"));
+  if (!in_background) {
+    set_alignment_info_text();
+  }
 
   wait_then_run_when_bam_file_loaded();
-  _ribbon_settings.alignment_info_text = "Bam from url: " + url;
-  _ribbon_settings.bam_url = url;
-  set_alignment_info_text();
+  _Bam = new BamFile([url, url + ".bai"]);
+  await _Bam.mount();
+  await _Bam.parseHeader();
 }
 
 function load_json_bam(header) {
@@ -5901,9 +5899,7 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["config"]["settings"]["bam_url"] !=
           undefined
         ) {
-          load_bam_url_in_background(
-            json_data["ribbon_perma"]["config"]["settings"]["bam_url"]
-          );
+          read_bam_url(json_data["ribbon_perma"]["config"]["settings"]["bam_url"], true);
         }
         if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
           _Additional_ref_intervals =
@@ -6202,7 +6198,7 @@ document
   .getElementById("bam_file")
   .addEventListener("change", open_bam_file, false);
 
-function create_bam(files) {
+async function create_bam(files) {
   var bamFile = (indexFile = null);
   for (var file of files) {
     var ext = file.name.substr(file.name.lastIndexOf(".") + 1);
@@ -6215,12 +6211,14 @@ function create_bam(files) {
     return;
   }
 
-  // Initialize bam file in the variable _Bam
-  _Bam = new Bam(bamFile, indexFile);
-  _Bam.mount().then(bam_loaded);
-
   _ribbon_settings.alignment_info_text = "Bam from file: " + bamFile.name;
   set_alignment_info_text();
+
+  // Initialize bam file
+  wait_then_run_when_bam_file_loaded();
+  _Bam = new BamFile([bamFile, indexFile]);
+  await _Bam.mount();
+  await _Bam.parseHeader();
 }
 
 function wait_then_run_when_bam_file_loaded(counter) {
@@ -6247,28 +6245,21 @@ function bam_loaded() {
   d3.select("#ref_match_region_view").property("checked", true);
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
-
   clear_data();
-
   record_bam_header(_Bam.header.sq);
-
   organize_references_for_chunk();
   show_all_chromosomes();
   apply_ref_filters();
-
   reset_svg2();
   draw_chunk_ref();
-  d3.select("#collapsible_alignment_input_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
 
+  d3.select("#collapsible_alignment_input_box").attr("class", "panel-collapse collapse");
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
 
   var PG_count = 0;
-  var header_list = _Bam.header.toStr.split("\n");
+  var header_list = _Bam.header.raw.split("\n");
   for (var i in header_list) {
     if (header_list[i].substr(0, 3) == "@PG") {
       PG_count++;
@@ -6276,23 +6267,12 @@ function bam_loaded() {
   }
 
   if (PG_count == 0) {
-    user_message_ribbon(
-      "Error",
-      "No header found. Are you sure this is a bam file?"
-    );
+    user_message_ribbon("Error", "No header found. Are you sure this is a bam file?");
     return;
   }
-  user_message_ribbon(
-    "Success",
-    "Loaded alignments from " +
-      _Whole_refs.length +
-      " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on."
-  );
+  user_message_ribbon("Success", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on.");
   if (PG_count > 1) {
-    user_message_ribbon(
-      "Warning",
-      "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one."
-    );
+    user_message_ribbon("Warning", "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one.");
   }
 
   refresh_visibility();
@@ -6388,7 +6368,7 @@ var _num_bam_records_to_load = 0;
 
 function my_fetch(chrom, start, end, callback) {
   _num_bam_records_to_load += 1;
-  _Bam.getReads(chrom, start, end).then(callback);
+  _Bam.fetch(chrom, start, end).then(callback);
 }
 
 function check_if_all_bam_records_loaded() {
@@ -6801,231 +6781,7 @@ function resizeWindow() {
 }
 
 // ===========================================================================
-// == BAM Parsing for local and remote URLs
-// ===========================================================================
-
-class Bam {
-  bamFile = {}; // { name: "<URL> or <path.bam>" }
-  baiFile = {}; // { name: "<URL> or <path.bam>" }
-  source = null; // "url" or "file"
-  header = { sq: null, toStr: "" }; // BAM header
-  ready = false; // True once .bam file + header is loaded
-
-  constructor(bamFile, baiFile) {
-    // Support File objects
-    if (bamFile instanceof File && baiFile instanceof File) {
-      this.source = "file";
-      this.bamFile = bamFile;
-      this.baiFile = baiFile;
-    }
-
-    // Support URLs
-    else if (typeof bamFile === "string" && typeof baiFile === "string") {
-      this.source = "url";
-      this.bamFile.name = bamFile;
-      this.baiFile.name = baiFile;
-    }
-
-    // Otherwise, input error
-    else throw "Can only mount URLs or File objects";
-  }
-
-  // -------------------------------------------------------------------------
-  // Mount URLs and File objects
-  // -------------------------------------------------------------------------
-
-  mount() {
-    // Mount .bam/.bai files and return header
-    if (this.source == "file")
-      return _CLI
-        .mount([this.bamFile, this.baiFile])
-        .then(() => this.getHeader());
-
-    if (this.source == "url") return this.getHeader();
-  }
-
-  // -------------------------------------------------------------------------
-  // Query BAM file
-  // -------------------------------------------------------------------------
-
-  getHeader() {
-    // Get header from file in the browser
-    if (this.source == "file")
-      return _CLI
-        .exec(`samtools view -H ${this.bamFile.name}`)
-        .then((d) => this.parseHeader(d));
-
-    // Get header from URL using iobio
-    if (this.source == "url")
-      return Bam.iobio("alignmentHeader", { url: this.bamFile.name }).then(
-        (d) => this.parseHeader(d)
-      );
-  }
-
-  getReads(chrom, start, end) {
-    // Get reads from file in the browser
-    if (this.source == "file") {
-      var region = `${chrom}:${start}-${end}`,
-        subsampling = "";
-
-      // Use "samtools coverage" to estimate how many bases we would need to load (in contrast,
-      // using "samtools view -c" would only tell us the number of reads, which is misleading
-      // for long-read data!). This is generally much much faster than trying to load the region
-      // so for most cases, the additional runtime is negligible.
-      console.time("samtools coverage");
-      return _CLI
-        .exec(`samtools coverage ${this.bamFile.name} -r ${region} --no-header`)
-        .then((d) => {
-          console.timeEnd("samtools coverage");
-
-          // Estimate how much data we're looking at in the selected region, and subsample if
-          // the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
-          // See http://www.htslib.org/doc/samtools-coverage.html for documentation.
-          var stats = d.split("\t"),
-            sampling = Math.round((1e6 / (+stats[4] * +stats[6])) * 100) / 100;
-          if (sampling < 1 && _automation_running && !automation_subsample) {
-            if (!_automation_running)
-              sampling = prompt(
-                `⚠️ Warning\n\nThis region contains a lot of data and may crash your browser.\n\nEnter the fraction of reads to sample (use the default if you're not sure):`,
-                sampling
-              );
-            subsampling = ` -s ${sampling}`;
-            user_message_ribbon(
-              "Warning",
-              `Region contains a lot of data; sampling ${Math.round(
-                sampling * 100
-              )}% of reads.`
-            );
-          }
-
-          // Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
-          // The alternative is to append each line output to Aioli's STDOUT variable, which involves
-          // converting bytes to strings each time, as opposed to doing it once at the end when we call
-          // _CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
-          // "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
-          console.time("samtools view");
-          return _CLI
-            .exec(
-              `samtools view${subsampling} -o /tmp/reads.sam ${this.bamFile.name} ${region}`
-            )
-            .then(() => _CLI.cat("/tmp/reads.sam"))
-            .then((d) => this.parseReads(d));
-        });
-    }
-
-    // Get reads from URL using iobio
-    if (this.source == "url") {
-      return Bam.iobio("viewAlignments", {
-        url: this.bamFile.name,
-        regions: [
-          {
-            name: chrom,
-            start: start,
-            end: end,
-          },
-        ],
-      }).then((d) => this.parseReads(d));
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Parse BAM file
-  // -------------------------------------------------------------------------
-
-  parseHeader(stdout) {
-    stdout = stdout.split("\n");
-    return new Promise((resolve, reject) => {
-      if (stdout == null) {
-        user_message_ribbon("Error", "Could not parse the BAM file header.");
-        return;
-      }
-
-      // Parse SQ fields from header
-      var sq = stdout
-        .filter((d) => d.startsWith("@SQ"))
-        .map((d) => {
-          var info = d
-            .split("\t")
-            .filter((d) => d.startsWith("SN:") || d.startsWith("LN:"))
-            .map((d) => d.replace("SN:", "").replace("LN:", ""));
-          return { name: info[0], end: +info[1] + 1 };
-        });
-
-      // Store header
-      this.header = {
-        sq: sq,
-        toStr: stdout.join("\n"),
-      };
-
-      this.ready = true;
-      resolve(this.header);
-    });
-  }
-
-  parseReads(stdout) {
-    stdout = stdout.split("\n");
-    return new Promise((resolve, reject) => {
-      if (stdout == null) {
-        user_message_ribbon("Error", "Could not parse the BAM reads.");
-        return;
-      }
-
-      // Turn read string into object
-      var reads = stdout.map((r) => {
-        var readInfo = r.split("\t");
-        var record = {
-          readName: readInfo[0],
-          flag: +readInfo[1],
-          segment: readInfo[2],
-          pos: +readInfo[3],
-          mq: +readInfo[4],
-          cigar: readInfo[5],
-        };
-
-        // Parse SA tag: In the SAM format, tags start at index 11
-        for (var i = 11; i < readInfo.length; i++) {
-          if (readInfo[i].substr(0, 2) == "SA") {
-            record.SA = readInfo[i].split(":")[2];
-            break;
-          }
-        }
-
-        return record;
-      });
-
-      // Last read should be an empty line
-      var lastRead = reads.pop();
-      // ... but in case it isn't...
-      if (lastRead.segment != null) reads.push(lastRead);
-
-      console.timeEnd("samtools view");
-      resolve(reads);
-    });
-  }
-
-  // -------------------------------------------------------------------------
-  // API calls to iobio
-  // -------------------------------------------------------------------------
-
-  static iobio(endpoint, data) {
-    return fetch(`https://backend.iobio.io/${endpoint}`, {
-      // API expects text/plain content-type
-      headers: { "Content-Type": "text/plain" },
-      method: "post",
-      body: JSON.stringify(data),
-    })
-      .catch((d) => {
-        alert("Could not connect to iobio server. Please try again later.");
-        console.error(d);
-      })
-      .then((d) => {
-        return d.text();
-      });
-  }
-}
-
-// ===========================================================================
-// == BAM Parsing
+// == Biowasm / Aioli
 // ===========================================================================
 
 // Initialize app on page load
@@ -7034,7 +6790,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load assets locally instead of using the CDN.
   _CLI = await new Aioli({
     tool: "samtools",
-    version: "1.10",
+    version: "1.17",
     urlPrefix: `${window.location.origin}/wasm`,
   });
 
