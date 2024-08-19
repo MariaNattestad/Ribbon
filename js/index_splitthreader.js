@@ -380,7 +380,7 @@ d3.select("select#annotation_dropdown").on("change", function (d) {
   }
 });
 
-d3.select("select#color_scheme_dropdown")
+d3.select("select#splitthreader_color_scheme_dropdown")
   .selectAll("option")
   .data(_splitthreader_static.color_schemes)
   .enter()
@@ -392,7 +392,7 @@ d3.select("select#color_scheme_dropdown")
     return d.colors;
   });
 
-d3.select("select#color_scheme_dropdown").on("change", function (d) {
+d3.select("select#splitthreader_color_scheme_dropdown").on("change", function (d) {
   _splitthreader_settings.color_index = this.options[this.selectedIndex].value;
   _splitthreader_scales.chromosome_colors.range(
     _splitthreader_static.color_collections[_splitthreader_settings.color_index]
@@ -2784,7 +2784,7 @@ function count_filtered_data(dataset) {
 }
 
 function make_variant_table() {
-  d3.select("#variant_table_landing").call(
+  d3.select("#splitthreader_variant_table_landing").call(
     (_variant_superTable = d3
       .superTable()
       .table_data(_Filtered_variant_data)
@@ -3399,7 +3399,7 @@ function open_bed_file(event) {
   };
 }
 
-d3.select("#feature_bed_file").on("change", open_bed_file);
+d3.select("#splitthreader_feature_bed_file").on("change", open_bed_file);
 
 function run_graph_search() {
   if (_Starting_intervals_for_search.length == 0) {

@@ -285,7 +285,7 @@
 										<tr>
 											<td>Color scheme:</td>
 											<td colspan="2">
-												<select class="form-control" id="color_scheme_dropdown">
+												<select class="form-control" id="ribbon_color_scheme_dropdown">
 													
 												</select>
 											</td>
@@ -501,9 +501,9 @@
 					<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
 						<div class="panel-body">
 							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#bam">load bam file</a></li>
-								<li><a data-toggle="tab" href="#coords">coordinates</a></li>
-								<li><a data-toggle="tab" href="#url_bam">bam from url</a></li>
+								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url</a></li>
+								<li><a data-toggle="tab" href="#bam">Local BAM</a></li>
+								<li><a data-toggle="tab" href="#coords">MUMmer coordinates</a></li>
 							</ul>
 							
 							<div class="tab-content">
@@ -576,7 +576,7 @@
 					<div class="panel-collapse collapse in" id="collapsible_feature_upload_box">
 						<div class="panel-body">
 							<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
-							<input type="file" id="feature_bed_file" />
+							<input type="file" id="ribbon_feature_bed_file" />
 							<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
 						</div>
 					</div>
@@ -593,7 +593,7 @@
 						<div class="panel-body">
 							<div id="variant_table_box">
 								<p> Showing only the first 30 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
-								<div id="variant_table_landing">
+								<div id="ribbon_variant_table_landing">
 									<!-- superTable creates a table here out of _Variants -->
 								</div>
 							</div>
@@ -755,7 +755,7 @@
 									<div class="tab-content">
 									<!-- Gene settings -->
 										<div id="gene_settings" class="tab-pane fade in active">
-											<label for="color_scheme_dropdown">Annotation:</label>
+											<label for="splitthreader_color_scheme_dropdown">Annotation:</label>
 											<select class="form-control" id="annotation_dropdown">
 											</select>
 
@@ -800,8 +800,8 @@
 													<td><input id="show_features" type="checkbox" checked></td>
 												</tr>
 												<tr>
-													<td><label for="color_scheme_dropdown">Color scheme:</label></td>
-													<td><select class="form-control" id="color_scheme_dropdown"></select></td>
+													<td><label for="splitthreader_color_scheme_dropdown">Color scheme:</label></td>
+													<td><select class="form-control" id="splitthreader_color_scheme_dropdown"></select></td>
 												</tr>
 												<tr>
 													<td>Publication style plot</td>
@@ -916,7 +916,7 @@
 				</div> <!-- end of row -->
 				<p>Showing <span id="table_row_count"></span> variants out of <span class="filtered_number_of_variants"></span>. Unfiltered, there are <span class="number_of_variants"></span> variants</p>
 				<p>Filter in text boxes by =,>, or <, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
-				<div class="table_landing" id="variant_table_landing"></div>
+				<div class="table_landing" id="splitthreader_variant_table_landing"></div>
 
 				<div id="table_export_buttons">
 					<a class="btn btn-info" id="export_variant_table_to_csv">Export table as csv</a>
@@ -1139,7 +1139,7 @@
 					</div>
 					<div class="panel-body">
 						<p>Upload a bed file of features</p>
-						<input type="file" id="feature_bed_file" />
+						<input type="file" id="splitthreader_feature_bed_file" />
 						<p>
 						<label>Instructions: </label>
 							Upload a bed file containing features to calculate distances between any sets of features and genes. 

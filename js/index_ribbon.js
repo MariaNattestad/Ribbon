@@ -2652,7 +2652,7 @@ function show_feature_table() {
 function show_variant_table() {
   d3.select("#variant_table_panel").style("display", "block");
 
-  d3.select("#variant_table_landing").call(
+  d3.select("#ribbon_variant_table_landing").call(
     d3
       .superTable()
       .table_data(_Variants)
@@ -3109,7 +3109,7 @@ function create_dropdowns() {
     draw_region_view();
   });
 
-  d3.select("select#color_scheme_dropdown")
+  d3.select("select#ribbon_color_scheme_dropdown")
     .selectAll("option")
     .data(_ribbon_static.color_schemes)
     .enter()
@@ -3121,7 +3121,7 @@ function create_dropdowns() {
       return d.colors;
     });
 
-  d3.select("select#color_scheme_dropdown").on("change", function (d) {
+  d3.select("select#ribbon_color_scheme_dropdown").on("change", function (d) {
     _ribbon_settings.color_index = this.options[this.selectedIndex].value;
     _ribbon_scales.ref_color_scale.range(
       _ribbon_static.color_collections[_ribbon_settings.color_index]
@@ -3401,7 +3401,7 @@ function refresh_ui_elements() {
     .property("selected", function (d) {
       return d.id === _ribbon_settings.feature_to_sort_reads;
     });
-  d3.select("select#color_scheme_dropdown")
+  d3.select("select#ribbon_color_scheme_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
       return d.id === _ribbon_settings.color_index;
@@ -6156,7 +6156,7 @@ function open_feature_bed_file(event) {
 
 d3.select("#variant_file").on("change", open_variant_file);
 d3.select("#bedpe_file").on("change", open_bedpe_file);
-d3.select("#feature_bed_file").on("change", open_feature_bed_file);
+d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 
 // ===========================================================================
 // == Load coords file
