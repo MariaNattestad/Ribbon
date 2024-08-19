@@ -6258,22 +6258,7 @@ function bam_loaded() {
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
 
-  var PG_count = 0;
-  var header_list = _Bam.header.raw.split("\n");
-  for (var i in header_list) {
-    if (header_list[i].substr(0, 3) == "@PG") {
-      PG_count++;
-    }
-  }
-
-  if (PG_count == 0) {
-    user_message_ribbon("Error", "No header found. Are you sure this is a bam file?");
-    return;
-  }
   user_message_ribbon("Success", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on.");
-  if (PG_count > 1) {
-    user_message_ribbon("Warning", "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one.");
-  }
 
   refresh_visibility();
 }
