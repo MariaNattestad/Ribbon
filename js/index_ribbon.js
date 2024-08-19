@@ -6558,7 +6558,6 @@ var _read_index_list = [];
 var _index_within_read_index_list = 0;
 
 var _chosen_variant = undefined;
-var audio = new Audio("Ribbon_finished_automation.m4a");
 var log_number_reads_found = [];
 
 function run_automation() {
@@ -6632,7 +6631,6 @@ function load_next_variant() {
   } else {
     _automation_running = false;
     user_message_ribbon("Success", "DONE with automation!");
-    audio.play();
   }
 }
 
