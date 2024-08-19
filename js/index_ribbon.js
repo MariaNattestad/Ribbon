@@ -2397,34 +2397,6 @@ function consolidate_records(records) {
   }
 }
 
-d3.select("#bam_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Create a bam file using an aligner such as BWA. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, select the my_file.sorted.bam and the my_file.sorted.bam.bai files. The bam file is not uploaded, but is read locally on your computer using the .bai file as the index. (This is secure because a site can only access the files you chose.)"
-  );
-});
-
-d3.select("#coords_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>"
-  );
-});
-
-d3.selectAll(".bed_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
-  );
-});
-
-d3.selectAll(".vcf_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
-  );
-});
-
 function parse_coords_columns(columns) {
   //     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  |  [LEN R]  [LEN Q]  | [TAGS]
   // ==========================================================================================================
@@ -3010,7 +2982,6 @@ function vcf_input_changed(vcf_input) {
 function run_ribbon() {
   resize_ribbon_views();
   refresh_visibility();
-  user_message_ribbon("Instructions", "Start by loading alignments below");
 }
 
 function all_read_analysis() {
@@ -5713,13 +5684,6 @@ function draw_ribbons() {
 // == Examples
 // ===========================================================================
 
-function show_info_panel() {
-  if (d3.select("#info_panel").style("display") == "none") {
-    d3.select("#info_panel").style("display", "block");
-  } else {
-    d3.select("#info_panel").style("display", "none");
-  }
-}
 function show_getting_started_panel() {
   if (d3.select("#start_panel").style("display") == "none") {
     d3.select("#start_panel").style("display", "block");
@@ -5727,21 +5691,9 @@ function show_getting_started_panel() {
     d3.select("#start_panel").style("display", "none");
   }
 }
-function show_advanced_settings_panel() {
-  if (d3.select("#advanced_settings_panel").style("display") == "none") {
-    d3.select("#advanced_settings_panel").style("display", "block");
-  } else {
-    d3.select("#advanced_settings_panel").style("display", "none");
-  }
-}
-d3.select("#click_info_link").on("click", show_info_panel);
 d3.select("#click_getting_started_link").on(
   "click",
   show_getting_started_panel
-);
-d3.select("#click_advanced_settings_link").on(
-  "click",
-  show_advanced_settings_panel
 );
 
 // Cookie Management (documentation: https://www.w3schools.com/js/js_cookies.asp)

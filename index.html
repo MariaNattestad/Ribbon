@@ -43,10 +43,7 @@
 			<ul class="nav navbar-nav" id="navbar">
 				<li><a id="go_to_splitthreader_mode" onclick="go_to_splitthreader_mode()">SplitThreader</a></li>
 				<li><a id="go_to_ribbon_mode" onclick="go_to_ribbon_mode()">Ribbon</a></li>
-				<li><a id="click_getting_started_link">Getting started</a></li>
-				<li><a id="click_info_link">Info</a></li>
-				
-				<li><a id="click_advanced_settings_link">Advanced settings</a></li>
+				<li><a id="click_getting_started_link">Info</a></li>
 				<li class="dropdown" id="examples_navbar_item">
 					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu" id="examples_list">
@@ -72,73 +69,34 @@
 
 <div id="ribbon-app-container">
 	<div id="left_panel">
-		<div id="advanced_settings_panel">
+		<div id="start_panel">
 			<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Advanced settings</h3></div>
+				<div class="panel-heading"><h3 class="panel-title">Info about Ribbon</h3></div>
 				<div class="panel-body">
-					<table>
-						<tr><th colspan="2">Fetching from a bam file</th></tr>
-							<tr><td >Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
-							<td>
-								<input type="number" style="width: 60%" id="bam_fetch_margin" value="100"> bp
-							</td>
-						</tr>
+					<h3>Getting started</h3>
+					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
+						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
+					<p>Start by loading a BAM file and picking a locus</p>
 
-						<tr><th colspan="2">Automation</th></tr>
-						<tr><td colspan="2">Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!  </td></tr>
-						<tr>
-							<td>Prefix for image files</td>
-							<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td>
-						</tr>
-						<tr>
-							<td>Number of reads to take pictures of (randomly selected)</td>
-							<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
-						</tr>
-						<tr>
-							<td>Print variant coordinates onto multi-read view</td>
-							<td><input type="checkbox" id="add_coordinates_to_figures"></td>
-						</tr>
-						<tr>
-							<td>Download a file with info and coordinates for each variant alongside the images</td>
-							<td><input type="checkbox" id="automation_download_info"></td>
-						</tr>
-						<tr>
-							<td>Only select reads with alignments that start or end near the bedpe variant</td>
-							<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
-						</tr>
-						<tr>
-							<td>If a region is too large for the browser to load, automatically subsample</td>
-							<td><input type="checkbox" id="automation_subsample" checked></td>
-						</tr>
-						<tr>
-							<td style="text-indent: 50px;" >Distance:</td>
-							<td><input type="number" id="automation_margin_for_split" value="1000"></td>
-						<tr>
-							<td></td>
-							<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>
-						</tr>
-					</table>
-				</div>
-			</div>
-		</div>
+					<p><strong>Examples:</strong></p>
+					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+					<p><strong>Visualize your own alignment data:</strong></p>
+					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
 
-
-		<div id="info_panel">
-			<!-- GITHUB LINK -->
-				<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Information about Ribbon</h3></div>
-				<div class="panel-body">
-						<p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
+					<h3>Paper and code</h3>
+					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
+					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
+					<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-					<p>
-						<p><strong>Please cite our paper on the bioRxiv:</strong></p>
-						<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
-					</p>
+					
+					<p><strong>Local installation:</strong></p>
+					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+
+					<h3>Acknowledgements</h3>
 					<p>Ribbon stands on the shoulders of giants:</p>
 					<ul>
 						<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
 						<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
-						<li>Remote bam files are read from any publicly accessible URL using a library from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab.</li>
 						<li>Local bam files are read using Samtools compiled into WebAssembly.</li>
 					</ul>
 					<p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
@@ -146,43 +104,6 @@
 						<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
 						<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
 					</ul>
-				</div>
-				</div>
-
-
-				<!-- PAPER LINK -->
-
-				<!-- <div class="panel panel-default">
-					<div class="panel-heading"><h3 class="panel-title">How to cite Ribbon</h3></div>
-					<div class="panel-body">
-						<p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
-						Citation information goes here
-					</div>
-				</div>
-
-				-->	
-		</div>
-		<div id="start_panel">
-			<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
-				<div class="panel-body">
-					<p>
-						<p><strong>Please cite our paper in Bioinformatics:</strong></p>
-						<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
-						<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
-					</p>
-					<p>
-						<p><strong>Examples:</strong></p>
-						<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
-					</p>
-					<p>
-						<p><strong>Visualize your own alignment data:</strong></p>
-						<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
-					</p>
-					<p>
-						<p><strong>Local installation:</strong></p>
-						<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-					</p>
 				</div>
 			</div>
 		</div>
@@ -213,35 +134,36 @@
 						<li><a data-toggle="tab" href="#tab_bedpe_table_panel">Inspect rearrangements</a></li>
 						<li><a data-toggle="tab" href="#tab_region_selector_panel">Select position</a></li>
 						<li><a data-toggle="tab" href="#tab_features_table_panel">Inspect features</a></li>
+						<li><a data-toggle="tab" href="#tab_automation">Automation</a></li>
 					</ul>
 					<div class="tab-content">
 						<div id="tab_input_alignments" class="tab-pane fade in active">
 							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url</a></li>
+								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url (recommended)</a></li>
 								<li><a data-toggle="tab" href="#bam">Local BAM</a></li>
 								<li><a data-toggle="tab" href="#coords">MUMmer coordinates</a></li>
 							</ul>
 							
 							<div class="tab-content">
 							<!-- Bam input -->
-								<div id="bam" class="tab-pane active">
-									<p>Select bam and corresponding index (bai/csi)</p>
-									<input type="file" name="files[]" id="bam_file"	multiple />
-									<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
-								</div>
-								<div id="url_bam" class="tab-pane">
-									<input type="text" id="bam_url_input" value="http://">
+								<div id="url_bam" class="tab-pane active">
+									<input type="text" id="bam_url_input" value="http://" style="width: 100%">
 									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
 									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai or .csi to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
 									</p>
 									<p>Note that the bam file does not get read into memory, but the index file does, so if the index file is huge, it will take a while the first time you fetch reads from the bam file. 
 									</p>
 								</div>
+								<div id="bam" class="tab-pane">
+									<p>Select bam and corresponding index (bai/csi)</p>
+									<input type="file" name="files[]" id="bam_file"	multiple />
+								</div>
 							<!-- Coords input -->
 								<div id="coords" class="tab-pane">
-									<p>Upload a show-coords file:</p>
+									<p>To use a .delta file from aligning assemblies/genomes with MUMmer's nucmer, run MUMmer's <pre>show-coords -lTH</pre> on it to get coordinates to load here.</p>
 									<input type="file" id="coords_file" />
-									<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
+									<h4>Instructions</h4>
+									The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>
 								</div>
 							</div>
 						</div>
@@ -365,8 +287,17 @@
 										</select>
 									</td>
 								</tr>
+								<tr><th colspan="3">Fetching from a bam file</th></tr>
+								<tr>
+									<td colspan="2">Margin around a locus where reads will be pulled from a bam file:</td>
+									<td><input type="number" style="width: 80%" id="bam_fetch_margin" value="100"> bp</td>
+								</tr>
+								<tr><td colspan="3">
+									Alignments that overlap this locus or within those number of basepairs of the locus will be loaded when a region is navigated to.
+									Use this parameter carefully as importing too much data can crash your web browser due to memory overload.
+									This takes effect when a new locus is navigated to.
+								</td></tr>
 							</table>
-				
 
 							<div id="feature_filter_settings_div">
 								<h3>Filter features by type</h3>
@@ -402,6 +333,7 @@
 									<td><input id="show_only_selected_variants" type="checkbox"></td>
 								</tr>
 							</table>
+
 						</div>
 						<div id="tab_settings" class="tab-pane fade">
 							<p>Settings for the single-read (bottom) view</p>
@@ -495,6 +427,15 @@
 									<input type="file" id="variant_file" />
 									<p><span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .vcf file</span></p>
 									<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
+
+									<h3>Bed instructions</h3>
+									Upload a bed file of variants or other features to look at.
+									<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
+									All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
+									<h3>VCF instructions</h3>
+									Upload a vcf file of variants to look at.
+									<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
+									The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
 								</div>
 							<!-- upload bedpe file -->
 								<div id="upload_bedpe" class="tab-pane fade">
@@ -539,6 +480,45 @@
 									<!-- superTable creates a table here out of _Features -->
 								</div>
 							</div>
+						</div>
+						<div id="tab_automation" class="tab-pane fade">
+							<h3>Automate Ribbon</h3>
+							<p>
+								Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!
+							</p>
+							<table>
+								<tr>
+									<td>Prefix for image files</td>
+									<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td>
+								</tr>
+								<tr>
+									<td>Number of reads to take pictures of (randomly selected)</td>
+									<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
+								</tr>
+								<tr>
+									<td>Print variant coordinates onto multi-read view</td>
+									<td><input type="checkbox" id="add_coordinates_to_figures"></td>
+								</tr>
+								<tr>
+									<td>Download a file with info and coordinates for each variant alongside the images</td>
+									<td><input type="checkbox" id="automation_download_info"></td>
+								</tr>
+								<tr>
+									<td>Only select reads with alignments that start or end near the bedpe variant</td>
+									<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
+								</tr>
+								<tr>
+									<td>If a region is too large for the browser to load, automatically subsample</td>
+									<td><input type="checkbox" id="automation_subsample" checked></td>
+								</tr>
+								<tr>
+									<td style="text-indent: 50px;" >Distance:</td>
+									<td><input type="number" id="automation_margin_for_split" value="1000"></td>
+								<tr>
+									<td></td>
+									<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>
+								</tr>
+							</table>
 						</div>
 					</div>
 				</div>
