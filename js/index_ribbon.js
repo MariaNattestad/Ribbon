@@ -6788,11 +6788,11 @@ function resizeWindow() {
 document.addEventListener("DOMContentLoaded", async () => {
   // Create Aioli (and the WebWorker in which WASM code will run).
   // Load assets locally instead of using the CDN.
-  _CLI = await new Aioli({
-    tool: "samtools",
-    version: "1.17",
-    urlPrefix: `${window.location.origin}/wasm`,
-  });
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
 
   // Get samtools version once initialized
   console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));
