@@ -592,8 +592,8 @@
 					<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
 						<div class="panel-body">
 							<div id="variant_table_box">
-								<p> Showing only the first 30 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
-								<div id="ribbon_variant_table_landing">
+								<p> Showing only the first 1000 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
+								<div id="ribbon_variant_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Variants -->
 								</div>
 							</div>
@@ -611,8 +611,8 @@
 					<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
 						<div class="panel-body">
 							<div id="bedpe_table_box">
-								<p> Showing only the first 30 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
-								<div id="bedpe_table_landing">
+								<p> Showing only the first 1000 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
+								<div id="bedpe_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Bedpe -->
 								</div>
 							</div>
@@ -653,8 +653,8 @@
 					<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
 						<div class="panel-body">
 							<div id="feature_table_box">
-								<p>Showing only the first 15 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
-								<div id="feature_table_landing">
+								<p>Showing only the first 1000 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
+								<div id="feature_table_landing" class="scrollable_table_landing">
 									
 								</div>
 							</div>
@@ -918,7 +918,7 @@
 				</div> <!-- end of row -->
 				<p>Showing <span id="table_row_count"></span> variants out of <span class="filtered_number_of_variants"></span>. Unfiltered, there are <span class="number_of_variants"></span> variants</p>
 				<p>Filter in text boxes by =,>, or <, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
-				<div class="table_landing" id="splitthreader_variant_table_landing"></div>
+				<div class="scrollable_table_landing" id="splitthreader_variant_table_landing"></div>
 
 				<div id="table_export_buttons">
 					<a class="btn btn-info" id="export_variant_table_to_csv">Export table as csv</a>
@@ -1005,7 +1005,7 @@
 						</div>
 						<div class="panel-body">
 							
-							<div class="table_landing" id="gene_fusion_table_landing"></div>
+							<div class="scrollable_table_landing" id="gene_fusion_table_landing"></div>
 							<label>Instructions:</label>
 							<p>
 								Click on a row in the table to jump to each gene fusion in the visualizer.
@@ -1068,7 +1068,7 @@
 									<input type="radio" name="search_from" value="features">Bed file
 								</label>
 								<p>Number of starting points: <span id="search_from_item_count"></span></p>
-								<div class="table_landing" id="search_from_table_landing">
+								<div class="scrollable_table_landing" id="search_from_table_landing">
 
 								</div>
 							</div>
@@ -1089,7 +1089,7 @@
 									<input type="radio" name="search_to" value="features">Bed file
 								</label>
 								<p>Number of target end-points: <span id="search_to_item_count"></span></p>
-								<div class="table_landing" id="search_to_table_landing">
+								<div class="scrollable_table_landing" id="search_to_table_landing">
 								</div>
 							</div>
 						</div>
@@ -1116,7 +1116,7 @@
 										Click on one of the results in the table to show the path in the visualizer. 
 									</p>
 									<p>
-										Found results for <span id="froms_matched_count">X</span> out of <span id="total_froms_count">N</span> total intervals in the "From" table. Showing at most 30, but filter and sort works on the whole set (as with all tables in SplitThreader). 
+										Found results for <span id="froms_matched_count">X</span> out of <span id="total_froms_count">N</span> total intervals in the "From" table. Showing a subset, but filter and sort works on the whole set (as with all tables in SplitThreader). 
 									</p>
 
 									<!-- Export options -->
@@ -1128,7 +1128,7 @@
 
 								</div>
 
-								<div class="table_landing" id="feature_search_table_landing"></div>
+								<div class="scrollable_table_landing" id="feature_search_table_landing"></div>
 							</div>
 						</div>
 					</div>

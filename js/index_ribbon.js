@@ -2644,7 +2644,7 @@ function show_feature_table() {
     d3
       .superTable()
       .table_data(_Features_for_ribbon)
-      .num_rows_to_show(15)
+      .num_rows_to_show(1000)
       .click_function(feature_row_click)
       .show_advanced_filters(true)
   );
@@ -2656,7 +2656,7 @@ function show_variant_table() {
     d3
       .superTable()
       .table_data(_Variants)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(variant_row_click)
       .check_ready_function(check_bam_done_fetching)
@@ -2696,7 +2696,7 @@ function show_bedpe_table() {
     d3
       .superTable()
       .table_data(_Bedpe)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(bedpe_row_click)
       .table_header([

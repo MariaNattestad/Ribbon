@@ -2805,7 +2805,7 @@ function make_variant_table() {
         "category",
         "nearby_variant_count",
       ])
-      .num_rows_to_show(15)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(choose_row)
       .run_on_filtered_data_function(count_filtered_data))
@@ -3291,7 +3291,7 @@ function update_search_input_table(to_or_from, data_type) {
       d3
         .superTable()
         .table_data(_Annotation_data)
-        .num_rows_to_show(15)
+        .num_rows_to_show(1000)
         .show_advanced_filters(true)
         .run_on_filtered_data_function(set_search_intervals[to_or_from])
     );
@@ -3313,7 +3313,7 @@ function update_search_input_table(to_or_from, data_type) {
         d3
           .superTable()
           .table_data(_Features_for_splitthreader)
-          .num_rows_to_show(15)
+          .num_rows_to_show(1000)
           .show_advanced_filters(true)
           .run_on_filtered_data_function(set_search_intervals[to_or_from])
       );
@@ -3503,7 +3503,7 @@ function update_search_results_table() {
         "path_chromosomes",
       ])
       .show_advanced_filters(true)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .click_function(highlight_graph_search_result)
       .run_on_filtered_data_function(update_graph_search_results_for_CSV)
   );

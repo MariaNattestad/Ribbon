@@ -243,10 +243,6 @@ h1#title {
   border: 0; /*.2px solid blue;*/
 }
 
-.table_landing {
-  overflow: auto;
-}
-
 #main_body_container {
   padding-left: 0.5vw;
 }

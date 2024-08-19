@@ -262,3 +262,8 @@ path.ref_mapping {
 #feature_filter_tab {
   display: none;
 }
+
+.scrollable_table_landing {
+  overflow-y: scroll;
+  height: 200px;
+}
