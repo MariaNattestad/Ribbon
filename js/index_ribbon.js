@@ -50,7 +50,10 @@ _ribbon_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that
 _ribbon_static.read_sort_options = [
   { id: "original", description: "Original order" },
   { id: "longest", description: "Position of longest alignment" },
-  { id: "primary", description: "Position of primary alignment in SAM/BAM entry" },
+  {
+    id: "primary",
+    description: "Position of primary alignment in SAM/BAM entry",
+  },
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
 ];
@@ -58,7 +61,10 @@ _ribbon_static.read_orientation_options = [
   { id: "original", description: "Original orientation" },
   { id: "reverse", description: "Reverse orientation" },
   { id: "longest", description: "Orientation of longest alignment" },
-  { id: "primary", description: "Orientation of alignment in selected locus (SAM/BAM)" },
+  {
+    id: "primary",
+    description: "Orientation of alignment in selected locus (SAM/BAM)",
+  },
 ];
 _ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -66,9 +72,81 @@ _ribbon_static.color_schemes = [
   { name: "Color scheme 3", colors: 2 },
 ];
 _ribbon_static.color_collections = [
-  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
-  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffffad", "#ff94ff", "#004200", "gray", "black" ],
-  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
+  [
+    "#ff9896",
+    "#c5b0d5",
+    "#8c564b",
+    "#e377c2",
+    "#bcbd22",
+    "#9edae5",
+    "#c7c7c7",
+    "#d62728",
+    "#ffbb78",
+    "#98df8a",
+    "#ff7f0e",
+    "#f7b6d2",
+    "#c49c94",
+    "#dbdb8d",
+    "#aec7e8",
+    "#17becf",
+    "#2ca02c",
+    "#7f7f7f",
+    "#1f77b4",
+    "#9467bd",
+  ],
+  [
+    "#ffff00",
+    "#ad0000",
+    "#bdadc6",
+    "#00ffff",
+    "#e75200",
+    "#de1052",
+    "#ffa5a5",
+    "#7b7b00",
+    "#7bffff",
+    "#008c00",
+    "#00adff",
+    "#ff00ff",
+    "#ff0000",
+    "#ff527b",
+    "#84d6a5",
+    "#e76b52",
+    "#8400ff",
+    "#6b4242",
+    "#52ff52",
+    "#0029ff",
+    "#ffffad",
+    "#ff94ff",
+    "#004200",
+    "gray",
+    "black",
+  ],
+  [
+    "#E41A1C",
+    "#A73C52",
+    "#6B5F88",
+    "#3780B3",
+    "#3F918C",
+    "#47A266",
+    "#53A651",
+    "#6D8470",
+    "#87638F",
+    "#A5548D",
+    "#C96555",
+    "#ED761C",
+    "#FF9508",
+    "#FFC11A",
+    "#FFEE2C",
+    "#EBDA30",
+    "#CC9F2C",
+    "#AD6428",
+    "#BB614F",
+    "#D77083",
+    "#F37FB8",
+    "#DA88B3",
+    "#B990A6",
+    "#999999",
+  ],
 ];
 _ribbon_static.min_indel_size_for_region_view = 50;
 _ribbon_static.show_indels_as_options = [
@@ -580,17 +658,17 @@ function get_name() {
 
 async function screenshot_top() {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg_multi_read"),
-      filename: `${get_name()}_multi-read.png`
+    format: "png",
+    element: document.querySelector("#svg_multi_read"),
+    filename: `${get_name()}_multi-read.png`,
   });
 }
 
 async function screenshot_bottom(read_name = "single-read") {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg_single_read"),
-      filename: `${get_name()}_${read_name}.png`
+    format: "png",
+    element: document.querySelector("#svg_single_read"),
+    filename: `${get_name()}_${read_name}.png`,
   });
 }
 
@@ -3009,7 +3087,7 @@ function feature_type_checkbox(d) {
   draw();
 }
 function make_feature_type_table() {
-  d3.select("#feature_filter_tab").style("display", "inline");
+  d3.select("#feature_filter_settings_div").style("display", "inline");
 
   var type_counts = {};
   _ribbon_settings.feature_types_to_show = {};
@@ -5714,10 +5792,6 @@ function add_user_links_to_navbar() {
 
 function variants_just_loaded() {
   refresh_visibility();
-  d3.select("#collapsible_variant_upload_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
 }
 
 function set_alignment_info_text() {
@@ -5771,10 +5845,6 @@ function load_json_bam(header) {
 
   reset_svg2();
   draw_chunk_ref();
-  d3.select("#collapsible_alignment_input_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
 
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
@@ -5899,7 +5969,10 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["config"]["settings"]["bam_url"] !=
           undefined
         ) {
-          read_bam_url(json_data["ribbon_perma"]["config"]["settings"]["bam_url"], true);
+          read_bam_url(
+            json_data["ribbon_perma"]["config"]["settings"]["bam_url"],
+            true
+          );
         }
         if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
           _Additional_ref_intervals =
@@ -6074,13 +6147,6 @@ function open_variant_file() {
   }
 }
 
-function features_just_loaded() {
-  d3.select("#collapsible_feature_upload_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
-}
-
 function read_feature_bed(raw_data) {
   var input_text = raw_data.split("\n");
 
@@ -6147,7 +6213,6 @@ function open_feature_bed_file(event) {
     reader.onload = function (event) {
       raw_data = event.target.result;
       read_feature_bed(raw_data);
-      features_just_loaded();
     };
   } else {
     user_message_ribbon("Error", "File extension must be .bed");
@@ -6174,10 +6239,6 @@ function open_coords_file() {
   reader.onload = function (event) {
     raw_data = event.target.result;
     coords_input_changed(raw_data);
-    d3.select("#collapsible_alignment_input_box").attr(
-      "class",
-      "panel-collapse collapse"
-    );
   };
   _ribbon_settings.alignment_info_text =
     "Coords from file: " + this.files[0].name;
@@ -6253,7 +6314,6 @@ function bam_loaded() {
   reset_svg2();
   draw_chunk_ref();
 
-  d3.select("#collapsible_alignment_input_box").attr("class", "panel-collapse collapse");
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
@@ -6267,12 +6327,23 @@ function bam_loaded() {
   }
 
   if (PG_count == 0) {
-    user_message_ribbon("Error", "No header found. Are you sure this is a bam file?");
+    user_message_ribbon(
+      "Error",
+      "No header found. Are you sure this is a bam file?"
+    );
     return;
   }
-  user_message_ribbon("Success", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on.");
+  user_message_ribbon(
+    "Success",
+    "Loaded alignments from " +
+      _Whole_refs.length +
+      " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on."
+  );
   if (PG_count > 1) {
-    user_message_ribbon("Warning", "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one.");
+    user_message_ribbon(
+      "Warning",
+      "Some bam files with multiple @PG header lines have been found to have issues fetching records. If you experience issues when fetching reads from this bam file, remove all @PG lines except one."
+    );
   }
 
   refresh_visibility();
