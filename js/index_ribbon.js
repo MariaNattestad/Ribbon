@@ -33,7 +33,6 @@ var _Features_for_ribbon = [];
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
 // Reading bam file
-var _CLI = null;
 var _automation_running = false;
 var _Bam = undefined;
 var _Ref_sizes_from_header = {};
@@ -6270,7 +6269,12 @@ function bam_loaded() {
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
 
-  user_message_ribbon("Success", "Loaded alignments from " + _Whole_refs.length + " reference sequences (chromosomes). Use any of the panels below to select a position or variant to zoom in on.");
+  user_message_ribbon(
+    "Success",
+    "Loaded alignments from " +
+      _Whole_refs.length +
+      " reference sequences (chromosomes). Navigate to a position by pasting it above or loading some variants/features."
+  );
 
   refresh_visibility();
 }
@@ -6435,6 +6439,7 @@ function parse_bam_record(record) {
 }
 
 function use_fetched_data(records) {
+  // records is [undefined]
   show_bam_is_ready();
 
   var parsed_bam_records = [];
@@ -6540,6 +6545,33 @@ function submit_bam_url() {
   read_bam_url(url);
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
+
+const _bam_presets = [
+  {
+    url: "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
+    name: "HG003 PacBio phased",
+  },
+  {
+    url: "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
+    name: "HG002 Illumina",
+  },
+];
+
+function make_bam_presets_list() {
+  const bamPresetsContainer = document.getElementById("bam_presets");
+
+  _bam_presets.forEach((preset) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = preset.name;
+    listItem.style.cursor = "pointer";
+    listItem.addEventListener("click", () => {
+      read_bam_url(preset.url);
+    });
+    bamPresetsContainer.appendChild(listItem);
+  });
+}
+
+make_bam_presets_list();
 
 window.addEventListener("beforeunload", function (event) {
   event.preventDefault();
@@ -6774,24 +6806,6 @@ window.onresize = resizeWindow;
 function resizeWindow() {
   resize_ribbon_views();
 }
-
-// ===========================================================================
-// == Biowasm / Aioli
-// ===========================================================================
-
-// Initialize app on page load
-document.addEventListener("DOMContentLoaded", async () => {
-  // Create Aioli (and the WebWorker in which WASM code will run).
-  // Load assets locally instead of using the CDN.
-  const urlPrefix = `${window.location.origin}/wasm`;
-  _CLI = await new Aioli([
-    { tool: "samtools", version: "1.17", urlPrefix },
-    { tool: "bcftools", version: "1.10", urlPrefix },
-  ]);
-
-  // Get samtools version once initialized
-  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));
-});
 
 // ===========================================================================
 

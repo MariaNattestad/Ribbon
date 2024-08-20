@@ -150,14 +150,18 @@
 							</ul>
 							
 							<div class="tab-content">
+								
 							<!-- Bam input -->
 								<div id="url_bam" class="tab-pane active">
-									<input type="text" id="bam_url_input" value="http://" style="width: 100%">
+									<input type="text" id="bam_url_input" placeholder="https://" style="width: 100%">
 									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
 									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai or .csi to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
 									</p>
 									<p>Note that the bam file does not get read into memory, but the index file does, so if the index file is huge, it will take a while the first time you fetch reads from the bam file. 
 									</p>
+
+									<h4>Here are some sampple BAMs to play with:</h4>
+									<div id="bam_presets"></div>
 								</div>
 								<div id="bam" class="tab-pane">
 									<p>Select bam and corresponding index (bai/csi)</p>
@@ -1019,6 +1023,7 @@
 <script src="js/d3-superTable.js"></script>
 <!-- Shared utilities-->
 <script src="js/utils.js"></script>
+<!-- file_parsing also sets up Aioli and makes the global _CLI variable -->
 <script src="js/file_parsing.js"></script>
 <!-- SplitThreader's graph algorithms -->
 <script src="js/SplitThreader.js"></script>
