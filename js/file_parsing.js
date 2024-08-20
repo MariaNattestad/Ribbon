@@ -1,3 +1,5 @@
+let _CLI = null;
+
 // =============================================================================
 // Classes for managing genomic files
 // =============================================================================
@@ -31,18 +33,21 @@ class BamFile extends GenomicFile {
   format = "bam";
   header = {
     raw: "",
-    sq: []
-  }
+    sq: [],
+  };
 
   async parseHeader() {
     const raw = await this.CLI.exec(`samtools view -H ${this.paths[0]}`);
     if (!raw) {
-      user_message_ribbon("Error", "No header found. Are you sure this is a bam file?");
+      user_message_ribbon(
+        "Error",
+        "No header found. Are you sure this is a bam file?"
+      );
       return;
     }
 
     this.header = {
-      sq: parseBamHeader(raw)
+      sq: parseBamHeader(raw),
     };
     this.ready = true;
     return this.header;
@@ -57,7 +62,9 @@ class BamFile extends GenomicFile {
     // for long-read data!). This is generally much much faster than trying to load the region
     // so for most cases, the additional runtime is negligible.
     console.time("samtools coverage");
-    const coverage = await this.CLI.exec(`samtools coverage ${this.paths[0]} -r ${region} --no-header`);
+    const coverage = await this.CLI.exec(
+      `samtools coverage ${this.paths[0]} -r ${region} --no-header`
+    );
     console.timeEnd("samtools coverage");
 
     // Estimate how much data we're looking at in the selected region, and subsample if
@@ -67,10 +74,18 @@ class BamFile extends GenomicFile {
     const samplingPct = Math.round((1e6 / (+stats[4] * +stats[6])) * 100) / 100;
     if (samplingPct < 1 && _automation_running && !automation_subsample) {
       if (!_automation_running) {
-        samplingPct = prompt(`⚠️ Warning\n\nThis region contains a lot of data and may crash your browser.\n\nEnter the fraction of reads to sample (use the default if you're not sure):`, samplingPct);
+        samplingPct = prompt(
+          `⚠️ Warning\n\nThis region contains a lot of data and may crash your browser.\n\nEnter the fraction of reads to sample (use the default if you're not sure):`,
+          samplingPct
+        );
       }
       subsampling = ` -s ${samplingPct}`;
-      user_message_ribbon("Warning", `Region contains a lot of data; sampling ${Math.round(samplingPct * 100)}% of reads.`);
+      user_message_ribbon(
+        "Warning",
+        `Region contains a lot of data; sampling ${Math.round(
+          samplingPct * 100
+        )}% of reads.`
+      );
     }
 
     // Stream the SAM output to a temporary file on the virtual filesystem inside the WebWorker.
@@ -79,13 +94,19 @@ class BamFile extends GenomicFile {
     // CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
     // "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
     console.time("samtools view");
-    await this.CLI.exec(`samtools view${subsampling} -o /tmp/reads.sam ${this.paths[0]} ${region}`);
+    let std_err_samtools = await this.CLI.exec(
+      `samtools view${subsampling} -o /tmp/reads.sam ${this.paths[0]} ${region}`
+    );
+    if (std_err_samtools.includes("[E::")) {
+      console.error(std_err_samtools);
+    }
+
     const raw = await this.CLI.cat("/tmp/reads.sam");
     console.timeEnd("samtools view");
 
     if (!raw) {
-      user_message_ribbon("Error", "Could not parse the BAM reads.");
-      return;
+      user_message_ribbon("Error", "No reads in the bam file at this location");
+      return [];
     }
 
     return parseBamReads(raw);
@@ -101,7 +122,7 @@ function parseBamHeader(raw) {
   return raw
     .trim()
     .split("\n")
-    .filter(d => d.startsWith("@SQ"))
+    .filter((d) => d.startsWith("@SQ"))
     .map((d) => {
       const info = d
         .split("\t")
@@ -139,3 +160,21 @@ function parseBamReads(raw) {
       return record;
     });
 }
+
+// ===========================================================================
+// == Biowasm / Aioli
+// ===========================================================================
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", async () => {
+  // Create Aioli (and the WebWorker in which WASM code will run).
+  // Load assets locally instead of using the CDN.
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
+
+  // Get samtools version once initialized
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));
+});
