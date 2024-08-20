@@ -76,7 +76,7 @@
 					<h3>Getting started</h3>
 					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
 						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
-					<p>Start by loading a BAM file and picking a locus</p>
+					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
 
 					<p><strong>Examples:</strong></p>
 					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
@@ -155,12 +155,9 @@
 								<div id="url_bam" class="tab-pane active">
 									<input type="text" id="bam_url_input" placeholder="https://" style="width: 100%">
 									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
-									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai or .csi to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
+									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix.
 									</p>
-									<p>Note that the bam file does not get read into memory, but the index file does, so if the index file is huge, it will take a while the first time you fetch reads from the bam file. 
-									</p>
-
-									<h4>Here are some sample BAMs to play with:</h4>
+									<strong>Here are some sample BAMs to play with:</strong>
 									<div id="bam_presets"></div>
 								</div>
 								<div id="bam" class="tab-pane">

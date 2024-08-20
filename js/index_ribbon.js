@@ -6549,14 +6549,20 @@ const _bam_presets = [
   {
     url: "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
     name: "HG003 PacBio phased",
+    "42basepairs_url":
+      "https://42basepairs.com/browse/gs/deepvariant/pacbio-case-study-testdata?file=HG003.pfda_challenge.grch38.phased.bam",
   },
   {
-    url: "https://42basepairs.com/download/web/giab/data_somatic/HG008/Liss_lab/PacBio_Onso_20240415/HG008-T_Pacbio-onso_136x_GRCh37.bam",
-    name: "HG008 PacBio Tumor",
+    url: "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+    name: "HG008 PacBio Tumor from GIAB",
+    "42basepairs_url":
+      "https://42basepairs.com/browse/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
   },
   {
     url: "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
     name: "HG002 Illumina",
+    "42basepairs_url":
+      "https://42basepairs.com/browse/r2/genomics-data/alignments_HG002.bam",
   },
 ];
 
@@ -6564,12 +6570,20 @@ function make_bam_presets_list() {
   const bamPresetsContainer = document.getElementById("bam_presets");
 
   _bam_presets.forEach((preset) => {
-    const listItem = document.createElement("li");
-    listItem.textContent = preset.name;
-    listItem.style.cursor = "pointer";
-    listItem.addEventListener("click", () => {
+    let listItem = document.createElement("li");
+    let load_link = document.createElement("span");
+    load_link.textContent = preset.name;
+    load_link.style.cursor = "pointer";
+    load_link.title = preset.url; // Show URL on hover
+    load_link.addEventListener("click", () => {
       read_bam_url(preset.url);
     });
+    listItem.appendChild(load_link);
+    let link_to_42basepairs = document.createElement("a");
+    link_to_42basepairs.href = preset["42basepairs_url"];
+    link_to_42basepairs.textContent = " (source on 42bp)";
+    link_to_42basepairs.target = "_blank";
+    listItem.appendChild(link_to_42basepairs);
     bamPresetsContainer.appendChild(listItem);
   });
 }
