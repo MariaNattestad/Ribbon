@@ -1,3 +1,8 @@
+// import VCF, { parseBreakend } from "@gmod/vcf"; // import is only for modules, and this script has too many global things to
+// become a module even with many code changes.
+
+// const { default: VCF, parseBreakend } = require("@gmod/vcf");
+
 var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
 var _splitthreader_layout = {
@@ -12,9 +17,81 @@ var _splitthreader_padding = {};
 
 var _splitthreader_static = {};
 _splitthreader_static.color_collections = [
-  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
-  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffcc66", "#ff94ff", "#004200", "gray", "black" ],
-  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
+  [
+    "#E41A1C",
+    "#A73C52",
+    "#6B5F88",
+    "#3780B3",
+    "#3F918C",
+    "#47A266",
+    "#53A651",
+    "#6D8470",
+    "#87638F",
+    "#A5548D",
+    "#C96555",
+    "#ED761C",
+    "#FF9508",
+    "#FFC11A",
+    "#FFEE2C",
+    "#EBDA30",
+    "#CC9F2C",
+    "#AD6428",
+    "#BB614F",
+    "#D77083",
+    "#F37FB8",
+    "#DA88B3",
+    "#B990A6",
+    "#999999",
+  ],
+  [
+    "#ffff00",
+    "#ad0000",
+    "#bdadc6",
+    "#00ffff",
+    "#e75200",
+    "#de1052",
+    "#ffa5a5",
+    "#7b7b00",
+    "#7bffff",
+    "#008c00",
+    "#00adff",
+    "#ff00ff",
+    "#ff0000",
+    "#ff527b",
+    "#84d6a5",
+    "#e76b52",
+    "#8400ff",
+    "#6b4242",
+    "#52ff52",
+    "#0029ff",
+    "#ffcc66",
+    "#ff94ff",
+    "#004200",
+    "gray",
+    "black",
+  ],
+  [
+    "#ff9896",
+    "#c5b0d5",
+    "#8c564b",
+    "#e377c2",
+    "#bcbd22",
+    "#9edae5",
+    "#c7c7c7",
+    "#d62728",
+    "#ffbb78",
+    "#98df8a",
+    "#ff7f0e",
+    "#f7b6d2",
+    "#c49c94",
+    "#dbdb8d",
+    "#aec7e8",
+    "#17becf",
+    "#2ca02c",
+    "#7f7f7f",
+    "#1f77b4",
+    "#9467bd",
+  ],
 ];
 _splitthreader_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -334,9 +411,9 @@ d3.select("#publication_style_plot_checkbox").on("change", function () {
 
 d3.select("#take_screenshot").on("click", async function () {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg"),
-      filename: "splitthreader.png"
+    format: "png",
+    element: document.querySelector("#svg"),
+    filename: "splitthreader.png",
   });
 });
 
@@ -392,14 +469,20 @@ d3.select("select#splitthreader_color_scheme_dropdown")
     return d.colors;
   });
 
-d3.select("select#splitthreader_color_scheme_dropdown").on("change", function (d) {
-  _splitthreader_settings.color_index = this.options[this.selectedIndex].value;
-  _splitthreader_scales.chromosome_colors.range(
-    _splitthreader_static.color_collections[_splitthreader_settings.color_index]
-  );
-  resize_splitthreader_views();
-  draw_everything();
-});
+d3.select("select#splitthreader_color_scheme_dropdown").on(
+  "change",
+  function (d) {
+    _splitthreader_settings.color_index =
+      this.options[this.selectedIndex].value;
+    _splitthreader_scales.chromosome_colors.range(
+      _splitthreader_static.color_collections[
+        _splitthreader_settings.color_index
+      ]
+    );
+    resize_splitthreader_views();
+    draw_everything();
+  }
+);
 
 d3.select("#coverage_divisor").on("change", function () {
   _splitthreader_settings.coverage_divisor = parseInt(this.value);
@@ -3974,7 +4057,9 @@ function analyze_variants() {
         unique_nearby_variants[j] = true;
       }
     }
-    _Filtered_variant_data[i].nearby_variant_count = Object.keys(unique_nearby_variants).length;
+    _Filtered_variant_data[i].nearby_variant_count = Object.keys(
+      unique_nearby_variants
+    ).length;
   }
 
   for (var i in _Filtered_variant_data) {
@@ -4217,7 +4302,7 @@ function open_coverage_file() {
   };
 }
 
-function open_variants_file() {
+function open_variants_bedpe_csv_file() {
   var raw_data;
   var reader = new FileReader();
 
@@ -4247,8 +4332,84 @@ function open_variants_file() {
     wait_then_run_when_all_data_loaded();
   };
 }
-
 d3.select("#input_coverage_file").on("change", open_coverage_file);
-d3.select("#input_variants_file").on("change", open_variants_file);
+
+d3.select("#input_variants_file").on("change", open_variants_bedpe_csv_file); // Old way with BEDPE that we may keep for backwards compatibility.
+// d3.select("#input_variants_file").on("change", load_vcf_local);  // New way with VCF.
 
 run_splitthreader();
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO: Consider moving this into its own file for loading sessions that can impact both Ribbon and SplitThreader.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+async function load_vcf_from_url(urls) {
+  console.log("url:", urls);
+  let paths = await _CLI.mount(urls);
+  console.log("paths:", paths);
+
+  console.log(
+    "load_vcf_from_url: bcftools --version-only:",
+    await _CLI.exec("bcftools --version-only")
+  );
+  for (let vcf_path of paths) {
+    const vcf_header = await _CLI.exec("bcftools view -h " + vcf_path);
+    console.log("vcf_header:", vcf_header);
+    let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
+    console.log("vcf_data:", vcf_data);
+    let vcf_parser = new VCF({header: vcf_header});
+
+    let variants = [];
+    for (let line of vcf_data.split("\n")) {
+      variants.push(vcf_parser.parseLine(line));
+      break;
+    }
+    console.log('variants:', variants);
+  }
+}
+
+const test_session = {
+  vcf: [
+    "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
+  ],
+};
+
+function load_session(session) {
+  if (session.vcf) {
+    console.log("Loading VCF:", session.vcf);
+    load_vcf_from_url(session.vcf);
+  }
+}
+
+function load_session_from_url() {
+  let url = new URL(window.location.href);
+  let session = url.searchParams.get("session");
+  if (session) {
+    console.log("session found in URL:", session);
+    // TODO: Read session contents.
+
+    // TESTING:
+    session = test_session;
+    load_session(session);
+  }
+}
+
+function is_aioli_ready() {
+  if (_CLI) {
+    console.log("Aioli ready");
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function load_session_if_present_in_url() {
+  console.log("load_session_if_present_in_url()");
+  if (is_aioli_ready()) {
+    load_session_from_url();
+  } else {
+    setTimeout(load_session_if_present_in_url, 1000);
+  }
+}
+
+load_session_if_present_in_url();

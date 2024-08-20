@@ -161,6 +161,7 @@ function parseBamReads(raw) {
     });
 }
 
+
 // ===========================================================================
 // == Biowasm / Aioli
 // ===========================================================================
@@ -176,5 +177,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
 
   // Get samtools version once initialized
-  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"));
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
 });
