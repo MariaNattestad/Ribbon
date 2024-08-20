@@ -2272,7 +2272,6 @@ function parse_paired_end(record) {
 
 function consolidate_records(records) {
   // Removing duplicates and pairing up records from paired-end reads
-
   _ribbon_settings.paired_end_mode = false;
   for (var i = 0; i < records.length; i++) {
     if ((records[i].flag & 1) == 1) {
@@ -6550,6 +6549,10 @@ const _bam_presets = [
   {
     url: "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
     name: "HG003 PacBio phased",
+  },
+  {
+    url: "https://42basepairs.com/download/web/giab/data_somatic/HG008/Liss_lab/PacBio_Onso_20240415/HG008-T_Pacbio-onso_136x_GRCh37.bam",
+    name: "HG008 PacBio Tumor",
   },
   {
     url: "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",

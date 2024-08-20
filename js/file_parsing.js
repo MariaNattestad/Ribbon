@@ -94,15 +94,19 @@ class BamFile extends GenomicFile {
     // CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
     // "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
     console.time("samtools view");
-    await this.CLI.exec(
+    let std_err_samtools = await this.CLI.exec(
       `samtools view${subsampling} -o /tmp/reads.sam ${this.paths[0]} ${region}`
     );
+    if (std_err_samtools.includes("[E::")) {
+      console.error(std_err_samtools);
+    }
+
     const raw = await this.CLI.cat("/tmp/reads.sam");
     console.timeEnd("samtools view");
 
     if (!raw) {
-      user_message_ribbon("Error", "Could not parse the BAM reads.");
-      return;
+      user_message_ribbon("Error", "No reads in the bam file at this location");
+      return [];
     }
 
     return parseBamReads(raw);
