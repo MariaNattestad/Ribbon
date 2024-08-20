@@ -50,7 +50,10 @@ _ribbon_static.fraction_ref_to_show_whole = 0.3; //  for very large contigs that
 _ribbon_static.read_sort_options = [
   { id: "original", description: "Original order" },
   { id: "longest", description: "Position of longest alignment" },
-  { id: "primary", description: "Position of primary alignment in SAM/BAM entry" },
+  {
+    id: "primary",
+    description: "Position of primary alignment in SAM/BAM entry",
+  },
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
 ];
@@ -58,7 +61,10 @@ _ribbon_static.read_orientation_options = [
   { id: "original", description: "Original orientation" },
   { id: "reverse", description: "Reverse orientation" },
   { id: "longest", description: "Orientation of longest alignment" },
-  { id: "primary", description: "Orientation of alignment in selected locus (SAM/BAM)" },
+  {
+    id: "primary",
+    description: "Orientation of alignment in selected locus (SAM/BAM)",
+  },
 ];
 _ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -66,9 +72,81 @@ _ribbon_static.color_schemes = [
   { name: "Color scheme 3", colors: 2 },
 ];
 _ribbon_static.color_collections = [
-  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
-  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffffad", "#ff94ff", "#004200", "gray", "black" ],
-  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
+  [
+    "#ff9896",
+    "#c5b0d5",
+    "#8c564b",
+    "#e377c2",
+    "#bcbd22",
+    "#9edae5",
+    "#c7c7c7",
+    "#d62728",
+    "#ffbb78",
+    "#98df8a",
+    "#ff7f0e",
+    "#f7b6d2",
+    "#c49c94",
+    "#dbdb8d",
+    "#aec7e8",
+    "#17becf",
+    "#2ca02c",
+    "#7f7f7f",
+    "#1f77b4",
+    "#9467bd",
+  ],
+  [
+    "#ffff00",
+    "#ad0000",
+    "#bdadc6",
+    "#00ffff",
+    "#e75200",
+    "#de1052",
+    "#ffa5a5",
+    "#7b7b00",
+    "#7bffff",
+    "#008c00",
+    "#00adff",
+    "#ff00ff",
+    "#ff0000",
+    "#ff527b",
+    "#84d6a5",
+    "#e76b52",
+    "#8400ff",
+    "#6b4242",
+    "#52ff52",
+    "#0029ff",
+    "#ffffad",
+    "#ff94ff",
+    "#004200",
+    "gray",
+    "black",
+  ],
+  [
+    "#E41A1C",
+    "#A73C52",
+    "#6B5F88",
+    "#3780B3",
+    "#3F918C",
+    "#47A266",
+    "#53A651",
+    "#6D8470",
+    "#87638F",
+    "#A5548D",
+    "#C96555",
+    "#ED761C",
+    "#FF9508",
+    "#FFC11A",
+    "#FFEE2C",
+    "#EBDA30",
+    "#CC9F2C",
+    "#AD6428",
+    "#BB614F",
+    "#D77083",
+    "#F37FB8",
+    "#DA88B3",
+    "#B990A6",
+    "#999999",
+  ],
 ];
 _ribbon_static.min_indel_size_for_region_view = 50;
 _ribbon_static.show_indels_as_options = [
@@ -580,17 +658,17 @@ function get_name() {
 
 async function screenshot_top() {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg_multi_read"),
-      filename: `${get_name()}_multi-read.png`
+    format: "png",
+    element: document.querySelector("#svg_multi_read"),
+    filename: `${get_name()}_multi-read.png`,
   });
 }
 
 async function screenshot_bottom(read_name = "single-read") {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg_single_read"),
-      filename: `${get_name()}_${read_name}.png`
+    format: "png",
+    element: document.querySelector("#svg_single_read"),
+    filename: `${get_name()}_${read_name}.png`,
   });
 }
 
@@ -2319,34 +2397,6 @@ function consolidate_records(records) {
   }
 }
 
-d3.select("#bam_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Create a bam file using an aligner such as BWA. If you get a sam file convert it to a bam file: <pre>samtools view -bS my_file.sam > my_file.bam</pre>Next sort the bam file:<pre>samtools sort my_file.bam my_file.sorted</pre>Then index the sorted bam file: <pre>samtools index my_file.sorted.bam</pre>Finally, select the my_file.sorted.bam and the my_file.sorted.bam.bai files. The bam file is not uploaded, but is read locally on your computer using the .bai file as the index. (This is secure because a site can only access the files you chose.)"
-  );
-});
-
-d3.select("#coords_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>"
-  );
-});
-
-d3.selectAll(".bed_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Upload a bed file of variants or other features to look at. <p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol> All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality."
-  );
-});
-
-d3.selectAll(".vcf_info_icon").on("click", function () {
-  user_message_ribbon(
-    "Instructions",
-    "Upload a vcf file of variants to look at. <p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol> The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality."
-  );
-});
-
 function parse_coords_columns(columns) {
   //     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  |  [LEN R]  [LEN Q]  | [TAGS]
   // ==========================================================================================================
@@ -2638,25 +2688,25 @@ function check_bam_done_fetching() {
 }
 
 function show_feature_table() {
-  d3.select("#feature_table_panel").style("display", "block");
+  d3.select("#feature_table_box").style("display", "block");
 
   d3.select("#feature_table_landing").call(
     d3
       .superTable()
       .table_data(_Features_for_ribbon)
-      .num_rows_to_show(15)
+      .num_rows_to_show(1000)
       .click_function(feature_row_click)
       .show_advanced_filters(true)
   );
 }
 function show_variant_table() {
-  d3.select("#variant_table_panel").style("display", "block");
+  d3.select("#variant_table_box").style("display", "block");
 
-  d3.select("#variant_table_landing").call(
+  d3.select("#ribbon_variant_table_landing").call(
     d3
       .superTable()
       .table_data(_Variants)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(variant_row_click)
       .check_ready_function(check_bam_done_fetching)
@@ -2696,7 +2746,7 @@ function show_bedpe_table() {
     d3
       .superTable()
       .table_data(_Bedpe)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(bedpe_row_click)
       .table_header([
@@ -2932,7 +2982,6 @@ function vcf_input_changed(vcf_input) {
 function run_ribbon() {
   resize_ribbon_views();
   refresh_visibility();
-  user_message_ribbon("Instructions", "Start by loading alignments below");
 }
 
 function all_read_analysis() {
@@ -3009,7 +3058,7 @@ function feature_type_checkbox(d) {
   draw();
 }
 function make_feature_type_table() {
-  d3.select("#feature_filter_tab").style("display", "inline");
+  d3.select("#feature_filter_settings_div").style("display", "inline");
 
   var type_counts = {};
   _ribbon_settings.feature_types_to_show = {};
@@ -3109,7 +3158,7 @@ function create_dropdowns() {
     draw_region_view();
   });
 
-  d3.select("select#color_scheme_dropdown")
+  d3.select("select#ribbon_color_scheme_dropdown")
     .selectAll("option")
     .data(_ribbon_static.color_schemes)
     .enter()
@@ -3121,7 +3170,7 @@ function create_dropdowns() {
       return d.colors;
     });
 
-  d3.select("select#color_scheme_dropdown").on("change", function (d) {
+  d3.select("select#ribbon_color_scheme_dropdown").on("change", function (d) {
     _ribbon_settings.color_index = this.options[this.selectedIndex].value;
     _ribbon_scales.ref_color_scale.range(
       _ribbon_static.color_collections[_ribbon_settings.color_index]
@@ -3401,7 +3450,7 @@ function refresh_ui_elements() {
     .property("selected", function (d) {
       return d.id === _ribbon_settings.feature_to_sort_reads;
     });
-  d3.select("select#color_scheme_dropdown")
+  d3.select("select#ribbon_color_scheme_dropdown")
     .selectAll("option")
     .property("selected", function (d) {
       return d.id === _ribbon_settings.color_index;
@@ -5635,13 +5684,6 @@ function draw_ribbons() {
 // == Examples
 // ===========================================================================
 
-function show_info_panel() {
-  if (d3.select("#info_panel").style("display") == "none") {
-    d3.select("#info_panel").style("display", "block");
-  } else {
-    d3.select("#info_panel").style("display", "none");
-  }
-}
 function show_getting_started_panel() {
   if (d3.select("#start_panel").style("display") == "none") {
     d3.select("#start_panel").style("display", "block");
@@ -5649,21 +5691,9 @@ function show_getting_started_panel() {
     d3.select("#start_panel").style("display", "none");
   }
 }
-function show_advanced_settings_panel() {
-  if (d3.select("#advanced_settings_panel").style("display") == "none") {
-    d3.select("#advanced_settings_panel").style("display", "block");
-  } else {
-    d3.select("#advanced_settings_panel").style("display", "none");
-  }
-}
-d3.select("#click_info_link").on("click", show_info_panel);
 d3.select("#click_getting_started_link").on(
   "click",
   show_getting_started_panel
-);
-d3.select("#click_advanced_settings_link").on(
-  "click",
-  show_advanced_settings_panel
 );
 
 // Cookie Management (documentation: https://www.w3schools.com/js/js_cookies.asp)
@@ -5714,10 +5744,6 @@ function add_user_links_to_navbar() {
 
 function variants_just_loaded() {
   refresh_visibility();
-  d3.select("#collapsible_variant_upload_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
 }
 
 function set_alignment_info_text() {
@@ -5771,10 +5797,6 @@ function load_json_bam(header) {
 
   reset_svg2();
   draw_chunk_ref();
-  d3.select("#collapsible_alignment_input_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
 
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
@@ -5899,7 +5921,10 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["config"]["settings"]["bam_url"] !=
           undefined
         ) {
-          read_bam_url(json_data["ribbon_perma"]["config"]["settings"]["bam_url"], true);
+          read_bam_url(
+            json_data["ribbon_perma"]["config"]["settings"]["bam_url"],
+            true
+          );
         }
         if (json_data["ribbon_perma"]["config"]["focus_regions"] != undefined) {
           _Additional_ref_intervals =
@@ -6074,13 +6099,6 @@ function open_variant_file() {
   }
 }
 
-function features_just_loaded() {
-  d3.select("#collapsible_feature_upload_box").attr(
-    "class",
-    "panel-collapse collapse"
-  );
-}
-
 function read_feature_bed(raw_data) {
   var input_text = raw_data.split("\n");
 
@@ -6147,7 +6165,6 @@ function open_feature_bed_file(event) {
     reader.onload = function (event) {
       raw_data = event.target.result;
       read_feature_bed(raw_data);
-      features_just_loaded();
     };
   } else {
     user_message_ribbon("Error", "File extension must be .bed");
@@ -6156,7 +6173,7 @@ function open_feature_bed_file(event) {
 
 d3.select("#variant_file").on("change", open_variant_file);
 d3.select("#bedpe_file").on("change", open_bedpe_file);
-d3.select("#feature_bed_file").on("change", open_feature_bed_file);
+d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 
 // ===========================================================================
 // == Load coords file
@@ -6174,10 +6191,6 @@ function open_coords_file() {
   reader.onload = function (event) {
     raw_data = event.target.result;
     coords_input_changed(raw_data);
-    d3.select("#collapsible_alignment_input_box").attr(
-      "class",
-      "panel-collapse collapse"
-    );
   };
   _ribbon_settings.alignment_info_text =
     "Coords from file: " + this.files[0].name;
@@ -6253,7 +6266,6 @@ function bam_loaded() {
   reset_svg2();
   draw_chunk_ref();
 
-  d3.select("#collapsible_alignment_input_box").attr("class", "panel-collapse collapse");
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
@@ -6543,7 +6555,6 @@ var _read_index_list = [];
 var _index_within_read_index_list = 0;
 
 var _chosen_variant = undefined;
-var audio = new Audio("Ribbon_finished_automation.m4a");
 var log_number_reads_found = [];
 
 function run_automation() {
@@ -6617,7 +6628,6 @@ function load_next_variant() {
   } else {
     _automation_running = false;
     user_message_ribbon("Success", "DONE with automation!");
-    audio.play();
   }
 }
 

@@ -43,10 +43,7 @@
 			<ul class="nav navbar-nav" id="navbar">
 				<li><a id="go_to_splitthreader_mode" onclick="go_to_splitthreader_mode()">SplitThreader</a></li>
 				<li><a id="go_to_ribbon_mode" onclick="go_to_ribbon_mode()">Ribbon</a></li>
-				<li><a id="click_getting_started_link">Getting started</a></li>
-				<li><a id="click_info_link">Info</a></li>
-				
-				<li><a id="click_advanced_settings_link">Advanced settings</a></li>
+				<li><a id="click_getting_started_link">Info</a></li>
 				<li class="dropdown" id="examples_navbar_item">
 					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu" id="examples_list">
@@ -72,73 +69,34 @@
 
 <div id="ribbon-app-container">
 	<div id="left_panel">
-		<div id="advanced_settings_panel">
+		<div id="start_panel">
 			<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Advanced settings</h3></div>
+				<div class="panel-heading"><h3 class="panel-title">Info about Ribbon</h3></div>
 				<div class="panel-body">
-					<table>
-						<tr><th colspan="2">Fetching from a bam file</th></tr>
-							<tr><td >Margin around a variant or manually entered coordinate where reads will be pulled from a bam file (use this parameter carefully as importing too much data can crash your web browser due to memory overload)</td>
-							<td>
-								<input type="number" style="width: 60%" id="bam_fetch_margin" value="100"> bp
-							</td>
-						</tr>
+					<h3>Getting started</h3>
+					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
+						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
+					<p>Start by loading a BAM file and picking a locus</p>
 
-						<tr><th colspan="2">Automation</th></tr>
-						<tr><td colspan="2">Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!  </td></tr>
-						<tr>
-							<td>Prefix for image files</td>
-							<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td>
-						</tr>
-						<tr>
-							<td>Number of reads to take pictures of (randomly selected)</td>
-							<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
-						</tr>
-						<tr>
-							<td>Print variant coordinates onto multi-read view</td>
-							<td><input type="checkbox" id="add_coordinates_to_figures"></td>
-						</tr>
-						<tr>
-							<td>Download a file with info and coordinates for each variant alongside the images</td>
-							<td><input type="checkbox" id="automation_download_info"></td>
-						</tr>
-						<tr>
-							<td>Only select reads with alignments that start or end near the bedpe variant</td>
-							<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
-						</tr>
-						<tr>
-							<td>If a region is too large for the browser to load, automatically subsample</td>
-							<td><input type="checkbox" id="automation_subsample" checked></td>
-						</tr>
-						<tr>
-							<td style="text-indent: 50px;" >Distance:</td>
-							<td><input type="number" id="automation_margin_for_split" value="1000"></td>
-						<tr>
-							<td></td>
-							<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>
-						</tr>
-					</table>
-				</div>
-			</div>
-		</div>
+					<p><strong>Examples:</strong></p>
+					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+					<p><strong>Visualize your own alignment data:</strong></p>
+					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
 
-
-		<div id="info_panel">
-			<!-- GITHUB LINK -->
-				<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Information about Ribbon</h3></div>
-				<div class="panel-body">
-						<p>Ribbon is made by Maria Nattestad with support from Pacific Biosciences and Cold Spring Harbor Laboratory.</p>
+					<h3>Paper and code</h3>
+					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
+					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
+					<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-					<p>
-						<p><strong>Please cite our paper on the bioRxiv:</strong></p>
-						<p>Ribbon: Visualizing complex genome alignments and structural variation: <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">http://biorxiv.org/content/early/2016/10/20/082123</a></p>
-					</p>
+					
+					<p><strong>Local installation:</strong></p>
+					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+
+					<h3>Acknowledgements</h3>
 					<p>Ribbon stands on the shoulders of giants:</p>
 					<ul>
 						<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
 						<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
-						<li>Remote bam files are read from any publicly accessible URL using a library from <a href="http://bam.iobio.io/">Bam.iobio</a> by the Gabor Marth lab.</li>
 						<li>Local bam files are read using Samtools compiled into WebAssembly.</li>
 					</ul>
 					<p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
@@ -147,43 +105,6 @@
 						<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
 					</ul>
 				</div>
-				</div>
-
-
-				<!-- PAPER LINK -->
-
-				<!-- <div class="panel panel-default">
-					<div class="panel-heading"><h3 class="panel-title">How to cite Ribbon</h3></div>
-					<div class="panel-body">
-						<p>Please cite our pre-print on the bioRxiv: <a href="" target="_blank">link text</a></p>
-						Citation information goes here
-					</div>
-				</div>
-
-				-->	
-		</div>
-		<div id="start_panel">
-			<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Getting started</h3></div>
-				<div class="panel-body">
-					<p>
-						<p><strong>Please cite our paper in Bioinformatics:</strong></p>
-						<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
-						<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
-					</p>
-					<p>
-						<p><strong>Examples:</strong></p>
-						<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
-					</p>
-					<p>
-						<p><strong>Visualize your own alignment data:</strong></p>
-						<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
-					</p>
-					<p>
-						<p><strong>Local installation:</strong></p>
-						<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-					</p>
-				</div>
 			</div>
 		</div>
 
@@ -191,18 +112,68 @@
 		<div id="svg1_panel"></div>
 	</div>
 
-	<div id="right_panel">
-		<div id='user-message'></div>
-		<div id='right-panel-under-alert' style="overflow: scroll">
-			<div class="panel-group" id="data_description_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-						<a data-toggle="collapse" class="active" href="#collapsible_info_box">Information</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_info_box">
-						<div class="panel-body">
+	<div id="right_panel" style="display: flex; flex-direction: column; height: 80%;">
+		<div>
+			<div id="region_box">
+				<p>Navigate to a position:</p>
+				<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
+				<input class="small_input" type="number" id="region_start" placeholder="123456789">
+				<button id="region_go">Go</button>
+			</div>
+			<div id='user-message'></div>
+		</div>
+		<div id='right-panel-under-alert' style="overflow: scroll; flex: 1;">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">Ribbon Settings</h4>
+				</div>
+				
+				<div class="panel-body">
+
+					<!-- Tabs: -->
+					<ul class="nav nav-tabs">
+						<li class="active"><a data-toggle="tab" href="#tab_input_alignments">Input alignments</a></li>
+						<li><a data-toggle="tab" href="#tab_data_description">Information</a></li>
+						<li><a data-toggle="tab" href="#tab_region_settings">Multi-read settings</a></li>
+						<li><a data-toggle="tab" href="#tab_settings">Single-read settings</a></li>
+						<li><a data-toggle="tab" href="#tab_bedpe_table_panel">Large variants</a></li>
+						<li><a data-toggle="tab" href="#tab_variant_input_panel">Small variants</a></li>
+						<li><a data-toggle="tab" href="#tab_feature_input_panel">Features</a></li>
+						<li><a data-toggle="tab" href="#tab_automation">Automation</a></li>
+					</ul>
+					<div class="tab-content">
+						<div id="tab_input_alignments" class="tab-pane fade in active">
+							<ul class="nav nav-tabs">
+								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url (recommended)</a></li>
+								<li><a data-toggle="tab" href="#bam">Local BAM</a></li>
+								<li><a data-toggle="tab" href="#coords">MUMmer coordinates</a></li>
+							</ul>
+							
+							<div class="tab-content">
+							<!-- Bam input -->
+								<div id="url_bam" class="tab-pane active">
+									<input type="text" id="bam_url_input" value="http://" style="width: 100%">
+									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
+									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai or .csi to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
+									</p>
+									<p>Note that the bam file does not get read into memory, but the index file does, so if the index file is huge, it will take a while the first time you fetch reads from the bam file. 
+									</p>
+								</div>
+								<div id="bam" class="tab-pane">
+									<p>Select bam and corresponding index (bai/csi)</p>
+									<input type="file" name="files[]" id="bam_file"	multiple />
+								</div>
+							<!-- Coords input -->
+								<div id="coords" class="tab-pane">
+									<p>To use a .delta file from aligning assemblies/genomes with MUMmer's nucmer, run MUMmer's <pre>show-coords -lTH</pre> on it to get coordinates to load here.</p>
+									<input type="file" id="coords_file" />
+									<h4>Instructions</h4>
+									The coordinates must be the same as MUMmer's show-coords -lTH. This means 11 tab-separated columns without a header: <ol><li>Ref start</li><li>Ref end</li><li>Query start</li><li>Query end</li><li>Ref alignment length</li><li>Query alignment length</li><li>Percent Identity</li><li>Total reference length</li><li>Total query length</li><li>Reference name(chromosome)</li><li>Query_name</li></ol>
+								</div>
+							</div>
+						</div>
+						<div id="tab_data_description" class="tab-pane fade">
+							<p>Information about the data and settings</p>
 							<div id="user_notes">
 								<label>Notes</label>
 								<textarea class="form-control" id="notes" placeholder="Add notes here (not saved)"></textarea>
@@ -234,439 +205,315 @@
 							<button id="screenshot_top">Download top view as png</button>
 							<button id="screenshot_bottom">Download bottom view as png</button>
 						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="panel-group" id="region_settings_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_region_settings_box">Multi-read settings</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_region_settings_box">
-						<div class="panel-body">
-							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#tab_reference">Reference</a></li>
-								<li><a data-toggle="tab" href="#tab_reads">Reads</a></li>
-								<li><a data-toggle="tab" href="#tab_settings">Settings</a></li>
-								<li id="feature_filter_tab"><a data-toggle="tab" href="#tab_features">Filter features by type</a></li>
-							</ul>
-
-							<div class="tab-content">
-								<div id="tab_reference" class="tab-pane fade in active">
-									<table class="settings_table">
-										<col width="45%">
-										<col width="20%">
-										<col width="30%">
-										
-										<tr><th colspan="3">Filter reference chromosomes</th></tr>
-										<tr>
-											<td>Zoom to chromosome</td>
-											<td><p id="chrom_highlighted">all</p></td>
-											<td>
-												<div id="chrom_livesearch"></div>
-												<button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
-											</td>
-										</tr>
-										<tr>
-											<td>Minimum number of alignments:</td>
-											<td><p id="min_aligns_for_ref_interval_label">1</p></td>
-											<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
-										</tr>
-										<tr>
-											<td>Maximum chromosome length:</td>
-											<td><input class="snug" type="number" id="max_ref_length_input"></td>
-											<!-- <td><span id="max_ref_length_input"></span> </td> -->
-											<td> <div class="slider" id="max_ref_length_slider"></div> </td>
-										</tr>
-										<tr><th colspan="3">Reference settings</th></tr>
-										<tr>
-											<td>Color scheme:</td>
-											<td colspan="2">
-												<select class="form-control" id="color_scheme_dropdown">
-													
-												</select>
-											</td>
-										</tr>
-										<tr>
-											<td>Collapse reference sequences within distance:</td>
-											<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
-										</tr>
-										<tr>
-											<td>Draw black border on selected region</td>
-											<td><input id="draw_focus_rectangle" type="checkbox" checked></td>
-										</tr>
-
-									</table>
-								</div>
-
-								<!-- Read filtering-->
-								<div id="tab_reads" class="tab-pane fade">
-									<table class="settings_table">
-										<col width="45%">
-										<col width="20%">
-										<col width="30%">
-										<tr><th colspan="3">Filter reads</th></tr>
-										<tr><td>Number of alignments:</td>
-											<td> <span id="num_aligns_range_label"></span> </td>
-											<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
-										</tr>
-										<tr>
-											<td>Minimum read length:</td>
-											<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
-											<td> <div class="slider" id="min_read_length_slider"></div> </td>
-										</tr>
-										<tr>
-											<td id="region_min_mq_title" >Minimum mapping quality: </td>
-											<td><span id="region_mq_label">0</span></td>
-											<td><div class="slider" id="region_mq_slider"></div></td>
-										</tr>
-										<tr><th colspan="3">Read settings</th></tr>
-										<tr>
-											<td>Sort reads vertically:</td>
-											<td colspan="2">
-												<select class="form-control" id="read_sorting_dropdown">
-													
-												</select>
-											</td>
-										</tr>
-										<tr>
-											<td>Orient reads by:</td>
-											<td colspan="2">
-												<select class="form-control" id="read_orientation_dropdown">
-													
-												</select>
-											</td>
-										</tr>
-									</table>
-								</div>
+						<div id="tab_region_settings" class="tab-pane fade">
+							<h3>Settings for the reference</h3>
+							<table class="settings_table">
+								<col width="45%">
+								<col width="20%">
+								<col width="30%">
 								
-
-
-								<div id="tab_features" class="tab-pane fade">
-									<table id="feature_type_table"></table>
-								</div>
-
-
-								<div id="tab_settings" class="tab-pane fade">
-									<table class="settings_table">
-										<col width="30%">
-										<col width="50%">
-										<col width="20%">
-										<tr><th colspan="3" class="hide_for_coords">Indels</th></tr>
-										<tr>
-											<td class="hide_for_coords">Show indels as:</td>
-											<td colspan="2"> 
-												<select class="form-control" id="show_indels_as_dropdown">
-													
-												</select>
-											</td>
-										</tr>
-										<tr><th class="when_features_only" colspan="3">Features</th></tr>
-										<tr>
-											<td class="when_features_only">Show features as:</td>
-											<td colspan="2"> 
-												<select class="form-control" id="show_features_as_dropdown">
-													
-												</select>
-											</td>
-										</tr>
-										<tr><th colspan="3" class="when_variants_only">Variants</th></tr>
-										<tr class="when_variants_only">
-											<td colspan="2">Show only the chosen variant when others are in view</td>
-											<td><input id="show_only_selected_variants" type="checkbox"></td>
-										</tr>
-									</table>
-								</div>
-							</div> <!-- end of tab content -->
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="panel-group" id="settings">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_detail_settings_box">Single-read settings</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_detail_settings_box">
-						<div class="panel-body">
-							<div class="panel-body">
-								<div id="ribbon_vs_dotplot_container">
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
-									</label>
-
-									<label class="radio-inline">
-										<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
-									</label>
-								</div>
-
-								<ul class="nav nav-tabs">
-									<li class="active"><a data-toggle="tab" href="#tab_select_read">Select read</a></li>
-									<li><a data-toggle="tab" href="#tab_filter_alignments">Filter alignments</a></li>
-									<li><a data-toggle="tab" href="#tab_singleread_settings">Settings</a></li>
-								</ul>
-
-								<div class="tab-content">
-									<div id="tab_select_read" class="tab-pane fade in active">
-										<table class="settings_table">
-											<col width="50%">
-											<col width="20%">
-											<col width="30%">
-											<tr>
-												<th colspan="3">Selected read</th>
-											</tr>
-											<tr>
-												<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
-											</tr>
-											<tr>
-												<td>Search reads:</td>
-												<td colspan="2">
-													<div id="readname_livesearch"></div>
-												</td>
-											</tr>
-										</table>
-									</div>
-									<div id="tab_filter_alignments" class="tab-pane fade">
-										<table class="settings_table">
-											<col width="50%">
-											<col width="20%">
-											<col width="30%">
-											<tr>
-												<td id="min_mq_title">Minimum mapping quality: </td>
-												<td><span id="mq_label">0</span></td>
-												<td><div class="slider" id="mq_slider"></div></td>
-											</tr>
-											<tr>
-												<td>Minimum alignment length: </td>
-												<td><span id="align_length_label">inf</span></td>
-												<td><div class="slider" id="align_length_slider"></div></td>
-												
-											</tr>
-										</table>
-									</div>
-									<div id="tab_singleread_settings" class="tab-pane fade">
-										<table class="settings_table">
-											<col width="50%">
-											<col width="20%">
-											<col width="30%">
-											<tr>
-												<td>Match reference from region view </td>
-												<td><input id="ref_match_region_view" type="checkbox" checked></td>
-											</tr>
-											<tr>
-												<td>Highlight selected read</td>
-												<td><input id="highlight_selected_read" type="checkbox" checked></td>
-											</tr>
-											<tr>
-												<td class="hide_for_coords">Minimum indel size to split: </td>
-												<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
-												<td><div class="slider" id="indel_size_slider"></div></td>
-											</tr>
-											<tr class="ribbon_settings">
-												<td>Alignment outlines on ribbon plot: </td>
-												<td><input id="outline_checkbox" type="checkbox" checked/></td>
-											</tr>
-											<!-- <tr class="dotplot_settings"><th colspan="3">Dot plot settings</th></tr> -->
-											<tr class="dotplot_settings">
-												<td>Colors on dotplot: </td>
-												<td><input id="colors_checkbox" type="checkbox" checked/></td>
-											</tr>
-											<!-- <tr class="ribbon_settings"><th colspan="3">Ribbon plot settings</th></tr> -->
+								<tr><th colspan="3">Filter reference chromosomes</th></tr>
+								<tr>
+									<td>Zoom to chromosome</td>
+									<td><p id="chrom_highlighted">all</p></td>
+									<td>
+										<div id="chrom_livesearch"></div>
+										<button class="btn btn-secondary"  type="button" id="show_all_refs">Show all</button></span>
+									</td>
+								</tr>
+								<tr>
+									<td>Minimum number of alignments:</td>
+									<td><p id="min_aligns_for_ref_interval_label">1</p></td>
+									<td> <div class="slider" id="min_aligns_for_ref_interval_slider"></div> </td>
+								</tr>
+								<tr>
+									<td>Maximum chromosome length:</td>
+									<td><input class="snug" type="number" id="max_ref_length_input"></td>
+									<!-- <td><span id="max_ref_length_input"></span> </td> -->
+									<td> <div class="slider" id="max_ref_length_slider"></div> </td>
+								</tr>
+								<tr><th colspan="3">Reference settings</th></tr>
+								<tr>
+									<td>Color scheme:</td>
+									<td colspan="2">
+										<select class="form-control" id="ribbon_color_scheme_dropdown">
 											
-										</table>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td>Collapse reference sequences within distance:</td>
+									<td><input id="margin_to_merge_ref_intervals" type="number" value="10000"></td>
+								</tr>
+								<tr>
+									<td>Draw black border on selected region</td>
+									<td><input id="draw_focus_rectangle" type="checkbox" checked></td>
+								</tr>
 
-
-
-
-			<div class="panel-group">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_alignment_input_box">Input alignments</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_alignment_input_box">
-						<div class="panel-body">
-							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#bam">load bam file</a></li>
-								<li><a data-toggle="tab" href="#coords">coordinates</a></li>
-								<li><a data-toggle="tab" href="#url_bam">bam from url</a></li>
-							</ul>
+							</table>
 							
-							<div class="tab-content">
-							<!-- Bam input -->
-								<div id="bam" class="tab-pane active">
-									<p>Select bam and corresponding index (bai/csi)</p>
-									<input type="file" name="files[]" id="bam_file"	multiple />
-									<span id="bam_info_icon" ><span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
-								</div>
-								<div id="url_bam" class="tab-pane">
-									<input type="text" id="bam_url_input" value="http://">
-									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
-									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix. If the bam file does not exist or cannot be read, a header will fail to appear but there will be no error message. If the header of the bam file does not show up within about 10 seconds, loading the bam file has probably failed and you should check to make sure it actually exists at the given address. (To test for this, put the url into your web browser. If it starts downloading the bam file, then also check whether adding .bai or .csi to the url downloads the index file. If one of these does not start a download, then the file does not exist.)
-									</p>
-									<p>Note that the bam file does not get read into memory, but the index file does, so if the index file is huge, it will take a while the first time you fetch reads from the bam file. 
-									</p>
-								</div>
-							<!-- Coords input -->
-								<div id="coords" class="tab-pane">
-									<p>Upload a show-coords file:</p>
-									<input type="file" id="coords_file" />
-									<span id="coords_info_icon"> <span class="glyphicon glyphicon-info-sign"></span>Instructions</span>
-								</div>
+
+							<h3>Settings for read alignments</h3>
+							<table class="settings_table">
+								<col width="45%">
+								<col width="20%">
+								<col width="30%">
+								<tr><th colspan="3">Filter reads</th></tr>
+								<tr><td>Number of alignments:</td>
+									<td> <span id="num_aligns_range_label"></span> </td>
+									<td> <div class="slider" id="num_aligns_range_slider"></div> </td>
+								</tr>
+								<tr>
+									<td>Minimum read length:</td>
+									<td><input class="snug" type="number" id="min_read_length_input"></input> </td>
+									<td> <div class="slider" id="min_read_length_slider"></div> </td>
+								</tr>
+								<tr>
+									<td id="region_min_mq_title" >Minimum mapping quality: </td>
+									<td><span id="region_mq_label">0</span></td>
+									<td><div class="slider" id="region_mq_slider"></div></td>
+								</tr>
+								<tr><th colspan="3">Read settings</th></tr>
+								<tr>
+									<td>Sort reads vertically:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_sorting_dropdown">
+											
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td>Orient reads by:</td>
+									<td colspan="2">
+										<select class="form-control" id="read_orientation_dropdown">
+											
+										</select>
+									</td>
+								</tr>
+								<tr><th colspan="3">Fetching from a bam file</th></tr>
+								<tr>
+									<td colspan="2">Margin around a locus where reads will be pulled from a bam file:</td>
+									<td><input type="number" style="width: 80%" id="bam_fetch_margin" value="100"> bp</td>
+								</tr>
+								<tr><td colspan="3">
+									Alignments that overlap this locus or within those number of basepairs of the locus will be loaded when a region is navigated to.
+									Use this parameter carefully as importing too much data can crash your web browser due to memory overload.
+									This takes effect when a new locus is navigated to.
+								</td></tr>
+							</table>
+
+							<div id="feature_filter_settings_div">
+								<h3>Filter features by type</h3>
+								<table id="feature_type_table"></table>
 							</div>
+
+
+							<table class="settings_table">
+								<col width="30%">
+								<col width="50%">
+								<col width="20%">
+								<tr><th colspan="3" class="hide_for_coords">Indels</th></tr>
+								<tr>
+									<td class="hide_for_coords">Show indels as:</td>
+									<td colspan="2"> 
+										<select class="form-control" id="show_indels_as_dropdown">
+											
+										</select>
+									</td>
+								</tr>
+								<tr><th class="when_features_only" colspan="3">Features</th></tr>
+								<tr>
+									<td class="when_features_only">Show features as:</td>
+									<td colspan="2"> 
+										<select class="form-control" id="show_features_as_dropdown">
+											
+										</select>
+									</td>
+								</tr>
+								<tr><th colspan="3" class="when_variants_only">Variants</th></tr>
+								<tr class="when_variants_only">
+									<td colspan="2">Show only the chosen variant when others are in view</td>
+									<td><input id="show_only_selected_variants" type="checkbox"></td>
+								</tr>
+							</table>
+
 						</div>
-					</div>
-				</div>
-			</div>
+						<div id="tab_settings" class="tab-pane fade">
+							<p>Settings for the single-read (bottom) view</p>
+							<div id="ribbon_vs_dotplot_container">
+								<label class="radio-inline">
+									<input class="ribbon_vs_dotplot" id="select_ribbon" type="radio" name="ribbon_vs_dotplot" value="ribbon">Ribbon plot
+								</label>
 
-			<div class="panel-group" id="variant_input_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_variant_upload_box">Upload variants</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_variant_upload_box">
-						<div class="panel-body">
-							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#upload_variants">upload vcf or bed</a></li>
-								<li><a data-toggle="tab" href="#upload_bedpe">upload bedpe</a></li>
-							</ul>
-
-							<div class="tab-content">
-							<!-- upload variant file -->
-								<div id="upload_variants" class="tab-pane fade in active">
-									<p>Upload a .vcf or .bed file</p>
-									<input type="file" id="variant_file" />
-									<p><span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .vcf file</span></p>
-									<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
-								</div>
-							<!-- upload bedpe file -->
-								<div id="upload_bedpe" class="tab-pane fade">
-									<p>Upload a .bedpe file</p>
-									<input type="file" id="bedpe_file" />
-								</div>
+								<label class="radio-inline">
+									<input class="ribbon_vs_dotplot" id="select_dotplot"  type="radio" name="ribbon_vs_dotplot" value="dotplot">Dot plot
+								</label>
 							</div>
-						</div>
-					</div>
-				</div>
-			</div>
 
-			<div class="panel-group" id="feature_input_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_feature_upload_box">Upload features</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_feature_upload_box">
-						<div class="panel-body">
-							<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
-							<input type="file" id="feature_bed_file" />
-							<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
+
+							<table class="settings_table">
+								<col width="50%">
+								<col width="20%">
+								<col width="30%">
+								<tr>
+									<th colspan="3">Selected read</th>
+								</tr>
+								<tr>
+									<td style="width:100%" colspan="3"><div id="text_read_output"></div></td>
+								</tr>
+								<tr>
+									<td>Search reads:</td>
+									<td colspan="2">
+										<div id="readname_livesearch"></div>
+									</td>
+								</tr>
+							</table>
+
+							<table class="settings_table">
+								<col width="50%">
+								<col width="20%">
+								<col width="30%">
+								<tr>
+									<td>Match reference from region view </td>
+									<td><input id="ref_match_region_view" type="checkbox" checked></td>
+								</tr>
+								<tr>
+									<td>Highlight selected read</td>
+									<td><input id="highlight_selected_read" type="checkbox" checked></td>
+								</tr>
+								<tr>
+									<td class="hide_for_coords">Minimum indel size to split: </td>
+									<td class="hide_for_coords"><span id="indel_size_label">inf</span></td>
+									<td><div class="slider" id="indel_size_slider"></div></td>
+								</tr>
+								<tr class="ribbon_settings">
+									<td>Alignment outlines on ribbon plot: </td>
+									<td><input id="outline_checkbox" type="checkbox" checked/></td>
+								</tr>
+								<!-- <tr class="dotplot_settings"><th colspan="3">Dot plot settings</th></tr> -->
+								<tr class="dotplot_settings">
+									<td>Colors on dotplot: </td>
+									<td><input id="colors_checkbox" type="checkbox" checked/></td>
+								</tr>
+								<!-- <tr class="ribbon_settings"><th colspan="3">Ribbon plot settings</th></tr> -->
+								
+							</table>
+
+							<h3>Filter alignments</h3>
+							<table class="settings_table">
+								<col width="50%">
+								<col width="20%">
+								<col width="30%">
+								<tr>
+									<td id="min_mq_title">Minimum mapping quality: </td>
+									<td><span id="mq_label">0</span></td>
+									<td><div class="slider" id="mq_slider"></div></td>
+								</tr>
+								<tr>
+									<td>Minimum alignment length: </td>
+									<td><span id="align_length_label">inf</span></td>
+									<td><div class="slider" id="align_length_slider"></div></td>
+									
+								</tr>
+							</table>
 						</div>
-					</div>
-				</div>
-			</div>
-			<div class="panel-group" id="variant_table_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_variant_table_box">Inspect variants</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_variant_table_box">
-						<div class="panel-body">
-							<div id="variant_table_box">
-								<p> Showing only the first 30 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
-								<div id="variant_table_landing">
+				
+						<div id="tab_variant_input_panel" class="tab-pane fade">
+							<div>
+								<p>Upload a .vcf or .bed file</p>
+								<input type="file" id="variant_file" />
+
+								<h3>Bed instructions</h3>
+								Upload a bed file of variants or other features to look at.
+								<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
+								All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
+								<h3>VCF instructions</h3>
+								Upload a vcf file of variants to look at.
+								<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
+								The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
+							</div>
+							<div id="variant_table_box" style="display: none;">
+								<p> Showing only the first 1000 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
+								<div id="ribbon_variant_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Variants -->
 								</div>
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
-			<div class="panel-group" id="bedpe_table_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_bedpe_table_box">Inspect rearrangements</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_bedpe_table_box">
-						<div class="panel-body">
+						<div id="tab_feature_input_panel" class="tab-pane fade">
+							<div>
+								<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
+								<input type="file" id="ribbon_feature_bed_file" />
+							</div>
+
+							<div id="feature_table_box" style="display: none">
+								<p>Showing only the first 1000 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
+								<div id="feature_table_landing" class="scrollable_table_landing">
+									<!-- superTable creates a table here out of _Features -->
+								</div>
+							</div>
+						</div>
+						<div id="tab_bedpe_table_panel" class="tab-pane fade">
+							<div id="upload_bedpe">
+								<p>Upload a .bedpe file</p>
+								<input type="file" id="bedpe_file" />
+								This is for those large variants that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
+								These are shown as connections. The smaller variants can be loaded under the "Small variants" tab.
+							</div>
 							<div id="bedpe_table_box">
-								<p> Showing only the first 30 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
-								<div id="bedpe_table_landing">
+								<p> Showing only the first 1000 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
+								<div id="bedpe_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Bedpe -->
 								</div>
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
-
-
-
-
-			<div class="panel-group" id="region_selector_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_region_picking_box">Select position</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_region_picking_box">
-						<div class="panel-body">
-							<div id="region_box">
-								<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
-								<input class="small_input" type="number" id="region_start" placeholder="123456789">
-								<button id="region_go">Go</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="panel-group" id="feature_table_panel">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" class="active" href="#collapsible_feature_table_box">Inspect features</a>
-						</h4>
-					</div>
-					<div class="panel-collapse collapse in" id="collapsible_feature_table_box">
-						<div class="panel-body">
-							<div id="feature_table_box">
-								<p>Showing only the first 15 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
-								<div id="feature_table_landing">
-									
-								</div>
-							</div>
+						<div id="tab_automation" class="tab-pane fade">
+							<h3>Automate Ribbon</h3>
+							<p>
+								Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!
+							</p>
+							<table>
+								<tr>
+									<td>Prefix for image files</td>
+									<td><input type="text" id="automation_file_prefix" value="Auto-Ribbon"></td>
+								</tr>
+								<tr>
+									<td>Number of reads to take pictures of (randomly selected)</td>
+									<td><input type="number" id="automation_max_reads_to_screenshot" value="5"></td>
+								</tr>
+								<tr>
+									<td>Print variant coordinates onto multi-read view</td>
+									<td><input type="checkbox" id="add_coordinates_to_figures"></td>
+								</tr>
+								<tr>
+									<td>Download a file with info and coordinates for each variant alongside the images</td>
+									<td><input type="checkbox" id="automation_download_info"></td>
+								</tr>
+								<tr>
+									<td>Only select reads with alignments that start or end near the bedpe variant</td>
+									<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
+								</tr>
+								<tr>
+									<td>If a region is too large for the browser to load, automatically subsample</td>
+									<td><input type="checkbox" id="automation_subsample" checked></td>
+								</tr>
+								<tr>
+									<td style="text-indent: 50px;" >Distance:</td>
+									<td><input type="number" id="automation_margin_for_split" value="1000"></td>
+								<tr>
+									<td></td>
+									<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>
+								</tr>
+							</table>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-
 	</div>
 </div>
-<div id="splitthreader-app-container">
+
+<div id="splitthreader-app-container" style="display: none">
+	<!-- SplitThreader starts out hidden. -->
 	<div class="row">
 		<div class="col-md-8">
 			<h1 id="title"></h1>
@@ -755,7 +602,7 @@
 									<div class="tab-content">
 									<!-- Gene settings -->
 										<div id="gene_settings" class="tab-pane fade in active">
-											<label for="color_scheme_dropdown">Annotation:</label>
+											<label for="splitthreader_color_scheme_dropdown">Annotation:</label>
 											<select class="form-control" id="annotation_dropdown">
 											</select>
 
@@ -800,8 +647,8 @@
 													<td><input id="show_features" type="checkbox" checked></td>
 												</tr>
 												<tr>
-													<td><label for="color_scheme_dropdown">Color scheme:</label></td>
-													<td><select class="form-control" id="color_scheme_dropdown"></select></td>
+													<td><label for="splitthreader_color_scheme_dropdown">Color scheme:</label></td>
+													<td><select class="form-control" id="splitthreader_color_scheme_dropdown"></select></td>
 												</tr>
 												<tr>
 													<td>Publication style plot</td>
@@ -916,7 +763,7 @@
 				</div> <!-- end of row -->
 				<p>Showing <span id="table_row_count"></span> variants out of <span class="filtered_number_of_variants"></span>. Unfiltered, there are <span class="number_of_variants"></span> variants</p>
 				<p>Filter in text boxes by =,>, or <, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
-				<div class="table_landing" id="variant_table_landing"></div>
+				<div class="scrollable_table_landing" id="splitthreader_variant_table_landing"></div>
 
 				<div id="table_export_buttons">
 					<a class="btn btn-info" id="export_variant_table_to_csv">Export table as csv</a>
@@ -1003,7 +850,7 @@
 						</div>
 						<div class="panel-body">
 							
-							<div class="table_landing" id="gene_fusion_table_landing"></div>
+							<div class="scrollable_table_landing" id="gene_fusion_table_landing"></div>
 							<label>Instructions:</label>
 							<p>
 								Click on a row in the table to jump to each gene fusion in the visualizer.
@@ -1066,7 +913,7 @@
 									<input type="radio" name="search_from" value="features">Bed file
 								</label>
 								<p>Number of starting points: <span id="search_from_item_count"></span></p>
-								<div class="table_landing" id="search_from_table_landing">
+								<div class="scrollable_table_landing" id="search_from_table_landing">
 
 								</div>
 							</div>
@@ -1087,7 +934,7 @@
 									<input type="radio" name="search_to" value="features">Bed file
 								</label>
 								<p>Number of target end-points: <span id="search_to_item_count"></span></p>
-								<div class="table_landing" id="search_to_table_landing">
+								<div class="scrollable_table_landing" id="search_to_table_landing">
 								</div>
 							</div>
 						</div>
@@ -1114,7 +961,7 @@
 										Click on one of the results in the table to show the path in the visualizer. 
 									</p>
 									<p>
-										Found results for <span id="froms_matched_count">X</span> out of <span id="total_froms_count">N</span> total intervals in the "From" table. Showing at most 30, but filter and sort works on the whole set (as with all tables in SplitThreader). 
+										Found results for <span id="froms_matched_count">X</span> out of <span id="total_froms_count">N</span> total intervals in the "From" table. Showing a subset, but filter and sort works on the whole set (as with all tables in SplitThreader). 
 									</p>
 
 									<!-- Export options -->
@@ -1126,7 +973,7 @@
 
 								</div>
 
-								<div class="table_landing" id="feature_search_table_landing"></div>
+								<div class="scrollable_table_landing" id="feature_search_table_landing"></div>
 							</div>
 						</div>
 					</div>
@@ -1139,7 +986,7 @@
 					</div>
 					<div class="panel-body">
 						<p>Upload a bed file of features</p>
-						<input type="file" id="feature_bed_file" />
+						<input type="file" id="splitthreader_feature_bed_file" />
 						<p>
 						<label>Instructions: </label>
 							Upload a bed file containing features to calculate distances between any sets of features and genes. 

@@ -380,7 +380,7 @@ d3.select("select#annotation_dropdown").on("change", function (d) {
   }
 });
 
-d3.select("select#color_scheme_dropdown")
+d3.select("select#splitthreader_color_scheme_dropdown")
   .selectAll("option")
   .data(_splitthreader_static.color_schemes)
   .enter()
@@ -392,7 +392,7 @@ d3.select("select#color_scheme_dropdown")
     return d.colors;
   });
 
-d3.select("select#color_scheme_dropdown").on("change", function (d) {
+d3.select("select#splitthreader_color_scheme_dropdown").on("change", function (d) {
   _splitthreader_settings.color_index = this.options[this.selectedIndex].value;
   _splitthreader_scales.chromosome_colors.range(
     _splitthreader_static.color_collections[_splitthreader_settings.color_index]
@@ -2784,7 +2784,7 @@ function count_filtered_data(dataset) {
 }
 
 function make_variant_table() {
-  d3.select("#variant_table_landing").call(
+  d3.select("#splitthreader_variant_table_landing").call(
     (_variant_superTable = d3
       .superTable()
       .table_data(_Filtered_variant_data)
@@ -2805,7 +2805,7 @@ function make_variant_table() {
         "category",
         "nearby_variant_count",
       ])
-      .num_rows_to_show(15)
+      .num_rows_to_show(1000)
       .show_advanced_filters(true)
       .click_function(choose_row)
       .run_on_filtered_data_function(count_filtered_data))
@@ -3291,7 +3291,7 @@ function update_search_input_table(to_or_from, data_type) {
       d3
         .superTable()
         .table_data(_Annotation_data)
-        .num_rows_to_show(15)
+        .num_rows_to_show(1000)
         .show_advanced_filters(true)
         .run_on_filtered_data_function(set_search_intervals[to_or_from])
     );
@@ -3313,7 +3313,7 @@ function update_search_input_table(to_or_from, data_type) {
         d3
           .superTable()
           .table_data(_Features_for_splitthreader)
-          .num_rows_to_show(15)
+          .num_rows_to_show(1000)
           .show_advanced_filters(true)
           .run_on_filtered_data_function(set_search_intervals[to_or_from])
       );
@@ -3399,7 +3399,7 @@ function open_bed_file(event) {
   };
 }
 
-d3.select("#feature_bed_file").on("change", open_bed_file);
+d3.select("#splitthreader_feature_bed_file").on("change", open_bed_file);
 
 function run_graph_search() {
   if (_Starting_intervals_for_search.length == 0) {
@@ -3503,7 +3503,7 @@ function update_search_results_table() {
         "path_chromosomes",
       ])
       .show_advanced_filters(true)
-      .num_rows_to_show(30)
+      .num_rows_to_show(1000)
       .click_function(highlight_graph_search_result)
       .run_on_filtered_data_function(update_graph_search_results_for_CSV)
   );
