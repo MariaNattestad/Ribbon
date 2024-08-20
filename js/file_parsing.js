@@ -37,12 +37,11 @@ class BamFile extends GenomicFile {
   async parseHeader() {
     const raw = await this.CLI.exec(`samtools view -H ${this.paths[0]}`);
     if (!raw) {
-      user_message_ribbon("Error", "Could not parse the BAM file header.");
+      user_message_ribbon("Error", "No header found. Are you sure this is a bam file?");
       return;
     }
 
     this.header = {
-      raw,
       sq: parseBamHeader(raw)
     };
     this.ready = true;
