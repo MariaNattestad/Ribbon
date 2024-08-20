@@ -6438,7 +6438,6 @@ function parse_bam_record(record) {
 }
 
 function use_fetched_data(records) {
-  // records is [undefined]
   show_bam_is_ready();
 
   var parsed_bam_records = [];
