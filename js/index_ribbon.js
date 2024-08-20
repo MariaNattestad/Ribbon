@@ -2688,7 +2688,7 @@ function check_bam_done_fetching() {
 }
 
 function show_feature_table() {
-  d3.select("#feature_table_panel").style("display", "block");
+  d3.select("#feature_table_box").style("display", "block");
 
   d3.select("#feature_table_landing").call(
     d3
@@ -2700,7 +2700,7 @@ function show_feature_table() {
   );
 }
 function show_variant_table() {
-  d3.select("#variant_table_panel").style("display", "block");
+  d3.select("#variant_table_box").style("display", "block");
 
   d3.select("#ribbon_variant_table_landing").call(
     d3

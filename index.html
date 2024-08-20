@@ -113,7 +113,15 @@
 	</div>
 
 	<div id="right_panel" style="display: flex; flex-direction: column; height: 80%;">
-		<div id='user-message'></div>
+		<div>
+			<div id="region_box">
+				<p>Navigate to a position:</p>
+				<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
+				<input class="small_input" type="number" id="region_start" placeholder="123456789">
+				<button id="region_go">Go</button>
+			</div>
+			<div id='user-message'></div>
+		</div>
 		<div id='right-panel-under-alert' style="overflow: scroll; flex: 1;">
 			<div class="panel panel-default">
 				<div class="panel-heading">
@@ -128,12 +136,9 @@
 						<li><a data-toggle="tab" href="#tab_data_description">Information</a></li>
 						<li><a data-toggle="tab" href="#tab_region_settings">Multi-read settings</a></li>
 						<li><a data-toggle="tab" href="#tab_settings">Single-read settings</a></li>
-						<li><a data-toggle="tab" href="#tab_variant_input_panel">Upload variants</a></li>
-						<li><a data-toggle="tab" href="#tab_feature_input_panel">Upload features</a></li>
-						<li><a data-toggle="tab" href="#tab_variant_table_panel">Inspect variants</a></li>
-						<li><a data-toggle="tab" href="#tab_bedpe_table_panel">Inspect rearrangements</a></li>
-						<li><a data-toggle="tab" href="#tab_region_selector_panel">Select position</a></li>
-						<li><a data-toggle="tab" href="#tab_features_table_panel">Inspect features</a></li>
+						<li><a data-toggle="tab" href="#tab_bedpe_table_panel">Large variants</a></li>
+						<li><a data-toggle="tab" href="#tab_variant_input_panel">Small variants</a></li>
+						<li><a data-toggle="tab" href="#tab_feature_input_panel">Features</a></li>
 						<li><a data-toggle="tab" href="#tab_automation">Automation</a></li>
 					</ul>
 					<div class="tab-content">
@@ -201,9 +206,7 @@
 							<button id="screenshot_bottom">Download bottom view as png</button>
 						</div>
 						<div id="tab_region_settings" class="tab-pane fade">
-							<p>Settings for the multi-read (top) view</p>
-							
-							<h3>Settings about how the reference shows up</h3>
+							<h3>Settings for the reference</h3>
 							<table class="settings_table">
 								<col width="45%">
 								<col width="20%">
@@ -250,7 +253,7 @@
 							</table>
 							
 
-							<h3>Settings about read filtering</h3>
+							<h3>Settings for read alignments</h3>
 							<table class="settings_table">
 								<col width="45%">
 								<col width="20%">
@@ -414,70 +417,52 @@
 								</tr>
 							</table>
 						</div>
+				
 						<div id="tab_variant_input_panel" class="tab-pane fade">
-							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#upload_variants">upload vcf or bed</a></li>
-								<li><a data-toggle="tab" href="#upload_bedpe">upload bedpe</a></li>
-							</ul>
+							<div>
+								<p>Upload a .vcf or .bed file</p>
+								<input type="file" id="variant_file" />
 
-							<div class="tab-content">
-							<!-- upload variant file -->
-								<div id="upload_variants" class="tab-pane fade in active">
-									<p>Upload a .vcf or .bed file</p>
-									<input type="file" id="variant_file" />
-									<p><span class="vcf_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .vcf file</span></p>
-									<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
-
-									<h3>Bed instructions</h3>
-									Upload a bed file of variants or other features to look at.
-									<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
-									All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
-									<h3>VCF instructions</h3>
-									Upload a vcf file of variants to look at.
-									<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
-									The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
-								</div>
-							<!-- upload bedpe file -->
-								<div id="upload_bedpe" class="tab-pane fade">
-									<p>Upload a .bedpe file</p>
-									<input type="file" id="bedpe_file" />
-								</div>
+								<h3>Bed instructions</h3>
+								Upload a bed file of variants or other features to look at.
+								<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
+								All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
+								<h3>VCF instructions</h3>
+								Upload a vcf file of variants to look at.
+								<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
+								The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
 							</div>
-						</div>
-						<div id="tab_feature_input_panel" class="tab-pane fade">
-							<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
-							<input type="file" id="ribbon_feature_bed_file" />
-							<p><span class="bed_info_icon"> <span class="glyphicon glyphicon-info-sign"></span> Instructions for .bed file</span></p>
-						</div>
-						<div id="tab_variant_table_panel" class="tab-pane fade">
-							<div id="variant_table_box">
+							<div id="variant_table_box" style="display: none;">
 								<p> Showing only the first 1000 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
 								<div id="ribbon_variant_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Variants -->
 								</div>
 							</div>
 						</div>
+						<div id="tab_feature_input_panel" class="tab-pane fade">
+							<div>
+								<p>Upload a bed file with genes, repeats, or any other types of elements you want to annotate</p>
+								<input type="file" id="ribbon_feature_bed_file" />
+							</div>
+
+							<div id="feature_table_box" style="display: none">
+								<p>Showing only the first 1000 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
+								<div id="feature_table_landing" class="scrollable_table_landing">
+									<!-- superTable creates a table here out of _Features -->
+								</div>
+							</div>
+						</div>
 						<div id="tab_bedpe_table_panel" class="tab-pane fade">
+							<div id="upload_bedpe">
+								<p>Upload a .bedpe file</p>
+								<input type="file" id="bedpe_file" />
+								This is for those large variants that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
+								These are shown as connections. The smaller variants can be loaded under the "Small variants" tab.
+							</div>
 							<div id="bedpe_table_box">
 								<p> Showing only the first 1000 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
 								<div id="bedpe_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Bedpe -->
-								</div>
-							</div>
-						</div>
-						<div id="tab_region_selector_panel" class="tab-pane fade">
-							<p>Select position</p>
-							<div id="region_box">
-								<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
-								<input class="small_input" type="number" id="region_start" placeholder="123456789">
-								<button id="region_go">Go</button>
-							</div>
-						</div>
-						<div id="tab_features_table_panel" class="tab-pane fade">
-							<div id="feature_table_box">
-								<p>Showing only the first 1000 features. Sort by clicking column names. Filter by typing queries into text input boxes, e.g. =17, >200.</p>
-								<div id="feature_table_landing" class="scrollable_table_landing">
-									<!-- superTable creates a table here out of _Features -->
 								</div>
 							</div>
 						</div>
