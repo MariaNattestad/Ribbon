@@ -1,10 +1,38 @@
-// import VCF, { parseBreakend } from "@gmod/vcf"; // import is only for modules, and this script has too many global things to
-// become a module even with many code changes.
+import * as d3 from "d3";
+import { parse_and_convert_vcf } from './vcf_utils.js';
+import {Graph} from './SplitThreader.js';
+import $ from 'jquery';
+import Aioli from "@biowasm/aioli";
+import Papa from "papaparse";
+import { exportViz } from "./utils.js";
+import Livesearch from "./d3-livesearch.js";
+import SuperTable from "./d3-superTable.js";
 
-// Hacky way to import from the vcf_utils.js module in this non-module script where we
-// can't use import.
-const parse_and_convert_vcf = window.parse_and_convert_vcf;
-console.log("parse_and_convert_vcf:", parse_and_convert_vcf);
+// ===========================================================================
+// == Biowasm / Aioli
+// ===========================================================================
+
+// TODO: Currently we're loading these in both index_splitthreader.js and index_ribbon.js,
+// perhaps there's a better way.
+
+let _CLI = null;
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", async () => {
+  // Create Aioli (and the WebWorker in which WASM code will run).
+  // Load assets locally instead of using the CDN.
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
+
+  // Get samtools version once initialized
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
+});
+
+// ===========================================================================
+
 
 var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
@@ -152,19 +180,18 @@ _splitthreader_settings.margin_for_nearby = 100000;
 
 var _splitthreader_scales = {};
 _splitthreader_scales.zoom_plots = {
-  top: { x: d3.scale.linear(), y: d3.scale.linear() },
-  bottom: { x: d3.scale.linear(), y: d3.scale.linear() },
+  top: { x: d3.scaleLinear(), y: d3.scaleLinear() },
+  bottom: { x: d3.scaleLinear(), y: d3.scaleLinear() },
 };
-_splitthreader_scales.chromosome_colors = d3.scale
-  .ordinal()
+_splitthreader_scales.chromosome_colors = d3.scaleOrdinal()
   .range(
     _splitthreader_static.color_collections[_splitthreader_settings.color_index]
   );
 _splitthreader_scales.connection_loops = {
-  top: d3.scale.linear(),
-  bottom: d3.scale.linear(),
+  top: d3.scaleLinear(),
+  bottom: d3.scaleLinear(),
 };
-_splitthreader_scales.hist = { x: d3.scale.linear(), y: d3.scale.linear() };
+_splitthreader_scales.hist = { x: d3.scaleLinear(), y: d3.scaleLinear() };
 
 var _axes = {};
 _axes.top = { x: null, y: null };
@@ -173,7 +200,7 @@ var _axis_labels = {};
 _axis_labels.top = { x: null, y: null };
 _axis_labels.bottom = { x: null, y: null };
 
-_zoom_behaviors = { top: d3.behavior.zoom(), bottom: d3.behavior.zoom() };
+let _zoom_behaviors = { top: d3.zoom(), bottom: d3.zoom() };
 
 ///////////////////////    Data    ///////////////////////
 // For plotting:
@@ -956,29 +983,28 @@ function dragmove(d) {
 function draw_circos() {
   ///////////////////// Set up circos plot ////////////////////////////
 
-  var drag = d3.behavior
-    .drag()
-    .origin(function (d) {
-      return d;
-    })
-    .on("dragstart", function (d) {
-      _hover_plot = null; // reset _hover_plot so we only detect mouseover events after the chromosome has been picked up
-      _dragging_chromosome = d.chromosome;
-      d3.event.sourceEvent.stopPropagation();
-    })
-    .on("drag", dragmove)
-    .on("dragend", function (d) {
-      // return chromosome (arc) to its original position
-      d3.select(this).attr("transform", function (d) {
-        return "translate(0,0)"; // return the chromosome label to its original position
-      });
+  var drag = d3.drag()
+    // .origin(function (d) {
+    //   return d;
+    // })
+    // .on("dragstart", function (d) {
+    //   _hover_plot = null; // reset _hover_plot so we only detect mouseover events after the chromosome has been picked up
+    //   _dragging_chromosome = d.chromosome;
+    //   d3.event.sourceEvent.stopPropagation();
+    // })
+    // .on("drag", dragmove)
+    // .on("dragend", function (d) {
+    //   // return chromosome (arc) to its original position
+    //   d3.select(this).attr("transform", function (d) {
+    //     return "translate(0,0)"; // return the chromosome label to its original position
+    //   });
 
-      // Put the chromosome onto the plot it was dropped on (top or bottom)
-      if (_hover_plot == "top" || _hover_plot == "bottom") {
-        select_chrom_for_zoom_plot(_dragging_chromosome, _hover_plot);
-      }
-      _dragging_chromosome = null;
-    });
+    //   // Put the chromosome onto the plot it was dropped on (top or bottom)
+    //   if (_hover_plot == "top" || _hover_plot == "bottom") {
+    //     select_chrom_for_zoom_plot(_dragging_chromosome, _hover_plot);
+    //   }
+    //   _dragging_chromosome = null;
+    // });
 
   var chromosome_labels = _circos_canvas
     .selectAll("g.circos_chromosome")
@@ -996,8 +1022,7 @@ function draw_circos() {
       _circos_canvas.selectAll("g.tip").remove();
     });
 
-  var arc = d3.svg
-    .arc()
+  var arc = d3.arc()
     .outerRadius(_splitthreader_layout.circos.radius)
     .innerRadius(
       _splitthreader_layout.circos.radius -
@@ -1218,10 +1243,8 @@ function draw_zoom_plot(top_or_bottom) {
 
   ///////////////// Plot axes and labels ////////////////////////////////
   if (top_or_bottom == "top") {
-    _axes[top_or_bottom].x = d3.svg
-      .axis()
+    _axes[top_or_bottom].x = d3.axisTop()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-      .orient(top_or_bottom)
       .ticks(5)
       .tickSize(5, 0, 0)
       .tickFormat(d3.format("s"));
@@ -1232,10 +1255,8 @@ function draw_zoom_plot(top_or_bottom) {
       .attr("transform", "translate(" + 0 + "," + 0 + ")")
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.svg
-      .axis()
+    _axes[top_or_bottom].y = d3.axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
-      .orient("left")
       .ticks(8)
       .tickSize(5, 0, 1);
     _axis_labels[top_or_bottom].y = _zoom_containers[top_or_bottom]
@@ -1257,11 +1278,9 @@ function draw_zoom_plot(top_or_bottom) {
           -30 +
           ")"
       );
-  } else {
-    _axes[top_or_bottom].x = d3.svg
-      .axis()
+  } else if (top_or_bottom == "bottom") {
+    _axes[top_or_bottom].x = d3.axisBottom()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-      .orient(top_or_bottom)
       .ticks(5)
       .tickSize(5, 0, 0)
       .tickFormat(d3.format("s"));
@@ -1275,10 +1294,8 @@ function draw_zoom_plot(top_or_bottom) {
       .style("font-size", _splitthreader_settings.font_size)
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.svg
-      .axis()
+    _axes[top_or_bottom].y = d3.axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
-      .orient("left")
       .ticks(8)
       .tickSize(5, 0, 1);
     _axis_labels[top_or_bottom].y = _zoom_containers[top_or_bottom]
@@ -1300,6 +1317,8 @@ function draw_zoom_plot(top_or_bottom) {
           40 +
           ")"
       );
+  } else {
+    console.error("top_or_bottom must be 'top' or 'bottom'");
   }
 
   // Plot background color:
@@ -1404,18 +1423,19 @@ function draw_zoom_plot(top_or_bottom) {
     update_coverage(top_or_bottom);
   };
 
-  _zoom_behaviors[top_or_bottom]
-    .x(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-    .duration(200)
-    .on("zoom", zoom_handler)
-    .center([
-      _splitthreader_layout.zoom_plot.width / 2,
-      _splitthreader_layout.zoom_plot.height / 2,
-    ])
-    .size([
-      _splitthreader_layout.zoom_plot.width,
-      _splitthreader_layout.zoom_plot.height,
-    ]);
+  // ???????????? Fix zoom here:
+  // _zoom_behaviors[top_or_bottom]
+  //   .x(_splitthreader_scales.zoom_plots[top_or_bottom].x)
+  //   .duration(200)
+  //   .on("zoom", zoom_handler)
+  //   .center([
+  //     _splitthreader_layout.zoom_plot.width / 2,
+  //     _splitthreader_layout.zoom_plot.height / 2,
+  //   ])
+  //   .size([
+  //     _splitthreader_layout.zoom_plot.width,
+  //     _splitthreader_layout.zoom_plot.height,
+  //   ]);
 
   _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom]);
 
@@ -1730,8 +1750,7 @@ function draw_connections() {
     user_message_splitthreader("");
   }
 
-  var y_coordinate_for_connection = d3.scale
-    .ordinal()
+  var y_coordinate_for_connection = d3.scaleOrdinal()
     .domain(["top", "bottom"])
     .range([
       _splitthreader_layout.zoom_plot.height +
@@ -1741,8 +1760,7 @@ function draw_connections() {
         _splitthreader_static.foot_spacing_from_axis,
     ]);
 
-  var y_coordinate_for_zoom_plot_base = d3.scale
-    .ordinal()
+  var y_coordinate_for_zoom_plot_base = d3.scaleOrdinal()
     .domain(["top", "bottom"])
     .range([
       _splitthreader_layout.zoom_plot.height + _splitthreader_padding.top,
@@ -1960,16 +1978,17 @@ function draw_connections() {
 
   // Line path generator for connections with feet on both sides to indicate strands
   function connection_path_generator(d) {
-    var x1 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, "top"), // top
-      y1 = y_coordinate_for_connection("top"),
-      x2 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom2, d.pos2, "bottom"), // bottom
-      y2 = y_coordinate_for_connection("bottom");
-    (direction1 = Number(d.strand1 == "-") * 2 - 1), // negative strands means the read is mappping to the right of the breakpoint
-      (direction2 = Number(d.strand2 == "-") * 2 - 1);
+    let x1 =
+      _splitthreader_layout.zoom_plot.x +
+      scale_position_by_chromosome(d.chrom1, d.pos1, "top"); // top
+    let y1 = y_coordinate_for_connection("top");
+    let x2 =
+      _splitthreader_layout.zoom_plot.x +
+      scale_position_by_chromosome(d.chrom2, d.pos2, "bottom"); // bottom
+    let y2 = y_coordinate_for_connection("bottom");
+
+    let  direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+    let direction2 = Number(d.strand2 == "-") * 2 - 1;
 
     return (
       "M " +
@@ -1992,17 +2011,16 @@ function draw_connections() {
   }
 
   function stub_path_generator(d, top_or_bottom) {
-    var x1 =
+    let x1 =
         _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom),
-      y1 = y_coordinate_for_connection(top_or_bottom);
+        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom);
+    let y1 = y_coordinate_for_connection(top_or_bottom);
 
-    var x2 = x1,
-      y2 =
-        y1 +
+    var x2 = x1;
+    let y2 = y1 +
         _splitthreader_layout.connections.stub_height *
           (Number(top_or_bottom == "top") * 2 - 1);
-    direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+    let direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
 
     return (
       "M " +
@@ -2021,14 +2039,14 @@ function draw_connections() {
   }
 
   function loop_path_generator_splitthreader(d, top_or_bottom) {
-    var x1 =
+    let x1 =
         _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom),
-      y1 = y_coordinate_for_connection(top_or_bottom),
-      x2 =
+        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom);
+    let y1 = y_coordinate_for_connection(top_or_bottom);
+    let x2 =
         _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom2, d.pos2, top_or_bottom),
-      y2 = y_coordinate_for_connection(top_or_bottom);
+        scale_position_by_chromosome(d.chrom2, d.pos2, top_or_bottom);
+    let y2 = y_coordinate_for_connection(top_or_bottom);
 
     var xmid = (x1 + x2) / 2;
     var ymid = y1;
@@ -2046,8 +2064,8 @@ function draw_connections() {
         );
     }
 
-    var direction1 = Number(d.strand1 == "-") * 2 - 1, // negative strands means the read is mappping to the right of the breakpoint
-      direction2 = Number(d.strand2 == "-") * 2 - 1;
+    let direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+    let direction2 = Number(d.strand2 == "-") * 2 - 1;
 
     return (
       "M " +
@@ -2232,8 +2250,7 @@ function variant_click(d) {
   choose_row(d);
 
   d3.select("#variant_detail_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data([d])
       .table_header([
         "chrom1",
@@ -2401,7 +2418,7 @@ function draw_genes(top_or_bottom) {
   }
 
   var show_local = false;
-  for (type in _splitthreader_settings.show_gene_types) {
+  for (let type in _splitthreader_settings.show_gene_types) {
     if (_splitthreader_settings.show_gene_types[type] == true) {
       show_local = true;
       break;
@@ -2747,8 +2764,7 @@ function search_select_fusion2(d) {
   }
 }
 function create_gene_search_boxes() {
-  var gene_livesearch = d3
-    .livesearch()
+  var gene_livesearch = Livesearch()
     .max_suggestions_to_show(15)
     .search_list(_Annotation_data)
     .search_key("gene")
@@ -2872,8 +2888,7 @@ function count_filtered_data(dataset) {
 
 function make_variant_table() {
   d3.select("#splitthreader_variant_table_landing").call(
-    (_variant_superTable = d3
-      .superTable()
+    (_variant_superTable = SuperTable()
       .table_data(_Filtered_variant_data)
       .table_header([
         "chrom1",
@@ -3059,10 +3074,8 @@ function draw_histogram(variant_data_to_use) {
     .domain([0, Math.max.apply(null, hist_data)])
     .range([0 + _splitthreader_layout.hist.height, 0]);
 
-  var x_axis = d3.svg
-    .axis()
+  var x_axis = d3.axisBottom()
     .scale(_splitthreader_scales.hist.x)
-    .orient("bottom")
     .ticks(3)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -3085,10 +3098,8 @@ function draw_histogram(variant_data_to_use) {
       "translate(" + (0 + _splitthreader_layout.hist.width / 2) + "," + 40 + ")"
     );
 
-  var y_axis = d3.svg
-    .axis()
+  var y_axis = d3.axisLeft()
     .scale(_splitthreader_scales.hist.y)
-    .orient("left")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -3375,8 +3386,7 @@ set_search_intervals["to"] = function (data) {
 function update_search_input_table(to_or_from, data_type) {
   if (data_type == "genes") {
     d3.select("#search_" + to_or_from + "_table_landing").call(
-      d3
-        .superTable()
+      SuperTable()
         .table_data(_Annotation_data)
         .num_rows_to_show(1000)
         .show_advanced_filters(true)
@@ -3397,8 +3407,7 @@ function update_search_input_table(to_or_from, data_type) {
       );
     } else {
       d3.select("#search_" + to_or_from + "_table_landing").call(
-        d3
-          .superTable()
+        SuperTable()
           .table_data(_Features_for_splitthreader)
           .num_rows_to_show(1000)
           .show_advanced_filters(true)
@@ -3577,8 +3586,7 @@ function highlight_graph_search_result(d) {
 
 function update_search_results_table() {
   d3.select("#feature_search_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Feature_search_results)
       .table_header([
         "from",
@@ -3655,8 +3663,7 @@ function update_fusion_table() {
   d3.select("#show_when_fusions_submitted").style("display", "block");
 
   d3.select("#gene_fusion_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Gene_fusions)
       .table_header([
         "gene1",
@@ -4441,14 +4448,6 @@ async function load_vcf_from_url(urls) {
 
     let records = parse_and_convert_vcf(vcf_header, vcf_data);
     console.log("records:", records);
-
-    // let vcf_parser = new VCF({ header: vcf_header });
-    // for (let line of vcf_data.split("\n")) {
-    //   let variant = vcf_parser.parseLine(line);
-    //   let spansplit_sv = gmod_vcf_to_spansplit_format(variant);
-    //   variants.push(spansplit_sv);
-    // }
-    // console.log("variants:", variants);
   }
 
   load_variants(variants);

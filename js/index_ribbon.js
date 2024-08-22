@@ -2,6 +2,9 @@ import * as d3 from "d3";
 import $ from "jquery";
 import Aioli from "@biowasm/aioli";
 import { BamFile } from "./file_parsing";
+import { download, exportViz } from "./utils.js";
+import Livesearch from "./d3-livesearch.js";
+import SuperTable from "./d3-superTable.js";
 
 // ===========================================================================
 // == Biowasm / Aioli
@@ -2120,8 +2123,7 @@ function apply_ref_filters() {
     return a.length - b.length;
   });
 
-  var chrom_livesearch = d3
-    .livesearch()
+  var chrom_livesearch = Livesearch()
     .max_suggestions_to_show(5)
     .search_list(chromosomes)
     .selection_function(search_select_chrom)
@@ -2146,8 +2148,7 @@ function chunk_changed() {
 
     new_read_selected(0);
 
-    var readname_livesearch = d3
-      .livesearch()
+    var readname_livesearch = Livesearch()
       .max_suggestions_to_show(5)
       .search_list(_Chunk_alignments)
       .search_key("readname")
@@ -2715,8 +2716,7 @@ function show_feature_table() {
   d3.select("#feature_table_box").style("display", "block");
 
   d3.select("#feature_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Features_for_ribbon)
       .num_rows_to_show(1000)
       .click_function(feature_row_click)
@@ -2727,8 +2727,7 @@ function show_variant_table() {
   d3.select("#variant_table_box").style("display", "block");
 
   d3.select("#ribbon_variant_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Variants)
       .num_rows_to_show(1000)
       .show_advanced_filters(true)
@@ -2767,8 +2766,7 @@ function show_bedpe_table() {
   d3.select("#bedpe_table_panel").style("display", "block");
 
   d3.select("#bedpe_table_landing").call(
-    d3
-      .superTable()
+      SuperTable()
       .table_data(_Bedpe)
       .num_rows_to_show(1000)
       .show_advanced_filters(true)

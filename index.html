@@ -13,8 +13,12 @@
 
 	<!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
-	<!-- Bundled CSS (Bootstrap/jQuery/jQueryUI) -->
-	<link href="css/bundle.css" rel="stylesheet">
+
+	<!-- This still uses an old bootstrap version that doesn't play well with bundlers -->
+	<!-- Updates may require migrating a lot of html code, so we'll leave it like this for now. -->
+	<link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="node_modules/jquery-ui-dist/jquery-ui.min.css" rel="stylesheet">
+
 	<!-- My d3-livesearch plugin -->
 	<link href="css/d3-livesearch.css" rel="stylesheet">
 	<link href="css/d3-superTable.css" rel="stylesheet">
@@ -1012,11 +1016,7 @@
 	</div>
 </div> <!-- end splitthreader app container -->
 
-<!-- Shared utilities-->
-<!-- <script src="js/utils.js"></script> -->
-
-<!-- SplitThreader's graph algorithms -->
-<!-- <script src="js/SplitThreader.js"></script> -->
+<script src="bootstrap"></script>
 
 <!-- Test various bundled JS is working: -->
 <script type="module">
@@ -1029,14 +1029,23 @@
 	import * as d3 from 'd3';
 	console.log('d3.scaleLinear()', d3.scaleLinear());
 
-	import {superTable} from './js/d3-superTable.js';
+	import SuperTable from './js/d3-superTable.js';
 	console.log('superTable', superTable);
-	import {livesearch} from './js/d3-livesearch.js';
+	import Livesearch from './js/d3-livesearch.js';
 	console.log('livesearch', livesearch);
 
+	// Import Bootstrap Alert component
+    import { Alert } from 'bootstrap';
+    console.log('Bootstrap Alert', Alert);
+
 </script>
+
+<!-- Keeping old bootstrap to avoid major html updates for now -->
+<script src="node_modules/jquery/dist/jquery.min.js"></script>
+<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+
 <!-- Index -->
-<!-- <script src="js/index_splitthreader.js"></script> -->
+<script type="module" src="js/index_splitthreader.js"></script>
 <script type="module" src="js/index_ribbon.js"></script>
 
 </body>

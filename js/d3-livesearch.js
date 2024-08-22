@@ -216,4 +216,5 @@ d3.livesearch = function () {
   return my;
 };
 
-export const livesearch = d3.livesearch;
+export const Livesearch = d3.livesearch;
+export default Livesearch;

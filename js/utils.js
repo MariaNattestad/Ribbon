@@ -1,17 +1,17 @@
-function download(filename, textOrBlob) {
+export function download(filename, textOrBlob) {
     const blob = textOrBlob instanceof Blob ? textOrBlob : new Blob([textOrBlob]);
     const url = URL.createObjectURL(blob);
     download_url(filename, url);
 }
 
-function download_url(filename, url) {
+export function download_url(filename, url) {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
     link.click();
 }
 
-async function exportViz({ format, element, filename } = {format: "svg"}) {
+export async function exportViz({ format, element, filename } = {format: "svg"}) {
     const serializer = new XMLSerializer();
     const svg = serializer.serializeToString(element);
 

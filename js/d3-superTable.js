@@ -232,4 +232,5 @@ d3.superTable = function() {
 	return my;
 }
 
-export const superTable = d3.superTable;
+export const SuperTable = d3.superTable;
+export default SuperTable;

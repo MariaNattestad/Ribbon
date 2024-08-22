@@ -14,17 +14,7 @@ Ribbon works without internet access when deployed locally, although note that p
 
 To deploy Ribbon locally:
 
-```bash
-# Clone this repository
-git clone https://github.com/marianattestad/ribbon
-cd ribbon
-
-# Launch a web server to serve the assets on port 1234
-npm run dev
-```
-
-Ribbon is now available at http://localhost:1234.
-
+We will soon release a package with the bundled code. In the meantime, follow instructions for "Development" below.
 
 ## Development
 
@@ -37,10 +27,5 @@ Then clone this repository and build it:
 git clone https://github.com/marianattestad/ribbon
 cd ribbon
 npm install
-npm run build
-# To add any new packages, edit the build.sh after doing 
-# `npm install <package>` to get the js and/or css included in the bundle!
-
-# Launch a web server
-python3 -m http.server 1234
+npm run dev
 ```
