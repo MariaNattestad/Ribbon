@@ -1,3 +1,30 @@
+import * as d3 from "d3";
+import $ from "jquery";
+import Aioli from "@biowasm/aioli";
+import { BamFile } from "./file_parsing";
+
+// ===========================================================================
+// == Biowasm / Aioli
+// ===========================================================================
+
+let _CLI = null;
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", async () => {
+  // Create Aioli (and the WebWorker in which WASM code will run).
+  // Load assets locally instead of using the CDN.
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
+
+  // Get samtools version once initialized
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
+});
+
+// ===========================================================================
+
 // URLs
 var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
 
@@ -242,16 +269,15 @@ _ui_properties.align_length_slider_max = 0;
 
 // Scales for visualization
 var _ribbon_scales = {};
-_ribbon_scales.read_scale = d3.scale.linear();
-_ribbon_scales.whole_ref_scale = d3.scale.linear();
-_ribbon_scales.chunk_whole_ref_scale = d3.scale.linear();
-_ribbon_scales.ref_interval_scale = d3.scale.linear();
-_ribbon_scales.chunk_ref_interval_scale = d3.scale.linear();
-_ribbon_scales.ref_color_scale = d3.scale
-  .ordinal()
+_ribbon_scales.read_scale = d3.scaleLinear();
+_ribbon_scales.whole_ref_scale = d3.scaleLinear();
+_ribbon_scales.chunk_whole_ref_scale = d3.scaleLinear();
+_ribbon_scales.ref_interval_scale = d3.scaleLinear();
+_ribbon_scales.chunk_ref_interval_scale = d3.scaleLinear();
+_ribbon_scales.ref_color_scale = d3.scaleOrdinal()
   .range(_ribbon_static.color_collections[_ribbon_settings.color_index]);
-_ribbon_scales.variant_color_scale = d3.scale.ordinal();
-_ribbon_scales.feature_color_scale = d3.scale.ordinal();
+_ribbon_scales.variant_color_scale = d3.scaleOrdinal();
+_ribbon_scales.feature_color_scale = d3.scaleOrdinal();
 
 // Show each warning only the first time it comes up in a session
 var _ribbon_warnings = {};
@@ -468,100 +494,100 @@ function open_any_url_files() {
 }
 
 //////////////////// Region settings /////////////////////////
+// ????????????????????????????????????????
+// $("#region_mq_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     $("#region_mq_label").html(ui.value);
+//     _ribbon_settings.region_min_mapping_quality = ui.value;
+//     draw_region_view();
+//   },
+// });
 
-$("#region_mq_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    $("#region_mq_label").html(ui.value);
-    _ribbon_settings.region_min_mapping_quality = ui.value;
-    draw_region_view();
-  },
-});
+// $("#min_read_length_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     d3.select("#min_read_length_input").property("value", ui.value);
+//     _ribbon_settings.min_read_length = ui.value;
+//     draw_region_view();
+//   },
+// });
 
-$("#min_read_length_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    d3.select("#min_read_length_input").property("value", ui.value);
-    _ribbon_settings.min_read_length = ui.value;
-    draw_region_view();
-  },
-});
+// $("#min_aligns_for_ref_interval_slider").slider({
+//   min: 1,
+//   max: 20,
+//   slide: function (event, ui) {
+//     d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
+//     _ribbon_settings.min_aligns_for_ref_interval = ui.value;
+//     apply_ref_filters();
+//     draw_region_view();
+//     if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
+//       select_read();
+//     }
+//   },
+// });
+// $("#max_ref_length_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     d3.select("#max_ref_length_input").property("value", ui.value);
+//     _ribbon_settings.max_ref_length = ui.value;
+//     max_ref_length_changed();
+//     apply_ref_filters();
+//     if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
+//       select_read();
+//     }
+//   },
+// });
 
-$("#min_aligns_for_ref_interval_slider").slider({
-  min: 1,
-  max: 20,
-  slide: function (event, ui) {
-    d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
-    _ribbon_settings.min_aligns_for_ref_interval = ui.value;
-    apply_ref_filters();
-    draw_region_view();
-    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
-      select_read();
-    }
-  },
-});
-$("#max_ref_length_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    d3.select("#max_ref_length_input").property("value", ui.value);
-    _ribbon_settings.max_ref_length = ui.value;
-    max_ref_length_changed();
-    apply_ref_filters();
-    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
-      select_read();
-    }
-  },
-});
+// $("#num_aligns_range_slider").slider({
+//   range: true,
+//   min: 1,
+//   max: 500,
+//   values: [100, 300],
+//   slide: function (event, ui) {
+//     $("#num_aligns_range_label").html("" + ui.values[0] + " - " + ui.values[1]);
+//     _ribbon_settings.min_num_alignments = ui.values[0];
+//     _ribbon_settings.max_num_alignments = ui.values[1];
+//     draw_region_view();
+//   },
+// });
 
-$("#num_aligns_range_slider").slider({
-  range: true,
-  min: 1,
-  max: 500,
-  values: [100, 300],
-  slide: function (event, ui) {
-    $("#num_aligns_range_label").html("" + ui.values[0] + " - " + ui.values[1]);
-    _ribbon_settings.min_num_alignments = ui.values[0];
-    _ribbon_settings.max_num_alignments = ui.values[1];
-    draw_region_view();
-  },
-});
+// $("#mq_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     $("#mq_label").html(ui.value);
+//     _ribbon_settings.min_mapping_quality = ui.value;
+//     draw();
+//   },
+// });
 
-$("#mq_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    $("#mq_label").html(ui.value);
-    _ribbon_settings.min_mapping_quality = ui.value;
-    draw();
-  },
-});
+// $("#indel_size_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     $("#indel_size_label").html(ui.value);
+//     _ribbon_settings.min_indel_size = ui.value;
 
-$("#indel_size_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    $("#indel_size_label").html(ui.value);
-    _ribbon_settings.min_indel_size = ui.value;
+//     _Alignments = reparse_read(
+//       _Chunk_alignments[_current_read_index]
+//     ).alignments;
+//     draw();
+//   },
+// });
 
-    _Alignments = reparse_read(
-      _Chunk_alignments[_current_read_index]
-    ).alignments;
-    draw();
-  },
-});
-
-$("#align_length_slider").slider({
-  min: 0,
-  max: 1000,
-  slide: function (event, ui) {
-    $("#align_length_label").html(ui.value);
-    _ribbon_settings.min_align_length = ui.value;
-    draw();
-  },
-});
+// $("#align_length_slider").slider({
+//   min: 0,
+//   max: 1000,
+//   slide: function (event, ui) {
+//     $("#align_length_label").html(ui.value);
+//     _ribbon_settings.min_align_length = ui.value;
+//     draw();
+//   },
+// });
 
 function max_ref_length_changed() {
   for (var i in _Whole_refs) {
@@ -577,11 +603,11 @@ function max_ref_length_changed() {
 function search_select_chrom(chrom) {
   // Reset the ref size slider to default
   _ribbon_settings.max_ref_length = _ui_properties.ref_length_slider_max;
-  $("#max_ref_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.max_ref_length
-  );
+  // $("#max_ref_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.max_ref_length
+  // );
   d3.select("#max_ref_length_input").property(
     "value",
     _ribbon_settings.max_ref_length
@@ -600,11 +626,11 @@ d3.select("#min_read_length_input").on("keyup", function () {
     _ribbon_settings.min_read_length = 0;
   }
 
-  $("#min_read_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_read_length
-  );
+  // $("#min_read_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_read_length
+  // );
   draw_region_view();
 });
 
@@ -614,11 +640,11 @@ d3.select("#max_ref_length_input").on("keyup", function () {
     _ribbon_settings.max_ref_length = 0;
   }
 
-  $("#max_ref_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.max_ref_length
-  );
+  // $("#max_ref_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.max_ref_length
+  // );
   max_ref_length_changed();
 });
 
@@ -2540,8 +2566,8 @@ function flexible_bam_fetch(region_list) {
     _num_loaded_regions = 0;
     _Bam_records_from_multiregions = [];
 
-    fetch_whole_region = false;
-    region_fetch_margin = _ribbon_settings.bam_fetch_margin;
+    let fetch_whole_region = false;
+    let region_fetch_margin = _ribbon_settings.bam_fetch_margin;
 
     if (fetch_whole_region == true) {
       for (var i in region_list) {
@@ -3237,13 +3263,13 @@ function reset_settings_for_new_dataset() {
 function refresh_ui_for_new_dataset() {
   if (_ribbon_settings.current_input_type == "coords") {
     $("#min_mq_title").html("Minimum % identity: ");
-    $("#mq_slider").slider("option", "step", 0.01);
+    // $("#mq_slider").slider("option", "step", 0.01);
     $("#region_min_mq_title").html("Minimum % identity of best alignment:");
-    $("#region_mq_slider").slider("option", "step", 0.01);
+    // $("#region_mq_slider").slider("option", "step", 0.01);
 
     d3.selectAll(".hide_for_coords").style("color", "#dddddd");
     // Disable indel size slider
-    $("#indel_size_slider").slider("option", "disabled", true);
+    // $("#indel_size_slider").slider("option", "disabled", true);
 
     // Disable header refs only checkbox
     $("#only_header_refs_checkbox").attr("disabled", true);
@@ -3254,15 +3280,15 @@ function refresh_ui_for_new_dataset() {
     _ribbon_settings.current_input_type == "bam"
   ) {
     $("#min_mq_title").html("Minimum mapping quality: ");
-    $("#mq_slider").slider("option", "step", 1);
+    // $("#mq_slider").slider("option", "step", 1);
     $("#region_min_mq_title").html(
       "Minimum mapping quality of best alignment:"
     );
-    $("#region_mq_slider").slider("option", "step", 1);
+    // $("#region_mq_slider").slider("option", "step", 1);
 
     d3.selectAll(".hide_for_coords").style("color", "black");
     // Enable indel size slider
-    $("#indel_size_slider").slider("option", "disabled", false);
+    // $("#indel_size_slider").slider("option", "disabled", false);
 
     // Enable header refs only checkbox
     $("#only_header_refs_checkbox").attr("disabled", false);
@@ -3289,69 +3315,69 @@ function refresh_ui_elements() {
   }
 
   // Mapping quality in region view
-  $("#region_mq_slider").slider(
-    "option",
-    "max",
-    _ui_properties.region_mq_slider_max
-  );
-  $("#region_mq_slider").slider(
-    "option",
-    "min",
-    _ui_properties.region_mq_slider_min
-  );
-  $("#region_mq_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.region_min_mapping_quality
-  );
+  // $("#region_mq_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.region_mq_slider_max
+  // );
+  // $("#region_mq_slider").slider(
+  //   "option",
+  //   "min",
+  //   _ui_properties.region_mq_slider_min
+  // );
+  // $("#region_mq_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.region_min_mapping_quality
+  // );
   $("#region_mq_label").html(_ribbon_settings.region_min_mapping_quality);
 
-  $("#max_ref_length_slider").slider(
-    "option",
-    "max",
-    _ui_properties.ref_length_slider_max
-  );
-  $("#max_ref_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.max_ref_length
-  );
+  // $("#max_ref_length_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.ref_length_slider_max
+  // );
+  // $("#max_ref_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.max_ref_length
+  // );
   d3.select("#max_ref_length_input").property(
     "value",
     _ribbon_settings.max_ref_length
   );
 
-  $("#min_read_length_slider").slider(
-    "option",
-    "max",
-    _ui_properties.read_length_slider_max
-  );
-  $("#min_read_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_read_length
-  );
+  // $("#min_read_length_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.read_length_slider_max
+  // );
+  // $("#min_read_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_read_length
+  // );
   d3.select("#min_read_length_input").property(
     "value",
     _ribbon_settings.min_read_length
   );
 
   // Number of alignments in region view
-  $("#num_aligns_range_slider").slider(
-    "option",
-    "max",
-    _ui_properties.num_alignments_slider_max
-  );
-  $("#num_aligns_range_slider").slider(
-    "values",
-    0,
-    _ribbon_settings.min_num_alignments
-  );
-  $("#num_aligns_range_slider").slider(
-    "values",
-    1,
-    _ribbon_settings.max_num_alignments
-  );
+  // $("#num_aligns_range_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.num_alignments_slider_max
+  // );
+  // $("#num_aligns_range_slider").slider(
+  //   "values",
+  //   0,
+  //   _ribbon_settings.min_num_alignments
+  // );
+  // $("#num_aligns_range_slider").slider(
+  //   "values",
+  //   1,
+  //   _ribbon_settings.max_num_alignments
+  // );
   $("#num_aligns_range_label").html(
     "" +
       _ribbon_settings.min_num_alignments +
@@ -3360,47 +3386,47 @@ function refresh_ui_elements() {
   );
 
   // Mapping quality in read detail view
-  $("#mq_slider").slider("option", "max", _ui_properties.mq_slider_max);
-  $("#mq_slider").slider("option", "min", _ui_properties.region_mq_slider_min);
-  $("#mq_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_mapping_quality
-  );
+  // $("#mq_slider").slider("option", "max", _ui_properties.mq_slider_max);
+  // $("#mq_slider").slider("option", "min", _ui_properties.region_mq_slider_min);
+  // $("#mq_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_mapping_quality
+  // );
   $("#mq_label").html(_ribbon_settings.min_mapping_quality);
 
   // Indel size in read detail view
-  $("#indel_size_slider").slider(
-    "option",
-    "max",
-    _ui_properties.indel_size_slider_max + 1
-  );
-  $("#indel_size_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_indel_size
-  );
+  // $("#indel_size_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.indel_size_slider_max + 1
+  // );
+  // $("#indel_size_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_indel_size
+  // );
   $("#indel_size_label").html(_ribbon_settings.min_indel_size);
 
   // Alignment length in read detail view
-  $("#align_length_slider").slider(
-    "option",
-    "max",
-    _ui_properties.align_length_slider_max
-  );
-  $("#align_length_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_align_length
-  );
+  // $("#align_length_slider").slider(
+  //   "option",
+  //   "max",
+  //   _ui_properties.align_length_slider_max
+  // );
+  // $("#align_length_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_align_length
+  // );
   $("#align_length_label").html(_ribbon_settings.min_align_length);
 
   // Minimum alignments for each reference interval
-  $("#min_aligns_for_ref_interval_slider").slider(
-    "option",
-    "value",
-    _ribbon_settings.min_aligns_for_ref_interval
-  );
+  // $("#min_aligns_for_ref_interval_slider").slider(
+  //   "option",
+  //   "value",
+  //   _ribbon_settings.min_aligns_for_ref_interval
+  // );
   $("#min_aligns_for_ref_interval_label").html(
     _ribbon_settings.min_aligns_for_ref_interval
   );
@@ -3545,7 +3571,7 @@ function user_message_ribbon(message_type, message) {
     default:
       message_style = "info";
   }
-  html = "<strong>" + message_type + ": </strong>" + message;
+  let html = "<strong>" + message_type + ": </strong>" + message;
 
   var alert = d3
     .select("#user-message")
@@ -3933,7 +3959,7 @@ function natural_sort(a, b) {
   var aa = chunk(a);
   var bb = chunk(b);
 
-  for (x = 0; aa[x] && bb[x]; x++) {
+  for (let x = 0; aa[x] && bb[x]; x++) {
     if (aa[x] !== bb[x]) {
       var c = Number(aa[x]),
         d = Number(bb[x]);
@@ -4282,7 +4308,7 @@ function organize_references_for_chunk() {
   // Gather starts and ends for each chromosome
   var ref_pieces = {};
   for (var j = 0; j < _Chunk_alignments.length; j++) {
-    alignments = _Chunk_alignments[j].alignments;
+    let alignments = _Chunk_alignments[j].alignments;
     for (var i = 0; i < alignments.length; i++) {
       if (ref_pieces[alignments[i].r] == undefined) {
         ref_pieces[alignments[i].r] = [];
@@ -4777,10 +4803,8 @@ function draw_dotplot() {
       _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  var read_axis = d3.svg
-    .axis()
+  var read_axis = d3.axisLeft()
     .scale(_ribbon_scales.read_scale)
-    .orient("left")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -5656,10 +5680,8 @@ function draw_ribbons() {
       _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  var read_axis = d3.svg
-    .axis()
+  var read_axis = d3.axisBottom()
     .scale(_ribbon_scales.read_scale)
-    .orient("bottom")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -5773,7 +5795,7 @@ async function read_bam_url(url, in_background = false) {
   }
 
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile([url, url + ".bai"]);
+  _Bam = new BamFile(_CLI, [url, url + ".bai"]);
   await _Bam.mount();
   await _Bam.parseHeader();
 }
@@ -6227,7 +6249,7 @@ async function create_bam(files) {
 
   // Initialize bam file
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile([bamFile, indexFile]);
+  _Bam = new BamFile(_CLI, [bamFile, indexFile]);
   await _Bam.mount();
   await _Bam.parseHeader();
 }
@@ -6589,10 +6611,6 @@ function make_bam_presets_list() {
 
 make_bam_presets_list();
 
-window.addEventListener("beforeunload", function (event) {
-  event.preventDefault();
-});
-
 // ===========================================================================
 // == Automation
 // ===========================================================================
@@ -6829,11 +6847,13 @@ function go_to_ribbon_mode() {
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
 }
+d3.select("#go_to_ribbon_mode").on("click", go_to_ribbon_mode);
 
 function go_to_splitthreader_mode() {
   d3.select("#ribbon-app-container").style("display", "none");
   d3.select("#splitthreader-app-container").style("display", "block");
 }
+d3.select("#go_to_splitthreader_mode").on("click", go_to_splitthreader_mode);
 
 // ===========================================================================
 // == Main
@@ -6841,3 +6861,8 @@ function go_to_splitthreader_mode() {
 
 run_ribbon();
 open_any_url_files();
+
+
+// window.addEventListener("beforeunload", function (event) {
+//   event.preventDefault();
+// });

@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 d3.superTable = function() {
 	
 	var table_data = undefined;
@@ -229,3 +231,5 @@ d3.superTable = function() {
 
 	return my;
 }
+
+export const superTable = d3.superTable;

@@ -1,18 +1,17 @@
-let _CLI = null;
-
 // =============================================================================
 // Classes for managing genomic files
 // =============================================================================
 
 class GenomicFile {
-  CLI = _CLI; // Assumes "_CLI" is a global variable
+  CLI = null; // Aioli instance must be passed in
   format; // genomics file format
   files = []; // array of File objects or URLs
   paths = []; // paths where those files are mounted
   ready = false;
 
-  constructor(files) {
+  constructor(cli, files) {
     this.files = files;
+    this.CLI = cli;
   }
 
   async mount() {
@@ -29,7 +28,7 @@ class GenomicFile {
 }
 
 // BAM file utilities
-class BamFile extends GenomicFile {
+export class BamFile extends GenomicFile {
   format = "bam";
   header = {
     raw: "",
@@ -39,9 +38,8 @@ class BamFile extends GenomicFile {
   async parseHeader() {
     const raw = await this.CLI.exec(`samtools view -H ${this.paths[0]}`);
     if (!raw) {
-      user_message_ribbon(
-        "Error",
-        "No header found. Are you sure this is a bam file?"
+      console.error(
+        "No header found when running `samtools view -H` This may not be a valid BAM file."
       );
       return;
     }
@@ -80,8 +78,7 @@ class BamFile extends GenomicFile {
         );
       }
       subsampling = ` -s ${samplingPct}`;
-      user_message_ribbon(
-        "Warning",
+      console.warn(
         `Region contains a lot of data; sampling ${Math.round(
           samplingPct * 100
         )}% of reads.`
@@ -105,7 +102,7 @@ class BamFile extends GenomicFile {
     console.timeEnd("samtools view");
 
     if (!raw) {
-      user_message_ribbon("Error", "No reads in the bam file at this location");
+      console.warn("No reads in the bam file at this location");
       return [];
     }
 
@@ -160,22 +157,3 @@ function parseBamReads(raw) {
       return record;
     });
 }
-
-
-// ===========================================================================
-// == Biowasm / Aioli
-// ===========================================================================
-
-// Initialize app on page load
-document.addEventListener("DOMContentLoaded", async () => {
-  // Create Aioli (and the WebWorker in which WASM code will run).
-  // Load assets locally instead of using the CDN.
-  const urlPrefix = `${window.location.origin}/wasm`;
-  _CLI = await new Aioli([
-    { tool: "samtools", version: "1.17", urlPrefix },
-    { tool: "bcftools", version: "1.10", urlPrefix },
-  ]);
-
-  // Get samtools version once initialized
-  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
-});

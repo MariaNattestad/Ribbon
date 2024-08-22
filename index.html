@@ -41,8 +41,8 @@
 			</div>
 			<!-- <div class="navbar-collapse collapse"> -->
 			<ul class="nav navbar-nav" id="navbar">
-				<li><a id="go_to_splitthreader_mode" onclick="go_to_splitthreader_mode()">SplitThreader</a></li>
-				<li><a id="go_to_ribbon_mode" onclick="go_to_ribbon_mode()">Ribbon</a></li>
+				<li><a id="go_to_splitthreader_mode">SplitThreader</a></li>
+				<li><a id="go_to_ribbon_mode">Ribbon</a></li>
 				<li><a id="click_getting_started_link">Info</a></li>
 				<li class="dropdown" id="examples_navbar_item">
 					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
@@ -1012,33 +1012,32 @@
 	</div>
 </div> <!-- end splitthreader app container -->
 
-<!-- Bundled JavaScript libraries -->
-<!-- <script src="js/bundle.js"></script> -->
-
-<!-- My own d3 plugins -->
-<!-- <script src="js/d3-livesearch.js"></script> -->
-<!-- <script src="js/d3-superTable.js"></script> -->
 <!-- Shared utilities-->
 <!-- <script src="js/utils.js"></script> -->
-<!-- file_parsing also sets up Aioli and makes the global _CLI variable -->
-<!-- <script type="module" src="js/file_parsing.js"></script> -->
+
 <!-- SplitThreader's graph algorithms -->
 <!-- <script src="js/SplitThreader.js"></script> -->
 
-<!-- @gmod/vcf only worked without import/export logic, so these are modified. -->
-<!-- <script src="js/vcf-js/vcfReserved.js"></script> -->
-<!-- <script src="js/vcf-js/parse.js"></script> -->
-<!-- <script src="js/vcf-js/index.js"></script> -->
-
-<script type="module" src="js/vcf_utils.js"></script>
-
+<!-- Test various bundled JS is working: -->
 <script type="module">
 	import {parse_and_convert_vcf} from './js/vcf_utils.js';
 	console.log("parse_and_convert_vcf", parse_and_convert_vcf);
+
+	import VCF from '@gmod/vcf';
+	console.log("VCF", VCF);
+
+	import * as d3 from 'd3';
+	console.log('d3.scaleLinear()', d3.scaleLinear());
+
+	import {superTable} from './js/d3-superTable.js';
+	console.log('superTable', superTable);
+	import {livesearch} from './js/d3-livesearch.js';
+	console.log('livesearch', livesearch);
+
 </script>
 <!-- Index -->
 <!-- <script src="js/index_splitthreader.js"></script> -->
-<!-- <script src="js/index_ribbon.js"></script> -->
+<script type="module" src="js/index_ribbon.js"></script>
 
 </body>
 </html>
