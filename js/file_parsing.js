@@ -69,7 +69,7 @@ export class BamFile extends GenomicFile {
     // the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
     // See http://www.htslib.org/doc/samtools-coverage.html for documentation.
     const stats = coverage.split("\t");
-    const samplingPct = Math.round((1e6 / (+stats[4] * +stats[6])) * 100) / 100;
+    let samplingPct = Math.round((1e6 / (+stats[4] * +stats[6])) * 100) / 100;
     if (samplingPct < 1 && _automation_running && !automation_subsample) {
       if (!_automation_running) {
         samplingPct = prompt(
