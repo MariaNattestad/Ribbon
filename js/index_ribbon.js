@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import $ from "jquery";
 import Aioli from "@biowasm/aioli";
 import { BamFile } from "./file_parsing";
 import { download, exportViz } from "./utils.js";
@@ -497,100 +496,99 @@ function open_any_url_files() {
 }
 
 //////////////////// Region settings /////////////////////////
-// ????????????????????????????????????????
-// $("#region_mq_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     $("#region_mq_label").html(ui.value);
-//     _ribbon_settings.region_min_mapping_quality = ui.value;
-//     draw_region_view();
-//   },
-// });
+$("#region_mq_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    $("#region_mq_label").html(ui.value);
+    _ribbon_settings.region_min_mapping_quality = ui.value;
+    draw_region_view();
+  },
+});
 
-// $("#min_read_length_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     d3.select("#min_read_length_input").property("value", ui.value);
-//     _ribbon_settings.min_read_length = ui.value;
-//     draw_region_view();
-//   },
-// });
+$("#min_read_length_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    d3.select("#min_read_length_input").property("value", ui.value);
+    _ribbon_settings.min_read_length = ui.value;
+    draw_region_view();
+  },
+});
 
-// $("#min_aligns_for_ref_interval_slider").slider({
-//   min: 1,
-//   max: 20,
-//   slide: function (event, ui) {
-//     d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
-//     _ribbon_settings.min_aligns_for_ref_interval = ui.value;
-//     apply_ref_filters();
-//     draw_region_view();
-//     if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
-//       select_read();
-//     }
-//   },
-// });
-// $("#max_ref_length_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     d3.select("#max_ref_length_input").property("value", ui.value);
-//     _ribbon_settings.max_ref_length = ui.value;
-//     max_ref_length_changed();
-//     apply_ref_filters();
-//     if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
-//       select_read();
-//     }
-//   },
-// });
+$("#min_aligns_for_ref_interval_slider").slider({
+  min: 1,
+  max: 20,
+  slide: function (event, ui) {
+    d3.select("#min_aligns_for_ref_interval_label").html(ui.value);
+    _ribbon_settings.min_aligns_for_ref_interval = ui.value;
+    apply_ref_filters();
+    draw_region_view();
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
+      select_read();
+    }
+  },
+});
+$("#max_ref_length_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    d3.select("#max_ref_length_input").property("value", ui.value);
+    _ribbon_settings.max_ref_length = ui.value;
+    max_ref_length_changed();
+    apply_ref_filters();
+    if (_ribbon_settings.ref_match_chunk_ref_intervals == true) {
+      select_read();
+    }
+  },
+});
 
-// $("#num_aligns_range_slider").slider({
-//   range: true,
-//   min: 1,
-//   max: 500,
-//   values: [100, 300],
-//   slide: function (event, ui) {
-//     $("#num_aligns_range_label").html("" + ui.values[0] + " - " + ui.values[1]);
-//     _ribbon_settings.min_num_alignments = ui.values[0];
-//     _ribbon_settings.max_num_alignments = ui.values[1];
-//     draw_region_view();
-//   },
-// });
+$("#num_aligns_range_slider").slider({
+  range: true,
+  min: 1,
+  max: 500,
+  values: [100, 300],
+  slide: function (event, ui) {
+    $("#num_aligns_range_label").html("" + ui.values[0] + " - " + ui.values[1]);
+    _ribbon_settings.min_num_alignments = ui.values[0];
+    _ribbon_settings.max_num_alignments = ui.values[1];
+    draw_region_view();
+  },
+});
 
-// $("#mq_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     $("#mq_label").html(ui.value);
-//     _ribbon_settings.min_mapping_quality = ui.value;
-//     draw();
-//   },
-// });
+$("#mq_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    $("#mq_label").html(ui.value);
+    _ribbon_settings.min_mapping_quality = ui.value;
+    draw();
+  },
+});
 
-// $("#indel_size_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     $("#indel_size_label").html(ui.value);
-//     _ribbon_settings.min_indel_size = ui.value;
+$("#indel_size_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    $("#indel_size_label").html(ui.value);
+    _ribbon_settings.min_indel_size = ui.value;
 
-//     _Alignments = reparse_read(
-//       _Chunk_alignments[_current_read_index]
-//     ).alignments;
-//     draw();
-//   },
-// });
+    _Alignments = reparse_read(
+      _Chunk_alignments[_current_read_index]
+    ).alignments;
+    draw();
+  },
+});
 
-// $("#align_length_slider").slider({
-//   min: 0,
-//   max: 1000,
-//   slide: function (event, ui) {
-//     $("#align_length_label").html(ui.value);
-//     _ribbon_settings.min_align_length = ui.value;
-//     draw();
-//   },
-// });
+$("#align_length_slider").slider({
+  min: 0,
+  max: 1000,
+  slide: function (event, ui) {
+    $("#align_length_label").html(ui.value);
+    _ribbon_settings.min_align_length = ui.value;
+    draw();
+  },
+});
 
 function max_ref_length_changed() {
   for (var i in _Whole_refs) {
@@ -606,11 +604,11 @@ function max_ref_length_changed() {
 function search_select_chrom(chrom) {
   // Reset the ref size slider to default
   _ribbon_settings.max_ref_length = _ui_properties.ref_length_slider_max;
-  // $("#max_ref_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.max_ref_length
-  // );
+  $("#max_ref_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.max_ref_length
+  );
   d3.select("#max_ref_length_input").property(
     "value",
     _ribbon_settings.max_ref_length
@@ -629,11 +627,11 @@ d3.select("#min_read_length_input").on("keyup", function () {
     _ribbon_settings.min_read_length = 0;
   }
 
-  // $("#min_read_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_read_length
-  // );
+  $("#min_read_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_read_length
+  );
   draw_region_view();
 });
 
@@ -643,11 +641,11 @@ d3.select("#max_ref_length_input").on("keyup", function () {
     _ribbon_settings.max_ref_length = 0;
   }
 
-  // $("#max_ref_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.max_ref_length
-  // );
+  $("#max_ref_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.max_ref_length
+  );
   max_ref_length_changed();
 });
 
@@ -3261,13 +3259,13 @@ function reset_settings_for_new_dataset() {
 function refresh_ui_for_new_dataset() {
   if (_ribbon_settings.current_input_type == "coords") {
     $("#min_mq_title").html("Minimum % identity: ");
-    // $("#mq_slider").slider("option", "step", 0.01);
+    $("#mq_slider").slider("option", "step", 0.01);
     $("#region_min_mq_title").html("Minimum % identity of best alignment:");
-    // $("#region_mq_slider").slider("option", "step", 0.01);
+    $("#region_mq_slider").slider("option", "step", 0.01);
 
     d3.selectAll(".hide_for_coords").style("color", "#dddddd");
     // Disable indel size slider
-    // $("#indel_size_slider").slider("option", "disabled", true);
+    $("#indel_size_slider").slider("option", "disabled", true);
 
     // Disable header refs only checkbox
     $("#only_header_refs_checkbox").attr("disabled", true);
@@ -3278,15 +3276,15 @@ function refresh_ui_for_new_dataset() {
     _ribbon_settings.current_input_type == "bam"
   ) {
     $("#min_mq_title").html("Minimum mapping quality: ");
-    // $("#mq_slider").slider("option", "step", 1);
+    $("#mq_slider").slider("option", "step", 1);
     $("#region_min_mq_title").html(
       "Minimum mapping quality of best alignment:"
     );
-    // $("#region_mq_slider").slider("option", "step", 1);
+    $("#region_mq_slider").slider("option", "step", 1);
 
     d3.selectAll(".hide_for_coords").style("color", "black");
     // Enable indel size slider
-    // $("#indel_size_slider").slider("option", "disabled", false);
+    $("#indel_size_slider").slider("option", "disabled", false);
 
     // Enable header refs only checkbox
     $("#only_header_refs_checkbox").attr("disabled", false);
@@ -3313,69 +3311,69 @@ function refresh_ui_elements() {
   }
 
   // Mapping quality in region view
-  // $("#region_mq_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.region_mq_slider_max
-  // );
-  // $("#region_mq_slider").slider(
-  //   "option",
-  //   "min",
-  //   _ui_properties.region_mq_slider_min
-  // );
-  // $("#region_mq_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.region_min_mapping_quality
-  // );
+  $("#region_mq_slider").slider(
+    "option",
+    "max",
+    _ui_properties.region_mq_slider_max
+  );
+  $("#region_mq_slider").slider(
+    "option",
+    "min",
+    _ui_properties.region_mq_slider_min
+  );
+  $("#region_mq_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.region_min_mapping_quality
+  );
   $("#region_mq_label").html(_ribbon_settings.region_min_mapping_quality);
 
-  // $("#max_ref_length_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.ref_length_slider_max
-  // );
-  // $("#max_ref_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.max_ref_length
-  // );
+  $("#max_ref_length_slider").slider(
+    "option",
+    "max",
+    _ui_properties.ref_length_slider_max
+  );
+  $("#max_ref_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.max_ref_length
+  );
   d3.select("#max_ref_length_input").property(
     "value",
     _ribbon_settings.max_ref_length
   );
 
-  // $("#min_read_length_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.read_length_slider_max
-  // );
-  // $("#min_read_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_read_length
-  // );
+  $("#min_read_length_slider").slider(
+    "option",
+    "max",
+    _ui_properties.read_length_slider_max
+  );
+  $("#min_read_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_read_length
+  );
   d3.select("#min_read_length_input").property(
     "value",
     _ribbon_settings.min_read_length
   );
 
   // Number of alignments in region view
-  // $("#num_aligns_range_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.num_alignments_slider_max
-  // );
-  // $("#num_aligns_range_slider").slider(
-  //   "values",
-  //   0,
-  //   _ribbon_settings.min_num_alignments
-  // );
-  // $("#num_aligns_range_slider").slider(
-  //   "values",
-  //   1,
-  //   _ribbon_settings.max_num_alignments
-  // );
+  $("#num_aligns_range_slider").slider(
+    "option",
+    "max",
+    _ui_properties.num_alignments_slider_max
+  );
+  $("#num_aligns_range_slider").slider(
+    "values",
+    0,
+    _ribbon_settings.min_num_alignments
+  );
+  $("#num_aligns_range_slider").slider(
+    "values",
+    1,
+    _ribbon_settings.max_num_alignments
+  );
   $("#num_aligns_range_label").html(
     "" +
       _ribbon_settings.min_num_alignments +
@@ -3384,47 +3382,47 @@ function refresh_ui_elements() {
   );
 
   // Mapping quality in read detail view
-  // $("#mq_slider").slider("option", "max", _ui_properties.mq_slider_max);
-  // $("#mq_slider").slider("option", "min", _ui_properties.region_mq_slider_min);
-  // $("#mq_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_mapping_quality
-  // );
+  $("#mq_slider").slider("option", "max", _ui_properties.mq_slider_max);
+  $("#mq_slider").slider("option", "min", _ui_properties.region_mq_slider_min);
+  $("#mq_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_mapping_quality
+  );
   $("#mq_label").html(_ribbon_settings.min_mapping_quality);
 
   // Indel size in read detail view
-  // $("#indel_size_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.indel_size_slider_max + 1
-  // );
-  // $("#indel_size_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_indel_size
-  // );
+  $("#indel_size_slider").slider(
+    "option",
+    "max",
+    _ui_properties.indel_size_slider_max + 1
+  );
+  $("#indel_size_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_indel_size
+  );
   $("#indel_size_label").html(_ribbon_settings.min_indel_size);
 
   // Alignment length in read detail view
-  // $("#align_length_slider").slider(
-  //   "option",
-  //   "max",
-  //   _ui_properties.align_length_slider_max
-  // );
-  // $("#align_length_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_align_length
-  // );
+  $("#align_length_slider").slider(
+    "option",
+    "max",
+    _ui_properties.align_length_slider_max
+  );
+  $("#align_length_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_align_length
+  );
   $("#align_length_label").html(_ribbon_settings.min_align_length);
 
   // Minimum alignments for each reference interval
-  // $("#min_aligns_for_ref_interval_slider").slider(
-  //   "option",
-  //   "value",
-  //   _ribbon_settings.min_aligns_for_ref_interval
-  // );
+  $("#min_aligns_for_ref_interval_slider").slider(
+    "option",
+    "value",
+    _ribbon_settings.min_aligns_for_ref_interval
+  );
   $("#min_aligns_for_ref_interval_label").html(
     _ribbon_settings.min_aligns_for_ref_interval
   );
