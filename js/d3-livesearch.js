@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-d3.livesearch = function () {
+export const Livesearch = function () {
   var selection_function = undefined;
   var search_list = undefined;
   var search_key = undefined;
@@ -216,5 +216,4 @@ d3.livesearch = function () {
   return my;
 };
 
-export const Livesearch = d3.livesearch;
 export default Livesearch;
