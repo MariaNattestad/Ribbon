@@ -5,6 +5,7 @@ import { BamFile } from "./file_parsing";
 import { download, exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
+import pako from "pako";
 
 // ===========================================================================
 // == Biowasm / Aioli
@@ -5742,9 +5743,9 @@ function add_user_links_to_navbar() {
 
   d3.select("#user_data_navbar_item").style(
     "visibility",
-    user_links == null ? "hidden" : "visible"
+    user_links ? "hidden" : "visible"
   );
-  if (user_links == null) return;
+  if (!user_links) return;
 
   // Each user_link = { name: ..., perma: ..., date: ... }
   d3.select("ul#user_data_list").html("");
@@ -6850,6 +6851,7 @@ function go_to_ribbon_mode() {
   // Grab any shared data that SplitThreader may have deposited.
   if (window.global_variants) {
     _Bedpe = window.global_variants;
+    update_bedpe();
   }
 }
 d3.select("#go_to_ribbon_mode").on("click", function() {
@@ -6860,12 +6862,13 @@ d3.select("#go_to_ribbon_mode").on("click", function() {
 // Function to switch modes based on the URL hash
 function switchMode() {
   const hash = window.location.hash;
-  console.log("hash:", hash);
 
   if (hash === '#splitthreader') {
     // handled in index_splitthreader.js because it needs to update variables in there.
   } else if (hash === '#ribbon') {
     go_to_ribbon_mode();
+  } else if (hash === '') {
+    // Do nothing
   } else {
     console.error('unknown hash in URL:', hash);
   }

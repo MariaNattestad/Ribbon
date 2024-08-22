@@ -473,6 +473,7 @@ d3.select("select#annotation_dropdown")
 
 
 function use_annotation_at_index(index) {
+  let annotation_chosen = _splitthreader_static.annotations_available[index];
   d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
   show_positions();
   read_ref_file();
@@ -481,9 +482,6 @@ function use_annotation_at_index(index) {
 }
 
 d3.select("select#annotation_dropdown").on("change", function (d) {
-
-  let annotation_chosen = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index];
-  
   if (this.selectedIndex !== _splitthreader_settings.annotation_index) {
     _splitthreader_settings.annotation_index = this.selectedIndex;
     use_annotation_at_index(_splitthreader_settings.annotation_index);
@@ -4566,7 +4564,6 @@ function load_session(session) {
 
 function load_session_from_url() {
   let url = new URL(window.location.href);
-  console.log("URL:", url);
   let session = url.searchParams.get("session");
   if (session) {
     console.log("session found in URL:", session);
@@ -4588,7 +4585,6 @@ function load_session_from_url() {
 
 function is_aioli_ready() {
   if (_CLI) {
-    console.log("Aioli ready");
     return true;
   } else {
     return false;
@@ -4661,12 +4657,13 @@ d3.select("#go_to_splitthreader_mode").on("click", function() {
 // Function to switch modes based on the URL hash
 function switchMode() {
   const hash = window.location.hash;
-  console.log("hash:", hash);
 
   if (hash === '#splitthreader') {
     go_to_splitthreader_mode();
   } else if (hash === '#ribbon') {
     // handled in index_ribbon.js because it needs to update variables in there.
+  } else if (hash === '') {
+    // Do nothing
   } else {
     console.error('unknown hash in URL:', hash);
   }

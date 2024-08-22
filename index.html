@@ -48,18 +48,8 @@
 				<li><a id="go_to_splitthreader_mode">SplitThreader</a></li>
 				<li><a id="go_to_ribbon_mode">Ribbon</a></li>
 				<li><a id="click_getting_started_link">Info</a></li>
-				<li class="dropdown" id="examples_navbar_item">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
-					<ul class="dropdown-menu" role="menu" id="examples_list">
-						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-					</ul>
-				</li>
 				<li class="dropdown" id="user_data_navbar_item">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
+					<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu" id="user_data_list">
 						<!-- Populated by add_user_links_to_navbar() in vis.js -->						
 					</ul>
@@ -83,14 +73,29 @@
 					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
 
 					<p><strong>Examples:</strong></p>
-					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+					<ul>
+						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+					</ul>
+
 					<p><strong>Visualize your own alignment data:</strong></p>
 					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
+
+					<h3>SplitThreader</h3>
+					SplitThreader is now available within Ribbon!
+					Just click "SplitThreader" in the top navigation bar, and you can load your own coverage and structural variant files to visualize them.
+					There are also some examples to get you started.
 
 					<h3>Paper and code</h3>
 					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
 					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
-					<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
+					<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
+					<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
+					
+
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
 					
 					<p><strong>Local installation:</strong></p>
@@ -108,6 +113,7 @@
 						<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
 						<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
 					</ul>
+
 				</div>
 			</div>
 		</div>
