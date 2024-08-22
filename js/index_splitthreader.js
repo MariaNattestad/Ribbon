@@ -1,7 +1,10 @@
 // import VCF, { parseBreakend } from "@gmod/vcf"; // import is only for modules, and this script has too many global things to
 // become a module even with many code changes.
 
-// const { default: VCF, parseBreakend } = require("@gmod/vcf");
+// Hacky way to import from the vcf_utils.js module in this non-module script where we
+// can't use import.
+const parse_and_convert_vcf = window.parse_and_convert_vcf;
+console.log("parse_and_convert_vcf:", parse_and_convert_vcf);
 
 var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
@@ -885,11 +888,12 @@ function parse_variant_data(spansplit_input) {
   return variant_data;
 }
 
-function read_variant_file(variants_input) {
+function load_variants(variants_input) {
   _Variant_data = parse_variant_data(variants_input);
   apply_variant_filters();
   populate_ribbon_link();
   _data_ready.spansplit = true;
+  wait_then_run_when_all_data_loaded();
 }
 
 function read_annotation_file() {
@@ -4328,8 +4332,7 @@ function open_variants_bedpe_csv_file() {
       );
       return;
     }
-    read_variant_file(variant_input.data);
-    wait_then_run_when_all_data_loaded();
+    load_variants(variant_input.data);
   };
 }
 d3.select("#input_coverage_file").on("change", open_coverage_file);
@@ -4343,6 +4346,84 @@ run_splitthreader();
 // TODO: Consider moving this into its own file for loading sessions that can impact both Ribbon and SplitThreader.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const INS_example = {
+  CHROM: "chr1",
+  POS: 2401265,
+  ALT: ["<INS>"],
+  INFO: {
+    END: [2401267],
+    SVTYPE: ["INS"],
+    LEFT_SVINSSEQ: [
+      "TCCCTCCTCCTAGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAAGATACTGTGTAGATCTCGGTGGTCGC",
+    ],
+    RIGHT_SVINSSEQ: [
+      "CCCTCCGTCCCTCCCTCCTCCTCCCTCCTTCCTCCCTCCTCCTCCCTCCTCCTCCCTCCTCCCTTCTTCCTCCCTCCTCCTCCCTTCTTCCTCCTCCTCCCTCCTCCCCCTCCTCCCTCCCCCT",
+    ],
+    SOMATIC: true,
+    SOMATICSCORE: [45],
+  },
+  REF: "C",
+  FILTER: "PASS",
+  ID: ["DRAGEN:INS:59677:0:0:0:15:0"],
+  QUAL: null,
+};
+
+let BND_example = {
+  CHROM: "chr1",
+  POS: 23272628,
+  ALT: ["G]chr5:52747359]"],
+  INFO: {
+    SVTYPE: ["BND"],
+    MATEID: ["DRAGEN:BND:63885:0:1:0:0:0:1"],
+    SOMATIC: true,
+    SOMATICSCORE: [381],
+    BND_DEPTH: [127],
+    MATE_BND_DEPTH: [136],
+  },
+  REF: "G",
+  FILTER: "PASS",
+  ID: ["DRAGEN:BND:63885:0:1:0:0:0:0"],
+  QUAL: null,
+};
+
+function gmod_vcf_to_spansplit_format(variant) {
+  console.log("variant:", variant);
+
+  // spansplit format:
+  // chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
+  // 1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
+  // let spansplit_example = {
+  //   chrom1: "1",
+  //   start1: 168186489,
+  //   stop1: 168186572,
+  //   chrom2: "1",
+  //   start2: 182274072,
+  //   stop2: 182274331,
+  //   variant_name: "540",
+  //   score: -1,
+  //   strand1: "+",
+  //   strand2: "+",
+  //   variant_type: "INV",
+  //   split: 15,
+  // };
+
+  let spansplit_sv = {
+    chrom1: variant.CHROM,
+    start1: variant.POS,
+    stop1: variant.POS, // start/stop are averaged later into a single pos.
+    chrom2: variant.CHROM,
+    start2: variant.POS,
+    stop2: variant.INFO.END[0], // start/stop are averaged later into a single pos.
+    variant_name: variant.ID[0],
+    score: -1,
+    strand1: "+",
+    strand2: "+",
+    variant_type: variant.INFO.SVTYPE[0],
+    split: variant.INFO.SOMATICSCORE[0],
+  };
+  return spansplit_sv;
+}
+
 async function load_vcf_from_url(urls) {
   console.log("url:", urls);
   let paths = await _CLI.mount(urls);
@@ -4352,20 +4433,25 @@ async function load_vcf_from_url(urls) {
     "load_vcf_from_url: bcftools --version-only:",
     await _CLI.exec("bcftools --version-only")
   );
+
+  let variants = [];
   for (let vcf_path of paths) {
     const vcf_header = await _CLI.exec("bcftools view -h " + vcf_path);
-    console.log("vcf_header:", vcf_header);
     let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
-    console.log("vcf_data:", vcf_data);
-    let vcf_parser = new VCF({header: vcf_header});
 
-    let variants = [];
-    for (let line of vcf_data.split("\n")) {
-      variants.push(vcf_parser.parseLine(line));
-      break;
-    }
-    console.log('variants:', variants);
+    let records = parse_and_convert_vcf(vcf_header, vcf_data);
+    console.log("records:", records);
+
+    // let vcf_parser = new VCF({ header: vcf_header });
+    // for (let line of vcf_data.split("\n")) {
+    //   let variant = vcf_parser.parseLine(line);
+    //   let spansplit_sv = gmod_vcf_to_spansplit_format(variant);
+    //   variants.push(spansplit_sv);
+    // }
+    // console.log("variants:", variants);
   }
+
+  load_variants(variants);
 }
 
 const test_session = {

@@ -763,7 +763,7 @@
 					</div>
 				</div> <!-- end of row -->
 				<p>Showing <span id="table_row_count"></span> variants out of <span class="filtered_number_of_variants"></span>. Unfiltered, there are <span class="number_of_variants"></span> variants</p>
-				<p>Filter in text boxes by =,>, or <, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
+				<p>Filter in text boxes by =,>, or &lt;, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
 				<div class="scrollable_table_landing" id="splitthreader_variant_table_landing"></div>
 
 				<div id="table_export_buttons">
@@ -1013,26 +1013,32 @@
 </div> <!-- end splitthreader app container -->
 
 <!-- Bundled JavaScript libraries -->
-<script src="js/bundle.js"></script>
+<!-- <script src="js/bundle.js"></script> -->
 
-<!-- My own d3-livesearch plugin -->
-<script src="js/d3-livesearch.js"></script>
-<script src="js/d3-superTable.js"></script>
+<!-- My own d3 plugins -->
+<!-- <script src="js/d3-livesearch.js"></script> -->
+<!-- <script src="js/d3-superTable.js"></script> -->
 <!-- Shared utilities-->
-<script src="js/utils.js"></script>
+<!-- <script src="js/utils.js"></script> -->
 <!-- file_parsing also sets up Aioli and makes the global _CLI variable -->
-<script src="js/file_parsing.js"></script>
+<!-- <script type="module" src="js/file_parsing.js"></script> -->
 <!-- SplitThreader's graph algorithms -->
-<script src="js/SplitThreader.js"></script>
+<!-- <script src="js/SplitThreader.js"></script> -->
 
 <!-- @gmod/vcf only worked without import/export logic, so these are modified. -->
-<script src="js/vcf-js/vcfReserved.js"></script>
-<script src="js/vcf-js/parse.js"></script>
-<script src="js/vcf-js/index.js"></script>
+<!-- <script src="js/vcf-js/vcfReserved.js"></script> -->
+<!-- <script src="js/vcf-js/parse.js"></script> -->
+<!-- <script src="js/vcf-js/index.js"></script> -->
 
+<script type="module" src="js/vcf_utils.js"></script>
+
+<script type="module">
+	import {parse_and_convert_vcf} from './js/vcf_utils.js';
+	console.log("parse_and_convert_vcf", parse_and_convert_vcf);
+</script>
 <!-- Index -->
-<script src="js/index_splitthreader.js"></script>
-<script src="js/index_ribbon.js"></script>
+<!-- <script src="js/index_splitthreader.js"></script> -->
+<!-- <script src="js/index_ribbon.js"></script> -->
 
 </body>
 </html>
