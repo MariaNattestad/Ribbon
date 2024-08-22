@@ -2922,6 +2922,8 @@ function update_bedpe() {
     .domain(color_calculations.names)
     .range(color_calculations.colors);
   show_bedpe_table();
+  // Put bedpe data into a global variable that SplitThreader can adopt.
+  window.global_variants = _Bedpe;
 }
 
 function update_features() {
@@ -6844,14 +6846,37 @@ function resizeWindow() {
 function go_to_ribbon_mode() {
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
-}
-d3.select("#go_to_ribbon_mode").on("click", go_to_ribbon_mode);
 
-function go_to_splitthreader_mode() {
-  d3.select("#ribbon-app-container").style("display", "none");
-  d3.select("#splitthreader-app-container").style("display", "block");
+  // Grab any shared data that SplitThreader may have deposited.
+  if (window.global_variants) {
+    _Bedpe = window.global_variants;
+  }
 }
-d3.select("#go_to_splitthreader_mode").on("click", go_to_splitthreader_mode);
+d3.select("#go_to_ribbon_mode").on("click", function() {
+  go_to_ribbon_mode();
+  window.location.hash = '#ribbon';
+});
+
+// Function to switch modes based on the URL hash
+function switchMode() {
+  const hash = window.location.hash;
+  console.log("hash:", hash);
+
+  if (hash === '#splitthreader') {
+    // handled in index_splitthreader.js because it needs to update variables in there.
+  } else if (hash === '#ribbon') {
+    go_to_ribbon_mode();
+  } else {
+    console.error('unknown hash in URL:', hash);
+  }
+}
+
+// Add event listener for hash change
+window.addEventListener('hashchange', switchMode);
+
+// Call switchMode on page load
+switchMode();
+
 
 // ===========================================================================
 // == Main

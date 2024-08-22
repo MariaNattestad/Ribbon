@@ -136,16 +136,21 @@ _splitthreader_static.foot_spacing_from_axis = 5;
 _splitthreader_static.foot_length = 15;
 _splitthreader_static.annotations_available = [
   {
-    name: "Human hg19 Gencode",
-    ucsc: "hg19",
-    path: "resources/annotation/Human_hg19.genes.csv",
-  },
-  {
     name: "Human GRCh38 Gencode",
     ucsc: "hg38",
+    id: "GRCh38",
     path: "resources/annotation/Human_GRCh38.genes.csv",
+    ref: "resources/reference/GRCh38.csv",
   },
+  {
+    name: "Human hg19 Gencode",
+    id: "hg19",
+    ucsc: "hg19",
+    path: "resources/annotation/Human_hg19.genes.csv",
+    ref: "resources/reference/hg19.csv",
+  }
 ];
+
 _splitthreader_static.max_variants_to_show = 10000;
 
 var _splitthreader_settings = {};
@@ -161,9 +166,7 @@ _splitthreader_settings.min_variant_size = -1;
 _splitthreader_settings.min_split_reads = -1;
 _splitthreader_settings.min_discordant_pairs = -1;
 _splitthreader_settings.min_other_read_evidence = -1;
-_splitthreader_settings.annotation_path =
-  "resources/annotation/Human_hg19.genes.csv";
-_splitthreader_settings.ucsc_database = "hg19";
+_splitthreader_settings.annotation_index = 0;
 _splitthreader_settings.coverage_divisor = 1;
 _splitthreader_settings.cov_diff_for_CNV = 1;
 _splitthreader_settings.publication_style_plot = false;
@@ -468,22 +471,22 @@ d3.select("select#annotation_dropdown")
     return d.ucsc;
   });
 
+
+function use_annotation_at_index(index) {
+  d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
+  show_positions();
+  read_ref_file();
+  read_annotation_file();
+  d3.select("select#annotation_dropdown").property("selectedIndex", index);
+}
+
 d3.select("select#annotation_dropdown").on("change", function (d) {
-  if (
-    !(
-      _splitthreader_settings.annotation_path ==
-      _splitthreader_static.annotations_available[
-        this.options[this.selectedIndex].value
-      ]
-    )
-  ) {
-    _splitthreader_settings.annotation_path =
-      this.options[this.selectedIndex].value;
-    _splitthreader_settings.ucsc_database =
-      this.options[this.selectedIndex].getAttribute("ucsc");
-    d3.select("#ucsc_database").html(_splitthreader_settings.ucsc_database);
-    show_positions();
-    read_annotation_file();
+
+  let annotation_chosen = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index];
+  
+  if (this.selectedIndex !== _splitthreader_settings.annotation_index) {
+    _splitthreader_settings.annotation_index = this.selectedIndex;
+    use_annotation_at_index(_splitthreader_settings.annotation_index);
   }
 });
 
@@ -535,6 +538,7 @@ function set_ribbon_path(path) {
 set_ribbon_path("https://genomeribbon.com");
 
 function update_variants() {
+  console.log("Updating variants");
   analyze_variants();
   make_variant_table();
   show_statistics();
@@ -726,6 +730,7 @@ function show_splitthreader_tooltip(text, x, y, parent_object) {
 ///////////  Run the whole program by loading all files and when they are loaded drawing everything ///////////
 
 function run_splitthreader() {
+  read_ref_file();
   read_annotation_file();
   wait_then_run_when_all_data_loaded();
 }
@@ -782,24 +787,59 @@ function wait_then_run_when_all_data_loaded() {
 
 function apply_variant_filters() {
   _Filtered_variant_data = [];
+
+  let num_filtered_bad_chromosomes = 0;
+  let num_filtered_not_enough_split_reads = 0;
+  let num_filtered_not_enough_discordant_pairs = 0;
+  let num_filtered_not_enough_other_read_evidence = 0;
+  let num_filtered_too_small = 0;
+
   for (var i in _Variant_data) {
     var d = _Variant_data[i];
     var variant_size = Math.abs(d.pos2 - d.pos1);
-    if (
-      _Chromosome_start_positions[d.chrom1] != undefined &&
-      _Chromosome_start_positions[d.chrom2] != undefined &&
-      d.split >= _splitthreader_settings.min_split_reads &&
-      d.pairs >= _splitthreader_settings.min_discordant_pairs &&
-      d.other_read_support >= _splitthreader_settings.min_other_read_evidence &&
-      (variant_size >= _splitthreader_settings.min_variant_size ||
-        d.chrom1 != d.chrom2)
-    ) {
-      _Filtered_variant_data.push(d);
+    if (_Chromosome_start_positions[d.chrom1] == undefined ||
+      _Chromosome_start_positions[d.chrom2] == undefined) {
+      num_filtered_bad_chromosomes++;
+      continue;
     }
+    if (d.split < _splitthreader_settings.min_split_reads) {
+      num_filtered_not_enough_split_reads++;
+      continue;
+    }
+    if (d.pairs < _splitthreader_settings.min_discordant_pairs) {
+      num_filtered_not_enough_discordant_pairs++;
+      continue;
+    }
+    if (d.other_read_support < _splitthreader_settings.min_other_read_evidence) {
+      num_filtered_not_enough_other_read_evidence++;
+      continue;
+    }
+
+    if (d.chrom1 == d.chrom2 && variant_size < _splitthreader_settings.min_variant_size) {
+      num_filtered_too_small++;
+      continue;
+    }
+    // Only if passing all those filters do we add the variant to the filtered list.
+    _Filtered_variant_data.push(d);
+  }
+  if (num_filtered_bad_chromosomes > 0) {
+    console.warn(`Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference chromosome names. This can happen if the coverage file has different chromosome names or if no coverage file is loaded, in which case GRCh38 is assumed.`);
+  }
+  if (num_filtered_not_enough_split_reads > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_split_reads} variants because they have too few split reads`);
+  }
+  if (num_filtered_not_enough_discordant_pairs > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_discordant_pairs} variants because they have too few discordant pairs`);
+  }
+  if (num_filtered_not_enough_other_read_evidence > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_other_read_evidence} variants because they have too few other read evidence`);
+  }
+  if (num_filtered_too_small > 0) {
+    console.warn(`Filtered out ${num_filtered_too_small} variants because they are too small (computed size < ${_splitthreader_settings.min_variant_size})`);
   }
 }
 
-function read_genome_file(genome_input) {
+function use_genome_input(genome_input) {
   var sum_genome_size = 0;
   for (var i = 0; i < genome_input.length; i++) {
     genome_input[i].size = +genome_input[i].size;
@@ -918,47 +958,64 @@ function parse_variant_data(spansplit_input) {
 function load_variants(variants_input) {
   _Variant_data = parse_variant_data(variants_input);
   apply_variant_filters();
-  populate_ribbon_link();
+  update_variants();
+  
+  // To share between SplitThreader and Ribbon that are separate JS scripts, we can use the window object
+  // to pass data.
+  window.global_variants = _Filtered_variant_data;
+
   _data_ready.spansplit = true;
   wait_then_run_when_all_data_loaded();
 }
 
 function read_annotation_file() {
-  if (_splitthreader_settings.annotation_path != "none") {
-    d3.csv(
-      _splitthreader_settings.annotation_path,
-      function (error, annotation_input) {
-        if (error) {
-          user_message_splitthreader("Error", "Could not find annotation.");
-          throw error;
-        }
+  const annotation_path = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].path;
 
-        // annotation_genes_available = []
-        _Annotation_by_chrom = {};
-        for (var i = 0; i < annotation_input.length; i++) {
-          annotation_input[i].start = +annotation_input[i].start;
-          annotation_input[i].end = +annotation_input[i].end;
-          if (
-            _Annotation_by_chrom[annotation_input[i].chromosome] == undefined
-          ) {
-            _Annotation_by_chrom[annotation_input[i].chromosome] = [];
-          }
-          _Annotation_by_chrom[annotation_input[i].chromosome].push(
-            annotation_input[i]
-          );
-        }
-        _Annotation_data = annotation_input;
-        _Annotation_data.sort(function (a, b) {
-          return a["gene"].length - b["gene"].length;
-        });
-
-        create_gene_search_boxes();
-        make_gene_type_table();
-
-        _Annotation_to_highlight = [];
+  d3.csv(
+    annotation_path,
+    function (error, annotation_input) {
+      if (error) {
+        user_message_splitthreader("Error", "Could not find annotation.");
+        throw error;
       }
-    );
-  }
+
+      // annotation_genes_available = []
+      _Annotation_by_chrom = {};
+      for (var i = 0; i < annotation_input.length; i++) {
+        annotation_input[i].start = +annotation_input[i].start;
+        annotation_input[i].end = +annotation_input[i].end;
+        if (
+          _Annotation_by_chrom[annotation_input[i].chromosome] == undefined
+        ) {
+          _Annotation_by_chrom[annotation_input[i].chromosome] = [];
+        }
+        _Annotation_by_chrom[annotation_input[i].chromosome].push(
+          annotation_input[i]
+        );
+      }
+      _Annotation_data = annotation_input;
+      _Annotation_data.sort(function (a, b) {
+        return a["gene"].length - b["gene"].length;
+      });
+
+      create_gene_search_boxes();
+      make_gene_type_table();
+
+      _Annotation_to_highlight = [];
+    }
+  );
+}
+
+function read_ref_file() {
+  const ref_path = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ref;
+  d3.csv(ref_path, function (error, genome_input) {
+    if (error) {
+      user_message_splitthreader("Error", "Could not find reference genome.");
+      throw error;
+    }
+
+    use_genome_input(genome_input);
+  });
 }
 
 //////////////  Handle dragging chromosomes from circos onto zoom plots to select chromosomes to show /////////////////
@@ -2916,15 +2973,6 @@ function make_variant_table() {
   make_variant_type_filter_table();
 }
 
-function populate_ribbon_link() {
-  d3.select("#data_to_send_ribbon").html("");
-  d3.select("#data_to_send_ribbon")
-    .append("input")
-    .attr("type", "hidden")
-    .attr("name", "splitthreader")
-    .property("value", JSON.stringify(_Filtered_variant_data));
-}
-
 function update_fusions_for_Ribbon_and_CSV() {
   var variants_for_Ribbon = [];
   for (var j in _Gene_fusions) {
@@ -3716,6 +3764,7 @@ function Mb_format(x) {
 }
 function show_positions() {
   var options = ["top", "bottom"];
+  const ucsc_database = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ucsc_database;
   for (var i in options) {
     var top_or_bottom = options[i];
     var pos = _splitthreader_scales.zoom_plots[top_or_bottom].x.domain();
@@ -3729,7 +3778,7 @@ function show_positions() {
     d3.select("#ucsc_go_" + top_or_bottom).property(
       "href",
       "https://genome.ucsc.edu/cgi-bin/hgTracks?db=" +
-        _splitthreader_settings.ucsc_database +
+        ucsc_database +
         "&position=chr" +
         _chosen_chromosomes["top"] +
         "%3A" +
@@ -3779,9 +3828,11 @@ function show_statistics() {
     }
   }
 
-  d3.select("#mean_copynumber").html(
-    " " + _Statistics.mean_copynumber.toFixed(2) + "X"
-  );
+  if (_Statistics.mean_copynumber) {
+    d3.select("#mean_copynumber").html(
+      " " + _Statistics.mean_copynumber.toFixed(2) + "X"
+    );
+  }
   d3.selectAll(".number_of_variants").html(
     " " + _Statistics.number_of_variants
   );
@@ -4286,6 +4337,18 @@ function genome_input_from_coverage(coverage_by_chromosome) {
   return genome_input;
 }
 
+function use_coverage(raw_data) {
+  let bed_data = read_coverage_file(raw_data);
+  assign_coverage_bed_to_chromosomes(bed_data);
+
+  let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
+  // genome_input in the future can come from a .fai or a .bam header perhaps.
+  // That would allow using SplitThreader with only variants if there's no coverage file available.
+  // For now we depend on the coverage file to figure out the chromosome sizes.
+  use_genome_input(genome_input);
+  wait_then_run_when_all_data_loaded();
+}
+
 function open_coverage_file() {
   var raw_data;
   var reader = new FileReader();
@@ -4301,15 +4364,7 @@ function open_coverage_file() {
   reader.readAsText(this.files[0]);
   reader.onload = function (event) {
     raw_data = event.target.result;
-    let bed_data = read_coverage_file(raw_data);
-    assign_coverage_bed_to_chromosomes(bed_data);
-
-    let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
-    // genome_input in the future can come from a .fai or a .bam header perhaps.
-    // That would allow using SplitThreader with only variants if there's no coverage file available.
-    // For now we depend on the coverage file to figure out the chromosome sizes.
-    read_genome_file(genome_input);
-    wait_then_run_when_all_data_loaded();
+    use_coverage(raw_data);
   };
 }
 
@@ -4453,6 +4508,23 @@ async function load_vcf_from_url(urls) {
   load_variants(variants);
 }
 
+function load_bedpe_from_url(url) {
+  // TODO: Test this once we have a BEDPE available by URL.
+  let variant_input = Papa.parse(url, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (variant_input.errors.length > 0) {
+    user_message_splitthreader(
+      "Error",
+      "Error reading BEDPE/CSV file: " + variant_input.errors[0].message
+    );
+    return;
+  }
+  load_variants(variant_input.data);
+}
+
 const test_session = {
   vcf: [
     "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
@@ -4460,22 +4532,57 @@ const test_session = {
 };
 
 function load_session(session) {
+  console.log("Loading session with JSON:", session);
   if (session.vcf) {
     console.log("Loading VCF:", session.vcf);
     load_vcf_from_url(session.vcf);
+  }
+
+  // if (session.bedpe) {
+  //   console.log("Loading BEDPE:", session.bedpe);
+  //   Not tested yet:
+  //   load_bedpe_from_url(session.bedpe);
+  // }
+
+  if (session.bedpe_backend) {
+    d3.csv(session.bedpe_backend, function (error, data) {
+      if (error) {
+        console.error("Error loading BEDPE:", error);
+      } else {
+        load_variants(data);
+      }
+    });
+  }
+  if (session.coverage_backend) {
+    d3.text(session.coverage_backend, function (error, raw_text) {
+      if (error) {
+        console.error("Error reading coverage file from examples in backend:", error);
+      } else {
+        use_coverage(raw_text);
+      }
+    });
   }
 }
 
 function load_session_from_url() {
   let url = new URL(window.location.href);
+  console.log("URL:", url);
   let session = url.searchParams.get("session");
   if (session) {
     console.log("session found in URL:", session);
-    // TODO: Read session contents.
 
-    // TESTING:
-    session = test_session;
-    load_session(session);
+    if (session.startsWith('example:')) {
+      let example_name = session.split(':')[1];
+      let example_id = example_sessions.findIndex((d) => d.name == example_name);
+      let session_json = example_sessions[example_id];
+      load_session(session_json);
+    } else {
+      // Assume session is a URL.
+
+      // TODO: Read session from a URL -- need an example for this. For now, testing with example sessions.
+      session = test_session;
+      load_session(session);
+    }
   }
 }
 
@@ -4489,7 +4596,6 @@ function is_aioli_ready() {
 }
 
 function load_session_if_present_in_url() {
-  console.log("load_session_if_present_in_url()");
   if (is_aioli_ready()) {
     load_session_from_url();
   } else {
@@ -4497,4 +4603,77 @@ function load_session_if_present_in_url() {
   }
 }
 
+let example_sessions = [
+  // {
+  //   bedpe:
+  //     "https://42basepairs.com/download/s3/human-pangenomics/NHGRI_UCSC_panel/HG002/hpp_HG002_NA24385_son_v1/10XG/giab_chromium_data/10XGenomics_ChromiumGenome_LongRanger2.2_Supernova2.0.1_04122018_high_coverage_bams/NA24385.GRCh38.large_sv_calls.bedpe",
+  //   // coverage:
+  // },
+  {
+    name: "skbr3",
+    bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+    coverage_backend: "resources/examples/skbr3.coverage.bed",
+    annotation_id: 'hg19'
+  },
+  {
+    name: "bedpe_without_coverage",
+    bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+    // coverage_backend: "resources/examples/skbr3.coverage.bed",
+  },
+  {
+    name: "coverage_without_bedpe",
+    // bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+    coverage_backend: "resources/examples/skbr3.coverage.bed",
+  }
+];
+
+// List examples in #splitthreader_examples:
+d3.select("#splitthreader_examples")
+  .append("ul")
+  .selectAll("li")
+  .data(example_sessions)
+  .enter()
+  .append("li")
+  .append("a")
+  .text(function (d) {
+    return d.name;
+  })
+  .attr("href", function (d) {
+    return `?session=example:${d.name}#splitthreader`;
+  });
+
 load_session_if_present_in_url();
+
+function go_to_splitthreader_mode() {
+  d3.select("#ribbon-app-container").style("display", "none");
+  d3.select("#splitthreader-app-container").style("display", "block");
+  if (window.global_variants) {
+    _Filtered_variant_data = window.global_variants;
+    update_variants();
+  }
+}
+d3.select("#go_to_splitthreader_mode").on("click", function() {
+  go_to_splitthreader_mode();
+  // Set hash to #splitthreader:
+  window.location.hash = '#splitthreader';
+});
+
+// Function to switch modes based on the URL hash
+function switchMode() {
+  const hash = window.location.hash;
+  console.log("hash:", hash);
+
+  if (hash === '#splitthreader') {
+    go_to_splitthreader_mode();
+  } else if (hash === '#ribbon') {
+    // handled in index_ribbon.js because it needs to update variables in there.
+  } else {
+    console.error('unknown hash in URL:', hash);
+  }
+}
+
+// Add event listener for hash change
+window.addEventListener('hashchange', switchMode);
+
+// Call switchMode on page load
+switchMode();

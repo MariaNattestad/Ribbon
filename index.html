@@ -542,6 +542,17 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
+							Examples
+						</h4>
+					</div>
+					<div class="panel-body">
+						<p>Click on an example to load it</p>
+						<div id="splitthreader_examples"></div>
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
 							Upload a coverage file
 						</h4>
 					</div>
@@ -1016,31 +1027,9 @@
 	</div>
 </div> <!-- end splitthreader app container -->
 
-<script src="bootstrap"></script>
-
-<!-- Test various bundled JS is working: -->
-<script type="module">
-	import {parse_and_convert_vcf} from './js/vcf_utils.js';
-	console.log("parse_and_convert_vcf", parse_and_convert_vcf);
-
-	import VCF from '@gmod/vcf';
-	console.log("VCF", VCF);
-
-	import * as d3 from 'd3';
-	console.log('d3.scaleLinear()', d3.scaleLinear());
-
-	import SuperTable from './js/d3-superTable.js';
-	console.log('superTable', superTable);
-	import Livesearch from './js/d3-livesearch.js';
-	console.log('livesearch', livesearch);
-
-	// Import Bootstrap Alert component
-    import { Alert } from 'bootstrap';
-    console.log('Bootstrap Alert', Alert);
-
-</script>
-
 <!-- Keeping old bootstrap to avoid major html updates for now -->
+<!-- This old bootstrap can't really be imported by our own JS, but 
+ 	that's okay because we only need it to power basic things like tabs -->
 <script src="node_modules/jquery/dist/jquery.min.js"></script>
 <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
