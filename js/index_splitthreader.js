@@ -536,7 +536,6 @@ function set_ribbon_path(path) {
 set_ribbon_path("https://genomeribbon.com");
 
 function update_variants() {
-  console.log("_Filtered_variant_data:", _Filtered_variant_data);
   analyze_variants();
   make_variant_table();
   show_statistics();
@@ -1308,7 +1307,8 @@ function draw_zoom_plot(top_or_bottom) {
 
   ///////////////// Plot axes and labels ////////////////////////////////
   if (top_or_bottom == "top") {
-    _axes[top_or_bottom].x = d3.axisTop()
+    _axes[top_or_bottom].x = d3
+      .axisTop()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
       .ticks(5)
       .tickSize(5, 0, 0)
@@ -1320,7 +1320,8 @@ function draw_zoom_plot(top_or_bottom) {
       .attr("transform", "translate(" + 0 + "," + 0 + ")")
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.axisLeft()
+    _axes[top_or_bottom].y = d3
+      .axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
       .ticks(8)
       .tickSize(5, 0, 1);
@@ -1344,7 +1345,8 @@ function draw_zoom_plot(top_or_bottom) {
           ")"
       );
   } else if (top_or_bottom == "bottom") {
-    _axes[top_or_bottom].x = d3.axisBottom()
+    _axes[top_or_bottom].x = d3
+      .axisBottom()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
       .ticks(5)
       .tickSize(5, 0, 0)
@@ -1359,7 +1361,8 @@ function draw_zoom_plot(top_or_bottom) {
       .style("font-size", _splitthreader_settings.font_size)
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.axisLeft()
+    _axes[top_or_bottom].y = d3
+      .axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
       .ticks(8)
       .tickSize(5, 0, 1);
@@ -1480,40 +1483,56 @@ function draw_zoom_plot(top_or_bottom) {
 
   update_coverage(top_or_bottom);
 
+  //////////////// Set up zoom behavior ////////////////////////////////
+  // ???????????????????????????????????????
 
-  let x_data_extent = d3.extent(_Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][_chosen_chromosomes[top_or_bottom]], d => d.start);
-  console.log("x_data_extent:", x_data_extent);
-  /////////////////  Zoom  /////////////////
-  var zoom_handler = function () {
-    console.log("zoom_handler running on ", top_or_bottom);
-    var transform = d3.event.transform;
-    var new_x_scale = transform.rescaleX(
-      _splitthreader_scales.zoom_plots[top_or_bottom].x
-    );
-    _axes[top_or_bottom].x.scale(new_x_scale);
-    _axis_labels[top_or_bottom].x.call(_axes[top_or_bottom].x);
+  let x_scale = _splitthreader_scales.zoom_plots[top_or_bottom].x;
+  let gX = _axis_labels[top_or_bottom].x;
+  let xAxis = _axes[top_or_bottom].x;
+  // Scale is _splitthreader_scales.zoom_plots[top_or_bottom].x
+  // const zoomed = function({transform}) { // works in d3 v7 but not v4.
+  const zoomed = function () {
+    const transform = d3.event.transform; // Needed for d3 v4, but in v7 we can update to the above.
+    if (!transform) {
+      console.error("No transform in zoomed function");
+    }
+    // TODO: Switch coverage updates to use the below:
+    // This transform is more performant than redrawing all the coverage rectangles,
+    // but it may be finicky, so I will save that for later.
+    // let x_only_transform = `translate(${transform.x},0) scale(${transform.k}, 1)`;
+    // _plot_canvas[top_or_bottom].attr("transform", x_only_transform);
+
+    let new_x_scale = transform.rescaleX(x_scale);
+    let new_domain = new_x_scale.domain();
+
+    // Constrain the domain to not go below zero.
+    // This fixes a weird panning bug that made the x-axis start at -73192642.
+    if (new_domain[0] < 0) {
+      const domain_width = new_domain[1] - new_domain[0];
+      new_domain = [0, domain_width];
+      new_x_scale.domain(new_domain);
+    }
     _splitthreader_scales.zoom_plots[top_or_bottom].x = new_x_scale;
-
-    console.log("d3.event:", d3.event);
-    var zoom_scale_factor = transform.k;
-    console.log("zoom_scale_factor:", zoom_scale_factor);
-    _bins_per_bar[top_or_bottom] = Math.ceil(1 / zoom_scale_factor);
-    console.log("_bins_per_bar[top_or_bottom]:", _bins_per_bar[top_or_bottom]);
+    gX.call(xAxis.scale(new_x_scale));
+    // This redraws everything, which uses the updated scale.
     update_coverage(top_or_bottom);
   };
 
-  // Initialize the zoom behavior
   _zoom_behaviors[top_or_bottom] = d3
     .zoom()
-    .on("zoom", zoom_handler);
+    .scaleExtent([1, 100])
+    .translateExtent([
+      [0, 0],
+      [
+        _splitthreader_layout.zoom_plot.width,
+        _splitthreader_layout.zoom_plot.height,
+      ],
+    ])
+    .on("zoom", zoomed);
 
   // Apply the zoom behavior to the canvas
+  // g element to apply transform to is _plot_canvas[top_or_bottom].
   _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom]);
-
-  // Prevent default wheel behavior
-  _plot_canvas[top_or_bottom].on("wheel.zoom", function (d) {
-    d3.event.preventDefault();
-  });
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1534,46 +1553,20 @@ function find_point(coordinates, transform) {
 }
 
 function clicked_zoom_button() {
-  console.log("clicked_zoom_button this:", this);
+  // ???????????????????????????????????????
   let top_or_bottom = this.getAttribute("data-plot");
-  console.log("top_or_bottom", top_or_bottom);
 
-  // Get the zoom behavior for the specified plot
-  var zoom = _zoom_behaviors[top_or_bottom];
-
-  // Record the coordinates (in data space) of the center (in screen space).
-  var transform = d3.zoomTransform(_plot_canvas[top_or_bottom].node());
-  
-  console.log("transform:", transform);
-  var center0 = [
-    transform.x +
-      (transform.k * _plot_canvas[top_or_bottom].node().clientWidth) / 2,
-    transform.y +
-      (transform.k * _plot_canvas[top_or_bottom].node().clientHeight) / 2,
-  ];
-  var coordinates0 = coordinates(center0, transform);
-  console.log("coordinates0:", coordinates0, "center0:", center0);
-
-  // Update the zoom scale
-  var scale = transform.k * Math.pow(2, +this.getAttribute("data-zoom"));
-  console.log("scale:", scale);
-  var newTransform = d3.zoomIdentity
-    .translate(transform.x, transform.y)
-    .scale(scale);
-
-  // Translate back to the center
-  var center1 = find_point(coordinates0, newTransform);
-  newTransform = newTransform.translate(
-    center0[0] - center1[0],
-    center0[1] - center1[1]
-  );
-
-  // Apply the new transform
-  _plot_canvas[top_or_bottom]
-    .transition()
-    .duration(200)
-    .call(zoom.transform, newTransform);
+  // Update the zoom scale.
+  let zoom_in_or_out = this.getAttribute("data-zoom");
+  let relative_scale = 1;
+  if (zoom_in_or_out === "+1") {
+    relative_scale = 2;
+  } else if (zoom_in_or_out === "-1") {
+    relative_scale = 0.5;
+  }
+  _zoom_behaviors[top_or_bottom].scaleBy(_plot_canvas[top_or_bottom], relative_scale);
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////// Draw or redraw the coverage (at resoluton matching the current zoom level) ///////////////
@@ -2358,7 +2351,7 @@ function variant_click(d) {
       ])
   );
 
-  $('.nav-tabs a[href="#variant_settings"]').tab("show");
+  // $('.nav-tabs a[href="#variant_settings"]').tab("show");
 }
 
 function arrow_path_generator(d, top_or_bottom) {
@@ -2773,7 +2766,7 @@ function highlight_feature(d) {
 }
 
 function highlight_gene_fusion(d) {
-  $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
 
   hide_all_genes();
   highlight_gene(d.annotation1);
@@ -2933,7 +2926,7 @@ function choose_row(d) {
         _Filtered_variant_data[i].pos2,
         "bottom"
       );
-      $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+      // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
     } else {
       _Filtered_variant_data[i].highlight = false;
     }
@@ -3303,24 +3296,38 @@ function thickness_of_connections(d) {
 function jump_to_location(chrom, pos, top_or_bottom) {
   select_chrom_for_zoom_plot(chrom, top_or_bottom);
 
-  var chrom_size = 0;
-  for (var i in _Genome_data) {
-    if (_Genome_data[i].chromosome == chrom) {
-      chrom_size = _Genome_data[i].size;
-    }
-  }
+  // TODO: Bring back this zooming feature.
 
-  _zoom_behaviors[top_or_bottom].scale(chrom_size / 2000000);
-  _zoom_behaviors[top_or_bottom].translate([
-    _splitthreader_layout.zoom_plot.width / 2 -
-      _splitthreader_scales.zoom_plots[top_or_bottom].x(pos),
-    0,
-  ]);
+  // var chrom_size = 0;
+  // for (var i in _Genome_data) {
+  //   if (_Genome_data[i].chromosome == chrom) {
+  //     chrom_size = _Genome_data[i].size;
+  //   }
+  // }
+ 
+  // let new_center = _splitthreader_scales.zoom_plots[top_or_bottom].x(pos);
 
-  _plot_canvas[top_or_bottom]
-    .transition()
-    .duration(200)
-    .call(_zoom_behaviors[top_or_bottom].event);
+  // let newTranslate = [
+  //   100,
+  //   0
+  // ];
+  // // let newTranslate = [
+  // //   _splitthreader_layout.zoom_plot.width / 2 - new_center,
+  // //   0
+  // // ];
+  // const newScale = 100; // 2000000;
+
+  // const newTransform = d3.zoomIdentity
+  //   .translate(...newTranslate)
+  //   .scale(newScale);
+
+  // _zoom_behaviors[top_or_bottom].transform(_plot_canvas[top_or_bottom], newTransform);
+
+  // Apply the transformation to the zoom behavior
+  // _plot_canvas[top_or_bottom]
+  //   .transition()
+  //   .duration(200)
+  //   .call(_zoom_behaviors[top_or_bottom].transform, newTransform);
 }
 
 function jump_to_gene(annotation_for_new_gene, top_or_bottom) {
@@ -3628,7 +3635,7 @@ function run_graph_search() {
 }
 
 function highlight_graph_search_result(d) {
-  $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
 
   hide_all_genes();
   if (_splitthreader_settings.search_dataset["from"] == "genes") {
@@ -4371,7 +4378,6 @@ function genome_input_from_coverage(coverage_by_chromosome) {
 
 function use_coverage(raw_data) {
   let bed_data = read_coverage_file(raw_data);
-  console.log("use_coverage bed_data:", bed_data);
   assign_coverage_bed_to_chromosomes(bed_data);
 
   let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
