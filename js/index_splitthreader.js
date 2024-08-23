@@ -1049,28 +1049,26 @@ function dragmove(d) {
 function draw_circos() {
   ///////////////////// Set up circos plot ////////////////////////////
 
-  var drag = d3.drag()
-    // .origin(function (d) {
-    //   return d;
-    // })
-    // .on("dragstart", function (d) {
-    //   _hover_plot = null; // reset _hover_plot so we only detect mouseover events after the chromosome has been picked up
-    //   _dragging_chromosome = d.chromosome;
-    //   d3.event.sourceEvent.stopPropagation();
-    // })
-    // .on("drag", dragmove)
-    // .on("dragend", function (d) {
-    //   // return chromosome (arc) to its original position
-    //   d3.select(this).attr("transform", function (d) {
-    //     return "translate(0,0)"; // return the chromosome label to its original position
-    //   });
+  var drag = d3
+    .drag()
+    .on("start", function (d) {
+      _hover_plot = null; // reset _hover_plot so we only detect mouseover events after the chromosome has been picked up
+      _dragging_chromosome = d.chromosome;
+      d3.event.sourceEvent.stopPropagation();
+    })
+    .on("drag", dragmove)
+    .on("end", function (d) {
+      // return chromosome (arc) to its original position
+      d3.select(this).attr("transform", function (d) {
+        return "translate(0,0)"; // return the chromosome label to its original position
+      });
 
-    //   // Put the chromosome onto the plot it was dropped on (top or bottom)
-    //   if (_hover_plot == "top" || _hover_plot == "bottom") {
-    //     select_chrom_for_zoom_plot(_dragging_chromosome, _hover_plot);
-    //   }
-    //   _dragging_chromosome = null;
-    // });
+      // Put the chromosome onto the plot it was dropped on (top or bottom)
+      if (_hover_plot == "top" || _hover_plot == "bottom") {
+        select_chrom_for_zoom_plot(_dragging_chromosome, _hover_plot);
+      }
+      _dragging_chromosome = null;
+    });
 
   var chromosome_labels = _circos_canvas
     .selectAll("g.circos_chromosome")
@@ -1088,7 +1086,8 @@ function draw_circos() {
       _circos_canvas.selectAll("g.tip").remove();
     });
 
-  var arc = d3.arc()
+  var arc = d3
+    .arc()
     .outerRadius(_splitthreader_layout.circos.radius)
     .innerRadius(
       _splitthreader_layout.circos.radius -
