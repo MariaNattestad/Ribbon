@@ -742,6 +742,16 @@ function draw_everything() {
   draw_histogram(_Filtered_variant_data);
 }
 
+function show_visualizer_tab() {
+  // Switch to viz once data is ready.
+  d3.select(".nav_tab_splitthreader").classed("active", false);
+  d3.select(".tab_splitthreader").classed("active", false);
+
+  d3.select("#nav_tab_splitthreader_viz").classed("active", true);
+  d3.select("#visualizer_tab").classed("active", true);
+  d3.select("#visualizer_tab").classed("in", true);
+}
+
 function wait_then_run_when_all_data_loaded() {
   if (
     _data_ready.coverage[_splitthreader_settings.segment_copy_number]["top"] &
@@ -750,6 +760,7 @@ function wait_then_run_when_all_data_loaded() {
     ] &
     _data_ready.spansplit
   ) {
+    show_visualizer_tab();
     scale_to_new_chrom("top");
     scale_to_new_chrom("bottom");
     draw_everything();
@@ -4567,7 +4578,6 @@ function load_session_from_url() {
   let session = url.searchParams.get("session");
   if (session) {
     console.log("session found in URL:", session);
-
     if (session.startsWith('example:')) {
       let example_name = session.split(':')[1];
       let example_id = example_sessions.findIndex((d) => d.name == example_name);
@@ -4674,3 +4684,9 @@ window.addEventListener('hashchange', switchMode);
 
 // Call switchMode on page load
 switchMode();
+
+
+
+// Switch to viz once data is loaded.
+d3.select("#visualizer_tab").classed("active", true);
+d3.select("#setup_tab").classed("active", false);
