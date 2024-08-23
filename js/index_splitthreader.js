@@ -1520,7 +1520,7 @@ function draw_zoom_plot(top_or_bottom) {
 
   _zoom_behaviors[top_or_bottom] = d3
     .zoom()
-    .scaleExtent([1, 100])
+    .scaleExtent([1, 10000])
     .translateExtent([
       [0, 0],
       [
@@ -2651,6 +2651,9 @@ function draw_genes(top_or_bottom) {
 }
 
 function select_chrom_for_zoom_plot(d, top_or_bottom) {
+  if (_chosen_chromosomes[top_or_bottom] === d) {
+    return;
+  }
   _chosen_chromosomes[top_or_bottom] = d;
   if (
     _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][d] ==
