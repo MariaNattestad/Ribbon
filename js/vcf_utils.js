@@ -97,8 +97,63 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
   return output;
 }
 
-export function parse_and_convert_vcf(header_text, vcf_body_text) {
-  let records = parse_whole_vcf(header_text, vcf_body_text);
-  let splitthreader_records = records.map(convert_to_splitthreader_format).filter((x) => x !== null);
-  return splitthreader_records;
+function remove_chr(chrom) {
+  return chrom.replace(/^chr/, "");
 }
+
+export function deduplicate_mates(records) {
+  // Given a list of rearrangement records, deduplicate them by their mate positions.
+  let seen_mates = new Set();
+  let deduplicated_records = [];
+  for (let record of records) {
+    let self_key = `${record.chrom1}:${record.pos1}`;
+    let mate_key = `${record.chrom2}:${record.pos2}`;
+    let my_way = `${self_key}-${mate_key}`;
+    let their_way = `${mate_key}-${self_key}`;
+    if (seen_mates.has(my_way) || seen_mates.has(their_way)) {
+      console.log("Skipping duplicate mate:", record);
+    } else {
+      deduplicated_records.push(record);
+      seen_mates.add(my_way);
+      seen_mates.add(their_way);
+    }
+  }
+  return deduplicated_records;
+}
+
+export function parse_and_convert_vcf(header_text, vcf_body_text, options) {
+  let vcf_records = parse_whole_vcf(header_text, vcf_body_text);
+  let rearrangement_records = vcf_records
+    .map(convert_to_splitthreader_format)
+    .filter((x) => x !== null);
+
+  if (options.deduplicate_mates) {
+    console.log("Deduplicating mates..., num records before:", rearrangement_records.length);
+    rearrangement_records = deduplicate_mates(rearrangement_records);
+    console.log("Num records after deduplication:", rearrangement_records.length);
+  }
+  if (options.remove_chr) {
+    rearrangement_records = rearrangement_records.map((record) => {
+      return {
+        ...record,
+        chrom1: remove_chr(record.chrom1),
+        chrom2: remove_chr(record.chrom2),
+      };
+    });
+  }
+
+  if (options.splitthreader_extra_fields) {
+    rearrangement_records = rearrangement_records.map((record) => {
+      return {
+        ...record,
+        start1: record.pos1,
+        stop1: record.pos1,
+        start2: record.pos2,
+        stop2: record.pos2,
+      };
+    });
+  } 
+
+  return rearrangement_records;
+}
+

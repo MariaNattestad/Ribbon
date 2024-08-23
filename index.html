@@ -154,7 +154,7 @@
 					<div class="tab-content">
 						<div id="tab_input_alignments" class="tab-pane fade in active">
 							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url (recommended)</a></li>
+								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from URL (recommended)</a></li>
 								<li><a data-toggle="tab" href="#bam">Local BAM</a></li>
 								<li><a data-toggle="tab" href="#coords">MUMmer coordinates</a></li>
 							</ul>
@@ -164,7 +164,7 @@
 							<!-- Bam input -->
 								<div id="url_bam" class="tab-pane active">
 									<input type="text" id="bam_url_input" placeholder="https://" style="width: 100%">
-									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
+									<input type="submit" id="submit_bam_url" value="Load bam file from a URL">
 									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix.
 									</p>
 									<strong>Here are some sample BAMs to play with:</strong>
@@ -568,9 +568,9 @@
 						<p>
 						<label>Instructions: </label>
 							We recommend using mosdepth to generate a bed file of coverage. The bed file should have the first three columns as chromosome, start, and end, and the fourth column as the coverage.
-	<pre>
-	mosdepth -n --fast-mode --by 10000 output_file_prefix read_alignments.bam
-	</pre>
+<pre>
+mosdepth -n --fast-mode --by 10000 output_file_prefix read_alignments.bam
+</pre>
 						</p>
 					</div>
 				</div>
@@ -578,24 +578,35 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
-							Upload structural variants
+							Upload structural variants 
 						</h4>
 					</div>
 					<div class="panel-body">
-						<p>Temporarily, only a special bedpe format is allowed. VCF will be supported soon.</p>
-						<input type="file" id="input_variants_file" />
-						<p>
-						<label>Instructions: </label>
-							There's a python script in the github that may help convert a VCF from a structural variant caller
-							to this bedpe-like format.
+						Note: SplitThreader is only useful for large rearrangement variants, so only variants over 1kb in size and interchromosomal variants will be used.
 
-							The bedpe file should have the following columns (comma separated). Here's an example:
-	<pre>
-	chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
-	1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
-	1,152555137,152555830,1,152587256,152588236,671,-1,+,-,DEL,34
-	</pre>
-						</p>
+						.vcf or .vcf.gz are both fine.
+						<p>Upload a VCF of structural variants</p>
+						<input type="file" id="splitthreader_vcf_file" />
+
+						<!-- Input by URL: -->
+						<p>Or, load a VCF from a URL</p>
+						<input type="text" id="splitthreader_vcf_url" placeholder="https://" style="width: 300px;" />
+						<input type="submit" id="splitthreader_vcf_url_button" />
+						<hr>
+						<p>Or, upload a bedpe file of structural variants</p>
+						<input type="file" id="splitthreader_bedpe_file" />
+						<div>
+						<label>Instructions: </label>
+							Some variant callers produce bedpe files, so you can load that instead of a VCF.
+							The bedpe file should have the following columns (comma or tab separated both work).
+
+							<p>Here's an example:</p>
+<pre>
+chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
+1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
+1,152555137,152555830,1,152587256,152588236,671,-1,+,-,DEL,34
+</pre>
+</div>
 					</div>
 				</div>
 			</div>
@@ -784,13 +795,6 @@
 
 				<div id="table_export_buttons">
 					<a class="btn btn-info" id="export_variant_table_to_csv">Export table as csv</a>
-
-					<form id="send_filtered_table_to_ribbon_form" method="post" target="_blank">
-						<div id="filtered_data_to_send_ribbon">
-							<!-- Hidden fields go here -->
-						</div>
-						<input class="btn btn-primary" type="submit" value="Send all variants to Ribbon">	
-					</form>
 				</div>
 
 			</div> <!-- end variant analysis tab -->

@@ -4417,7 +4417,7 @@ function open_coverage_file() {
   };
 }
 
-function open_variants_bedpe_csv_file() {
+function open_variants_bedpe_file() {
   var raw_data;
   var reader = new FileReader();
 
@@ -4446,76 +4446,48 @@ function open_variants_bedpe_csv_file() {
     load_variants(variant_input.data);
   };
 }
-d3.select("#input_coverage_file").on("change", open_coverage_file);
 
-d3.select("#input_variants_file").on("change", open_variants_bedpe_csv_file); // Old way with BEDPE that we may keep for backwards compatibility.
-// d3.select("#input_variants_file").on("change", load_vcf_local);  // New way with VCF.
-
-function remove_chr(chrom) {
-  return chrom.replace(/^chr/, "");
-}
-
-async function load_vcf_from_url(urls) {
-  console.log("url:", urls);
-  let paths = await _CLI.mount(urls);
-  console.log("paths:", paths);
-
-  console.log(
-    "load_vcf_from_url: bcftools --version-only:",
-    await _CLI.exec("bcftools --version-only")
-  );
-
+async function read_bedpes_with_aioli(paths) {
   let variants = [];
   for (let vcf_path of paths) {
     const vcf_header = await _CLI.exec("bcftools view -h " + vcf_path);
     let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
 
-    let records = parse_and_convert_vcf(vcf_header, vcf_data);
-
-    // records = [{
-    //     "chrom1": "chr1",
-    //     "pos1": 23272628,
-    //     "svtype": "BND",
-    //     "variant_name": "DRAGEN:BND:63885:0:1:0:0:0:0",
-    //     "chrom2": "chr5",
-    //     "pos2": 52747359,
-    //     "strand1": "+",
-    //     "strand2": "+",
-    //     "split": 127
-    // }]
-    console.log("records:", records);
-
-    // // variant format needed:
-    // {
-    //   "chrom1": "1",
-    //   "start1": 168186489,
-    //   "stop1": 168186572,
-    //   "chrom2": "1",
-    //   "start2": 182274072,
-    //   "stop2": 182274331,
-    //   "variant_name": "540",
-    //   "score": "-1",
-    //   "strand1": "+",
-    //   "strand2": "+",
-    //   "variant_type": "INV",
-    //   "split": 15,
-    //   "pos1": 168186530,
-    //   "pos2": 182274201,
-    // }
-
-    for (let record of records) {
-      variants.push({...record,
-        chrom1: remove_chr(record.chrom1),
-        chrom2: remove_chr(record.chrom2),
-        start1: record.pos1,
-        stop1: record.pos1,
-        start2: record.pos2,
-        stop2: record.pos2
-      });
-      // TODO: Add any missing fields here.
-    }
+    let records = parse_and_convert_vcf(vcf_header, vcf_data, {
+      deduplicate_mates: true,
+      splitthreader_extra_fields: true,
+      remove_chr: true,
+    });
+    variants = variants.concat(records);
   }
 
+  return variants;
+}
+
+async function open_variants_vcf_file() {
+  var raw_data;
+  var reader = new FileReader();
+
+  if (this.files[0].size > 100000000) {
+    user_message_splitthreader(
+      "Error",
+      "This file is larger than 100 MB. Please choose a smaller file."
+    );
+    return;
+  }
+
+  let paths = await _CLI.mount(this.files[0]);
+  console.log("paths:", paths);
+
+  let variants = await read_bedpes_with_aioli(paths);
+  load_variants(variants);
+}
+
+async function load_vcf_from_url(urls) {
+  console.log("url:", urls);
+  let paths = await _CLI.mount(urls);
+
+  let variants = await read_bedpes_with_aioli(paths);
   load_variants(variants);
 }
 
@@ -4677,6 +4649,22 @@ function check_url_for_mode() {
     console.error('unknown hash in URL:', hash);
   }
 }
+
+d3.select("#input_coverage_file").on("change", open_coverage_file);
+
+d3.select("#splitthreader_bedpe_file").on("change", open_variants_bedpe_file);
+d3.select("#splitthreader_vcf_file").on("change", open_variants_vcf_file);
+
+function submit_vcf_url() {
+  var url = d3.select("#splitthreader_vcf_url").property("value");
+  load_vcf_from_url(url);
+}
+d3.select("#splitthreader_vcf_url_button").on("click", submit_vcf_url);
+d3.select("#splitthreader_vcf_url").on("keypress", function () {
+  if (d3.event.keyCode == 13) {
+    submit_vcf_url();
+  }
+});
 
 // Add event listener for hash change
 window.addEventListener("hashchange", check_url_for_mode);
