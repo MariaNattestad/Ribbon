@@ -53,9 +53,11 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
   // 	QUAL: null
   // };
 
-  if (!vcf_row_obj.INFO) {
-    throw new Error("Expected INFO field in VCF row but it was not found");
+  if (!vcf_row_obj) {
+    console.warn("Expected VCF row object but it was undefined. Skipping.");
+    return null;
   }
+
   let output = {
     chrom1: vcf_row_obj.CHROM,
     pos1: vcf_row_obj.POS,
@@ -63,13 +65,20 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
     variant_name: vcf_row_obj.ID?.[0],
   };
 
-  if (vcf_row_obj.ALT && vcf_row_obj.ALT?.[0]) {
+  let alt = vcf_row_obj?.ALT?.[0];
+  if (alt === undefined) {
+    console.warn("ALT field is undefined for row:", vcf_row_obj);
+    return null;
+  }
+  if (alt.includes("[") || alt.includes("]")) {
     output = {
       ...output,
       ...extract_bnd_info_to_strands(vcf_row_obj.ALT?.[0]),
     };
   } else {
-    console.log("ALT reading not implemented for non-breakends yet.");
+    // For now:
+    console.warn("Skipping non-BND ALT:", vcf_row_obj.ALT?.[0]);
+    return null;
   }
 
   // Warn if any fields in output are undefined.
@@ -79,7 +88,7 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
     }
   }
 
-  if (vcf_row_obj.INFO.BND_DEPTH) {
+  if (vcf_row_obj?.INFO?.BND_DEPTH) {
     // Assuming BND_DEPTH is somewhat equivalent to how many reads support the breakend.
     output.split = vcf_row_obj.INFO.BND_DEPTH[0];
     // Unclear though because MATE_BND_DEPTH differs.
@@ -90,6 +99,6 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
 
 export function parse_and_convert_vcf(header_text, vcf_body_text) {
   let records = parse_whole_vcf(header_text, vcf_body_text);
-  let splitthreader_records = records.map(convert_to_splitthreader_format);
+  let splitthreader_records = records.map(convert_to_splitthreader_format).filter((x) => x !== null);
   return splitthreader_records;
 }

@@ -33,7 +33,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // ===========================================================================
 
-
 var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
 var _splitthreader_layout = {
@@ -481,6 +480,13 @@ function use_annotation_at_index(index) {
   d3.select("select#annotation_dropdown").property("selectedIndex", index);
 }
 
+function use_annotation_by_id(annotation_id) {
+  let index = _splitthreader_static.annotations_available.findIndex(
+    (d) => d.id == annotation_id
+  );
+  use_annotation_at_index(index);
+}
+
 d3.select("select#annotation_dropdown").on("change", function (d) {
   if (this.selectedIndex !== _splitthreader_settings.annotation_index) {
     _splitthreader_settings.annotation_index = this.selectedIndex;
@@ -742,7 +748,7 @@ function draw_everything() {
 }
 
 function show_visualizer_tab() {
-  // Switch to viz once data is ready.
+  // Switch to viz once data is ready, or e.g. when a variant is clicked in the table.
   d3.select(".nav_tab_splitthreader").classed("active", false);
   d3.select(".tab_splitthreader").classed("active", false);
 
@@ -964,6 +970,7 @@ function parse_variant_data(spansplit_input) {
 }
 
 function load_variants(variants_input) {
+  console.log("load_variants input example:", variants_input[0]);
   _Variant_data = parse_variant_data(variants_input);
   apply_variant_filters();
   update_variants();
@@ -2769,7 +2776,7 @@ function highlight_feature(d) {
 }
 
 function highlight_gene_fusion(d) {
-  // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  show_visualizer_tab();
 
   hide_all_genes();
   highlight_gene(d.annotation1);
@@ -2929,7 +2936,7 @@ function choose_row(d) {
         _Filtered_variant_data[i].pos2,
         "bottom"
       );
-      // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+      show_visualizer_tab();
     } else {
       _Filtered_variant_data[i].highlight = false;
     }
@@ -3638,7 +3645,7 @@ function run_graph_search() {
 }
 
 function highlight_graph_search_result(d) {
-  // $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  show_visualizer_tab();
 
   hide_all_genes();
   if (_splitthreader_settings.search_dataset["from"] == "genes") {
@@ -4444,88 +4451,8 @@ d3.select("#input_coverage_file").on("change", open_coverage_file);
 d3.select("#input_variants_file").on("change", open_variants_bedpe_csv_file); // Old way with BEDPE that we may keep for backwards compatibility.
 // d3.select("#input_variants_file").on("change", load_vcf_local);  // New way with VCF.
 
-run_splitthreader();
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// TODO: Consider moving this into its own file for loading sessions that can impact both Ribbon and SplitThreader.
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const INS_example = {
-  CHROM: "chr1",
-  POS: 2401265,
-  ALT: ["<INS>"],
-  INFO: {
-    END: [2401267],
-    SVTYPE: ["INS"],
-    LEFT_SVINSSEQ: [
-      "TCCCTCCTCCTAGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAAGATACTGTGTAGATCTCGGTGGTCGC",
-    ],
-    RIGHT_SVINSSEQ: [
-      "CCCTCCGTCCCTCCCTCCTCCTCCCTCCTTCCTCCCTCCTCCTCCCTCCTCCTCCCTCCTCCCTTCTTCCTCCCTCCTCCTCCCTTCTTCCTCCTCCTCCCTCCTCCCCCTCCTCCCTCCCCCT",
-    ],
-    SOMATIC: true,
-    SOMATICSCORE: [45],
-  },
-  REF: "C",
-  FILTER: "PASS",
-  ID: ["DRAGEN:INS:59677:0:0:0:15:0"],
-  QUAL: null,
-};
-
-let BND_example = {
-  CHROM: "chr1",
-  POS: 23272628,
-  ALT: ["G]chr5:52747359]"],
-  INFO: {
-    SVTYPE: ["BND"],
-    MATEID: ["DRAGEN:BND:63885:0:1:0:0:0:1"],
-    SOMATIC: true,
-    SOMATICSCORE: [381],
-    BND_DEPTH: [127],
-    MATE_BND_DEPTH: [136],
-  },
-  REF: "G",
-  FILTER: "PASS",
-  ID: ["DRAGEN:BND:63885:0:1:0:0:0:0"],
-  QUAL: null,
-};
-
-function gmod_vcf_to_spansplit_format(variant) {
-  console.log("variant:", variant);
-
-  // spansplit format:
-  // chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
-  // 1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
-  // let spansplit_example = {
-  //   chrom1: "1",
-  //   start1: 168186489,
-  //   stop1: 168186572,
-  //   chrom2: "1",
-  //   start2: 182274072,
-  //   stop2: 182274331,
-  //   variant_name: "540",
-  //   score: -1,
-  //   strand1: "+",
-  //   strand2: "+",
-  //   variant_type: "INV",
-  //   split: 15,
-  // };
-
-  let spansplit_sv = {
-    chrom1: variant.CHROM,
-    start1: variant.POS,
-    stop1: variant.POS, // start/stop are averaged later into a single pos.
-    chrom2: variant.CHROM,
-    start2: variant.POS,
-    stop2: variant.INFO.END[0], // start/stop are averaged later into a single pos.
-    variant_name: variant.ID[0],
-    score: -1,
-    strand1: "+",
-    strand2: "+",
-    variant_type: variant.INFO.SVTYPE[0],
-    split: variant.INFO.SOMATICSCORE[0],
-  };
-  return spansplit_sv;
+function remove_chr(chrom) {
+  return chrom.replace(/^chr/, "");
 }
 
 async function load_vcf_from_url(urls) {
@@ -4544,14 +4471,56 @@ async function load_vcf_from_url(urls) {
     let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
 
     let records = parse_and_convert_vcf(vcf_header, vcf_data);
+
+    // records = [{
+    //     "chrom1": "chr1",
+    //     "pos1": 23272628,
+    //     "svtype": "BND",
+    //     "variant_name": "DRAGEN:BND:63885:0:1:0:0:0:0",
+    //     "chrom2": "chr5",
+    //     "pos2": 52747359,
+    //     "strand1": "+",
+    //     "strand2": "+",
+    //     "split": 127
+    // }]
     console.log("records:", records);
+
+    // // variant format needed:
+    // {
+    //   "chrom1": "1",
+    //   "start1": 168186489,
+    //   "stop1": 168186572,
+    //   "chrom2": "1",
+    //   "start2": 182274072,
+    //   "stop2": 182274331,
+    //   "variant_name": "540",
+    //   "score": "-1",
+    //   "strand1": "+",
+    //   "strand2": "+",
+    //   "variant_type": "INV",
+    //   "split": 15,
+    //   "pos1": 168186530,
+    //   "pos2": 182274201,
+    // }
+
+    for (let record of records) {
+      variants.push({...record,
+        chrom1: remove_chr(record.chrom1),
+        chrom2: remove_chr(record.chrom2),
+        start1: record.pos1,
+        stop1: record.pos1,
+        start2: record.pos2,
+        stop2: record.pos2
+      });
+      // TODO: Add any missing fields here.
+    }
   }
 
   load_variants(variants);
 }
 
 function load_bedpe_from_url(url) {
-  // TODO: Test this once we have a BEDPE available by URL.
+  // TODO: Test this once we have a sample BEDPE available by URL.
   let variant_input = Papa.parse(url, {
     download: true,
     header: true,
@@ -4567,14 +4536,12 @@ function load_bedpe_from_url(url) {
   load_variants(variant_input.data);
 }
 
-const test_session = {
-  vcf: [
-    "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
-  ],
-};
 
 function load_session(session) {
   console.log("Loading session with JSON:", session);
+  if (session.annotation_id) {
+    use_annotation_by_id(session.annotation_id);
+  }
   if (session.vcf) {
     console.log("Loading VCF:", session.vcf);
     load_vcf_from_url(session.vcf);
@@ -4618,10 +4585,7 @@ function load_session_from_url() {
       load_session(session_json);
     } else {
       // Assume session is a URL.
-
       // TODO: Read session from a URL -- need an example for this. For now, testing with example sessions.
-      session = test_session;
-      load_session(session);
     }
   }
 }
@@ -4642,17 +4606,19 @@ function load_session_if_present_in_url() {
   }
 }
 
-let example_sessions = [
-  // {
-  //   bedpe:
-  //     "https://42basepairs.com/download/s3/human-pangenomics/NHGRI_UCSC_panel/HG002/hpp_HG002_NA24385_son_v1/10XG/giab_chromium_data/10XGenomics_ChromiumGenome_LongRanger2.2_Supernova2.0.1_04122018_high_coverage_bams/NA24385.GRCh38.large_sv_calls.bedpe",
-  //   // coverage:
-  // },
+const example_sessions = [
+  {
+    name: "GIAB HG008 DRAGEN",
+    vcf: [
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
+    ],
+    annotation_id: "GRCh38",
+  },
   {
     name: "skbr3",
     bedpe_backend: "resources/examples/skbr3.bedpe.csv",
     coverage_backend: "resources/examples/skbr3.coverage.bed",
-    annotation_id: 'hg19'
+    annotation_id: "hg19",
   },
   {
     name: "bedpe_without_coverage",
@@ -4663,7 +4629,7 @@ let example_sessions = [
     name: "coverage_without_bedpe",
     // bedpe_backend: "resources/examples/skbr3.bedpe.csv",
     coverage_backend: "resources/examples/skbr3.coverage.bed",
-  }
+  },
 ];
 
 // List examples in #splitthreader_examples:
@@ -4698,7 +4664,7 @@ d3.select("#go_to_splitthreader_mode").on("click", function() {
 });
 
 // Function to switch modes based on the URL hash
-function switchMode() {
+function check_url_for_mode() {
   const hash = window.location.hash;
 
   if (hash === '#splitthreader') {
@@ -4713,7 +4679,9 @@ function switchMode() {
 }
 
 // Add event listener for hash change
-window.addEventListener('hashchange', switchMode);
+window.addEventListener("hashchange", check_url_for_mode);
 
-// Call switchMode on page load
-switchMode();
+// Call check_url_for_mode on page load
+check_url_for_mode();
+
+run_splitthreader();
