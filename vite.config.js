@@ -7,9 +7,11 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
-        file_parsing: resolve(__dirname, "js/file_parsing.js"), // remove this later by exporting _CLI.
         ribbon: resolve(__dirname, "js/index_ribbon.js"),
         splitthreader: resolve(__dirname, "js/index_splitthreader.js"),
+        jquery: resolve(__dirname, "js/lib/jquery.min.js"),
+        bootstrap: resolve(__dirname, "js/lib/bootstrap.min.js"),
+        jqueryui: resolve(__dirname, "js/lib/jquery-ui.min.js"),
       },
     },
   },
