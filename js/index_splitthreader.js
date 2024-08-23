@@ -536,7 +536,7 @@ function set_ribbon_path(path) {
 set_ribbon_path("https://genomeribbon.com");
 
 function update_variants() {
-  console.log("Updating variants");
+  console.log("_Filtered_variant_data:", _Filtered_variant_data);
   analyze_variants();
   make_variant_table();
   show_statistics();
@@ -1475,35 +1475,42 @@ function draw_zoom_plot(top_or_bottom) {
         .attr("dominant-baseline", "middle");
     }
 
-    d3.selectAll(".zoom_button").on("click", zoom_click);
+    d3.selectAll(".zoom_button").on("click", clicked_zoom_button);
   }
 
   update_coverage(top_or_bottom);
 
+
+  let x_data_extent = d3.extent(_Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][_chosen_chromosomes[top_or_bottom]], d => d.start);
+  console.log("x_data_extent:", x_data_extent);
   /////////////////  Zoom  /////////////////
   var zoom_handler = function () {
+    console.log("zoom_handler running on ", top_or_bottom);
+    var transform = d3.event.transform;
+    var new_x_scale = transform.rescaleX(
+      _splitthreader_scales.zoom_plots[top_or_bottom].x
+    );
+    _axes[top_or_bottom].x.scale(new_x_scale);
     _axis_labels[top_or_bottom].x.call(_axes[top_or_bottom].x);
-    var zoom_scale_factor = d3.event.scale;
+    _splitthreader_scales.zoom_plots[top_or_bottom].x = new_x_scale;
+
+    console.log("d3.event:", d3.event);
+    var zoom_scale_factor = transform.k;
+    console.log("zoom_scale_factor:", zoom_scale_factor);
     _bins_per_bar[top_or_bottom] = Math.ceil(1 / zoom_scale_factor);
+    console.log("_bins_per_bar[top_or_bottom]:", _bins_per_bar[top_or_bottom]);
     update_coverage(top_or_bottom);
   };
 
-  // ???????????? Fix zoom here:
-  // _zoom_behaviors[top_or_bottom]
-  //   .x(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-  //   .duration(200)
-  //   .on("zoom", zoom_handler)
-  //   .center([
-  //     _splitthreader_layout.zoom_plot.width / 2,
-  //     _splitthreader_layout.zoom_plot.height / 2,
-  //   ])
-  //   .size([
-  //     _splitthreader_layout.zoom_plot.width,
-  //     _splitthreader_layout.zoom_plot.height,
-  //   ]);
+  // Initialize the zoom behavior
+  _zoom_behaviors[top_or_bottom] = d3
+    .zoom()
+    .on("zoom", zoom_handler);
 
+  // Apply the zoom behavior to the canvas
   _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom]);
 
+  // Prevent default wheel behavior
   _plot_canvas[top_or_bottom].on("wheel.zoom", function (d) {
     d3.event.preventDefault();
   });
@@ -1511,45 +1518,62 @@ function draw_zoom_plot(top_or_bottom) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function coordinates(point, zoom) {
-  var scale = zoom.scale(),
-    translate = zoom.translate();
+function coordinates(point, transform) {
+  var scale = transform.k,
+    translate = [transform.x, transform.y];
   return [(point[0] - translate[0]) / scale, (point[1] - translate[1]) / scale];
 }
 
-function find_point(coordinates, zoom) {
-  var scale = zoom.scale(),
-    translate = zoom.translate();
+function find_point(coordinates, transform) {
+  var scale = transform.k,
+    translate = [transform.x, transform.y];
   return [
     coordinates[0] * scale + translate[0],
     coordinates[1] * scale + translate[1],
   ];
 }
 
-function zoom_click() {
-  top_or_bottom = this.getAttribute("data-plot");
-  _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom].event); // https://github.com/mbostock/d3/issues/2387
+function clicked_zoom_button() {
+  console.log("clicked_zoom_button this:", this);
+  let top_or_bottom = this.getAttribute("data-plot");
+  console.log("top_or_bottom", top_or_bottom);
 
+  // Get the zoom behavior for the specified plot
   var zoom = _zoom_behaviors[top_or_bottom];
+
   // Record the coordinates (in data space) of the center (in screen space).
-  var center0 = zoom.center();
-  var translate0 = zoom.translate();
-  var coordinates0 = coordinates(center0, zoom);
-  zoom.scale(zoom.scale() * Math.pow(2, +this.getAttribute("data-zoom")));
+  var transform = d3.zoomTransform(_plot_canvas[top_or_bottom].node());
+  
+  console.log("transform:", transform);
+  var center0 = [
+    transform.x +
+      (transform.k * _plot_canvas[top_or_bottom].node().clientWidth) / 2,
+    transform.y +
+      (transform.k * _plot_canvas[top_or_bottom].node().clientHeight) / 2,
+  ];
+  var coordinates0 = coordinates(center0, transform);
+  console.log("coordinates0:", coordinates0, "center0:", center0);
 
-  // Translate back to the center.
-  var center1 = find_point(coordinates0, zoom);
-  _zoom_behaviors[top_or_bottom].translate([
-    translate0[0] + center0[0] - center1[0],
-    translate0[1] + center0[1] - center1[1],
-  ]);
+  // Update the zoom scale
+  var scale = transform.k * Math.pow(2, +this.getAttribute("data-zoom"));
+  console.log("scale:", scale);
+  var newTransform = d3.zoomIdentity
+    .translate(transform.x, transform.y)
+    .scale(scale);
 
+  // Translate back to the center
+  var center1 = find_point(coordinates0, newTransform);
+  newTransform = newTransform.translate(
+    center0[0] - center1[0],
+    center0[1] - center1[1]
+  );
+
+  // Apply the new transform
   _plot_canvas[top_or_bottom]
     .transition()
     .duration(200)
-    .call(_zoom_behaviors[top_or_bottom].event);
+    .call(zoom.transform, newTransform);
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////// Draw or redraw the coverage (at resoluton matching the current zoom level) ///////////////
@@ -4347,6 +4371,7 @@ function genome_input_from_coverage(coverage_by_chromosome) {
 
 function use_coverage(raw_data) {
   let bed_data = read_coverage_file(raw_data);
+  console.log("use_coverage bed_data:", bed_data);
   assign_coverage_bed_to_chromosomes(bed_data);
 
   let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
@@ -4683,9 +4708,3 @@ window.addEventListener('hashchange', switchMode);
 
 // Call switchMode on page load
 switchMode();
-
-
-
-// Switch to viz once data is loaded.
-d3.select("#visualizer_tab").classed("active", true);
-d3.select("#setup_tab").classed("active", false);
