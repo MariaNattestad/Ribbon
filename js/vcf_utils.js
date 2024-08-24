@@ -54,7 +54,7 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
   // };
 
   if (!vcf_row_obj) {
-    console.warn("Expected VCF row object but it was undefined. Skipping.");
+    // console.warn("Expected VCF row object but it was undefined. Skipping.");
     return null;
   }
 
@@ -67,7 +67,7 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
 
   let alt = vcf_row_obj?.ALT?.[0];
   if (alt === undefined) {
-    console.warn("ALT field is undefined for row:", vcf_row_obj);
+    // console.warn("ALT field is undefined for row:", vcf_row_obj);
     return null;
   }
   if (alt.includes("[") || alt.includes("]")) {
@@ -77,7 +77,7 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
     };
   } else {
     // For now:
-    console.warn("Skipping non-BND ALT:", vcf_row_obj.ALT?.[0]);
+    // console.warn("Skipping non-BND ALT:", vcf_row_obj.ALT?.[0]);
     return null;
   }
 
@@ -110,9 +110,7 @@ export function deduplicate_mates(records) {
     let mate_key = `${record.chrom2}:${record.pos2}`;
     let my_way = `${self_key}-${mate_key}`;
     let their_way = `${mate_key}-${self_key}`;
-    if (seen_mates.has(my_way) || seen_mates.has(their_way)) {
-      console.log("Skipping duplicate mate:", record);
-    } else {
+    if (!(seen_mates.has(my_way) || seen_mates.has(their_way))) {
       deduplicated_records.push(record);
       seen_mates.add(my_way);
       seen_mates.add(their_way);
@@ -128,9 +126,7 @@ export function parse_and_convert_vcf(header_text, vcf_body_text, options) {
     .filter((x) => x !== null);
 
   if (options.deduplicate_mates) {
-    console.log("Deduplicating mates..., num records before:", rearrangement_records.length);
     rearrangement_records = deduplicate_mates(rearrangement_records);
-    console.log("Num records after deduplication:", rearrangement_records.length);
   }
   if (options.remove_chr) {
     rearrangement_records = rearrangement_records.map((record) => {
