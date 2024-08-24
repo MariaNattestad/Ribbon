@@ -1209,20 +1209,7 @@ function initialize_coverage_for_chosen_chromosome(top_or_bottom) {
     return;
   }
 
-  var bp_per_genomic_bin =
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ][0].end -
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ][0].start;
-
   var num_genomic_bins_per_pixel = 1;
-  Math.ceil(
-    (bp_max - bp_min) /
-      bp_per_genomic_bin /
-      _splitthreader_layout.zoom_plot.width
-  );
   var new_coverage = [];
 
   if (_splitthreader_settings.segment_copy_number == "unsegmented") {
