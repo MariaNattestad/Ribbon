@@ -142,7 +142,7 @@ export const SuperTable = function() {
 
 		var reqs = text.split(/\s+/);
 		var acceptable_types = [">","<","="];
-		for (i in reqs) {
+		for (var i in reqs) {
 			if (acceptable_types.indexOf(reqs[i][0]) != -1) {
 				var value = reqs[i].substr(1,reqs[i].length);
 				if (value.length > 0) {

@@ -752,6 +752,7 @@ function show_visualizer_tab() {
   // Switch to viz once data is ready, or e.g. when a variant is clicked in the table.
   d3.select(".nav_tab_splitthreader").classed("active", false);
   d3.select(".tab_splitthreader").classed("active", false);
+  d3.select(".tab_splitthreader").classed("in", false);
 
   d3.select("#nav_tab_splitthreader_viz").classed("active", true);
   d3.select("#visualizer_tab").classed("active", true);
