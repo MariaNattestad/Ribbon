@@ -977,7 +977,10 @@ function mark_coverage_loaded_successfully() {
 function load_variants(variants_input) {
   let clean_variants = variants_input.map((d) => {
     let chrom1 = d.chrom1 || d['#chrom1'];
-    return { ...d, chrom1: remove_chr(chrom1), chrom2: remove_chr(d.chrom2) };
+    return d;
+    // Skipping remove_chr for now since it messes up BAM loading. We'll instead
+    // just make the user be consistent across their files.
+    // return { ...d, chrom1: remove_chr(chrom1), chrom2: remove_chr(d.chrom2) };
   });
 
   _Variant_data = parse_variant_data(clean_variants);
@@ -1139,7 +1142,8 @@ function draw_circos() {
     .style("font-size", _splitthreader_settings.font_size * 0.8)
     .attr("class", "chromosome_label")
     .text(function (d, i) {
-      return d.chromosome;
+      // Remove chr prefix only for drawing the plot.
+      return remove_chr(d.chromosome);
     });
 }
 
@@ -4380,7 +4384,7 @@ async function read_bedpes_with_aioli(paths) {
     let records = parse_and_convert_vcf(vcf_header, vcf_data, {
       deduplicate_mates: true,
       splitthreader_extra_fields: true,
-      remove_chr: true,
+      remove_chr: false
     });
     variants = variants.concat(records);
   }
@@ -4429,7 +4433,6 @@ function load_bedpe_from_url(url) {
   }
   load_variants(variant_input.data);
 }
-
 
 function load_session(session) {
   console.log("Loading session with JSON:", session);
@@ -4561,7 +4564,6 @@ d3.select("#go_to_splitthreader_mode").on("click", function() {
   window.location.hash = '#splitthreader';
 });
 
-// Function to switch modes based on the URL hash
 function check_url_for_mode() {
   const hash = window.location.hash;
 

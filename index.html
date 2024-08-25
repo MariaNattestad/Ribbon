@@ -167,6 +167,8 @@
 									<input type="submit" id="submit_bam_url" value="Load bam file from a URL">
 									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix.
 									</p>
+
+									<p>You can also load multiple bams, comma-separated.</p>
 									<strong>Here are some sample BAMs to play with:</strong>
 									<div id="bam_presets"></div>
 								</div>
@@ -190,7 +192,7 @@
 								<textarea class="form-control" id="notes" placeholder="Add notes here (not saved)"></textarea>
 							</div>
 							<div>
-								<label>Alignment file</label>
+								<label>Alignment file(s)</label>
 								<div id="text_alignment_file_output"></div>
 							</div>
 							<div class="hide_when_no_variants">

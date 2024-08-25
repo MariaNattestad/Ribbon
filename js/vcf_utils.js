@@ -93,6 +93,14 @@ export function convert_to_splitthreader_format(vcf_row_obj) {
     output.split = vcf_row_obj.INFO.BND_DEPTH[0];
     // Unclear though because MATE_BND_DEPTH differs.
   }
+  let sv_type = vcf_row_obj?.INFO?.SVTYPE?.[0];
+  if (sv_type !== undefined) {
+    output.variant_type = sv_type;
+  }
+  let sv_id = vcf_row_obj?.ID?.[0];
+  if (sv_id !== undefined) {
+    output.name = sv_id;
+  }
 
   return output;
 }

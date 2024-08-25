@@ -64,7 +64,7 @@ var _focal_region; // {chrom,start,end}:  one region that the bam file, variants
 
 // Reading bam file
 var _automation_running = false;
-var _Bam = undefined;
+var _Bams = undefined;
 var _Ref_sizes_from_header = {};
 
 // Selecting region
@@ -2296,7 +2296,7 @@ function parse_paired_end(record) {
   };
 }
 
-function consolidate_records(records) {
+function pair_up_any_paired_reads(records) {
   // Removing duplicates and pairing up records from paired-end reads
   _ribbon_settings.paired_end_mode = false;
   for (var i = 0; i < records.length; i++) {
@@ -2559,7 +2559,7 @@ function batch_bam_fetching(chrom, start, end, callback) {
 function flexible_bam_fetch(region_list) {
   _Additional_ref_intervals = [];
 
-  if (_Bam != undefined) {
+  if (_Bams != undefined) {
     show_waiting_for_bam();
 
     _num_bam_records_to_load = 0;
@@ -2645,7 +2645,7 @@ function flexible_bam_fetch(region_list) {
     }
     d3.select("#bam_fetch_info").html(info);
   } else {
-    user_message_ribbon("Error", "No bam file");
+    user_message_ribbon("Error", "No bam file. Please load a bam file first from the 'Input alignments' tab.");
   }
 }
 
@@ -2826,7 +2826,7 @@ function bed_input_changed(bed_input) {
           name: columns[3] || "",
           score: score,
           strand: columns[5],
-          type: columns[6] || "",
+          variant_type: columns[6] || "",
         });
       }
     }
@@ -2886,7 +2886,7 @@ function bedpe_input_changed(bedpe_input) {
         _Bedpe.push({
           name: name,
           score: score,
-          type: type,
+          variant_type: type,
           size: size,
           chrom1: chrom1,
           pos1: pos1,
@@ -2990,7 +2990,7 @@ function vcf_input_changed(vcf_input) {
           name: name,
           score: score,
           strand: strand,
-          type: type,
+          variant_type: type,
         });
       }
     }
@@ -4478,7 +4478,7 @@ function refresh_visibility() {
   if (
     _Chunk_alignments.length > 0 ||
     (_ribbon_settings.automation_mode == true &&
-      _Bam != undefined &&
+      _Bams != undefined &&
       _Bedpe.length > 0)
   ) {
     d3.select("#region_settings_panel").style("display", "block");
@@ -4491,7 +4491,7 @@ function refresh_visibility() {
   if (
     _Alignments.length > 0 ||
     (_ribbon_settings.automation_mode == true &&
-      _Bam != undefined &&
+      _Bams != undefined &&
       _Bedpe.length > 0)
   ) {
     d3.select("#settings").style("display", "block");
@@ -5777,26 +5777,35 @@ function set_variant_info_text() {
   );
 }
 
-async function read_bam_url(url, in_background = false) {
-  if (url.startsWith("s3://")) {
-    url = url.replace("s3://", "https://42basepairs.com/download/s3/");
-  } else if (url.startsWith("gs://")) {
-    url = url.replace("gs://", "https://42basepairs.com/download/gs/");
-  } else if (!url.startsWith("https://")) {
-    alert("We only support HTTPS, s3:// or gs:// paths");
-    return;
+async function read_bam_urls(urls, in_background = false) {
+  _Bams = [];
+  for (let url of urls) {
+    if (url.startsWith("s3://")) {
+      url = url.replace("s3://", "https://42basepairs.com/download/s3/");
+    } else if (url.startsWith("gs://")) {
+      url = url.replace("gs://", "https://42basepairs.com/download/gs/");
+    } else if (!url.startsWith("https://")) {
+      alert("We only support HTTPS, s3:// or gs:// paths");
+      return;
+    }
+
+    let new_bam = new BamFile(_CLI, [url, url + ".bai"]);
+    await new_bam.mount();
+    await new_bam.parseHeader();
+    _Bams.push(new_bam);
   }
 
-  _ribbon_settings.alignment_info_text = "Bam from url: " + url;
-  _ribbon_settings.bam_url = url;
+  if (urls.length == 1) {
+    _ribbon_settings.alignment_info_text = `Bam from url: ${urls[0]}`;
+  } else {
+  _ribbon_settings.alignment_info_text = `Bam(s) from url(s):<br>${urls.join("<br>")}`;
+  }
+  _ribbon_settings.bam_url = urls;
   if (!in_background) {
     set_alignment_info_text();
   }
 
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile(_CLI, [url, url + ".bai"]);
-  await _Bam.mount();
-  await _Bam.parseHeader();
 }
 
 function load_json_bam(header) {
@@ -5940,7 +5949,7 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["config"]["settings"]["bam_url"] !=
           undefined
         ) {
-          read_bam_url(
+          read_bam_urls(
             json_data["ribbon_perma"]["config"]["settings"]["bam_url"],
             true
           );
@@ -6248,9 +6257,12 @@ async function create_bam(files) {
 
   // Initialize bam file
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile(_CLI, [bamFile, indexFile]);
-  await _Bam.mount();
-  await _Bam.parseHeader();
+
+  _Bams = [];
+  let new_bam = new BamFile(_CLI, [bamFile, indexFile]);
+  await new_bam.mount();
+  await new_bam.parseHeader();
+  _Bams.push(new_bam);
 }
 
 function wait_then_run_when_bam_file_loaded(counter) {
@@ -6260,8 +6272,13 @@ function wait_then_run_when_bam_file_loaded(counter) {
     user_message_ribbon("Error", "File taking too long to load");
     return;
   }
-  if (_Bam != null && _Bam.ready) {
-    bam_loaded();
+  
+  if (_Bams !== undefined) {
+    let all_ready = _Bams.every((b) => b.ready);
+    console.log("_Bams:", _Bams, "all_ready?:", all_ready);
+    if (all_ready) {
+      bam_loaded();
+    }
   } else {
     window.setTimeout(function () {
       wait_then_run_when_bam_file_loaded(counter + 1);
@@ -6278,7 +6295,7 @@ function bam_loaded() {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
   clear_data();
-  record_bam_header(_Bam.header.sq);
+  record_bam_header(_Bams[0].header.sq); // This uses first bam file only.
   organize_references_for_chunk();
   show_all_chromosomes();
   apply_ref_filters();
@@ -6387,9 +6404,18 @@ var _Bam_records_from_multiregions = [];
 var _num_loaded_regions = 0;
 var _num_bam_records_to_load = 0;
 
-function my_fetch(chrom, start, end, callback) {
+async function my_fetch(chrom, start, end, callback) {
   _num_bam_records_to_load += 1;
-  _Bam.fetch(chrom, start, end).then(callback);
+  // _Bam.fetch(chrom, start, end).then(callback);
+  let all_bam_records = [];
+  for (let bam of _Bams) {
+    let records = await bam.fetch(chrom, start, end);
+    all_bam_records.push(records);
+  }
+
+  Promise.all(all_bam_records).then((records) => {
+    callback(records.flat());
+  });
 }
 
 function check_if_all_bam_records_loaded() {
@@ -6469,7 +6495,7 @@ function use_fetched_data(records) {
     }
   }
 
-  _Chunk_alignments = consolidate_records(parsed_bam_records);
+  _Chunk_alignments = pair_up_any_paired_reads(parsed_bam_records);
   parsed_bam_records = []; // reset to save memory
 
   chunk_changed();
@@ -6560,10 +6586,17 @@ d3.select("#region_start").on("keyup", function () {
 });
 
 function submit_bam_url() {
-  var url = d3.select("#bam_url_input").property("value");
-  read_bam_url(url);
+  var url_input = d3.select("#bam_url_input").property("value");
+  console.log("url_input:", url_input);
+  // Parse by comma-separated
+  var urls = url_input.split(",").map((d) => d.trim());
+  console.log("urls:", urls);
+  read_bam_urls(urls);
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
+
+// https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam, https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-N-P_PacBio-HiFi-Revio_20240125_35x_CHM13v2.0.bam
+
 
 const _bam_presets = [
   {
@@ -6857,8 +6890,7 @@ d3.select("#go_to_ribbon_mode").on("click", function() {
   window.location.hash = '#ribbon';
 });
 
-// Function to switch modes based on the URL hash
-function switchMode() {
+function check_url_for_mode() {
   const hash = window.location.hash;
 
   if (hash === '#splitthreader') {
@@ -6873,10 +6905,10 @@ function switchMode() {
 }
 
 // Add event listener for hash change
-window.addEventListener('hashchange', switchMode);
+window.addEventListener('hashchange', check_url_for_mode);
 
 // Call switchMode on page load
-switchMode();
+check_url_for_mode();
 
 
 // ===========================================================================
