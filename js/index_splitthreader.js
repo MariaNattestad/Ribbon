@@ -4271,7 +4271,7 @@ function genome_input_from_coverage(coverage_by_chromosome) {
   return genome_input;
 }
 
-function use_coverage(raw_data) {
+export function use_coverage(raw_data) {
   let bed_data = read_coverage_file(raw_data);
   assign_coverage_bed_to_chromosomes(bed_data);
 
@@ -4363,7 +4363,7 @@ export async function load_vcf_from_url(urls) {
   load_variants(variants);
 }
 
-function load_bedpe_from_url(url) {
+export function load_bedpe_from_url(url) {
   // TODO: Test this once we have a sample BEDPE available by URL.
   let variant_input = Papa.parse(url, {
     download: true,

@@ -9,18 +9,18 @@ export const EXAMPLE_SESSIONS = [
   },
   {
     name: "skbr3",
-    bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-    coverage_backend: "resources/examples/skbr3.coverage.bed",
+    bedpe: "/resources/examples/skbr3.bedpe.csv",
+    coverage: "/resources/examples/skbr3.coverage.bed",
     annotation_id: "hg19",
   },
   // {
   //   name: "bedpe without coverage",
-  //   bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-  //   // coverage_backend: "resources/examples/skbr3.coverage.bed",
+  //   bedpe: "/resources/examples/skbr3.bedpe.csv",
+  //   // coverage: "/resources/examples/skbr3.coverage.bed",
   // },
   // {
   //   name: "coverage without bedpe",
-  //   // bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-  //   coverage_backend: "resources/examples/skbr3.coverage.bed",
+  //   // bedpe: "/resources/examples/skbr3.bedpe.csv",
+  //   coverage: "/resources/examples/skbr3.coverage.bed",
   // },
 ];
