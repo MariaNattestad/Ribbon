@@ -148,9 +148,11 @@ function parseBamReads(raw) {
 
       // Parse SA tag: In the SAM format, tags start at index 11
       for (let i = 11; i < readInfo.length; i++) {
-        if (readInfo[i].startsWith("SA")) {
+        if (readInfo[i].startsWith("SA:")) {
           record.SA = readInfo[i].split(":")[2];
-          break;
+        }
+        if (readInfo[i].startsWith("HP:")) {
+          record.HP = readInfo[i].split(":")[2];
         }
       }
 
