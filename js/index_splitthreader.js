@@ -3362,10 +3362,7 @@ function read_gene_fusion_file(raw_input) {
   update_fusion_table();
 }
 
-function open_gene_fusion_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_gene_fusion_file() {
   if (this.files[0].size > 100000) {
     user_message_splitthreader(
       "Error",
@@ -3374,11 +3371,8 @@ function open_gene_fusion_file(event) {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    read_gene_fusion_file(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  read_gene_fusion_file(raw_data);
 }
 
 d3.select("#gene_fusion_file").on("change", open_gene_fusion_file);
@@ -3502,10 +3496,7 @@ function read_bed_file(raw_data) {
   d3.selectAll(".only_when_features").style("display", "table-row");
 }
 
-function open_bed_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_bed_file(event) {
   if (this.files[0].size > 10000000) {
     user_message_splitthreader(
       "Error",
@@ -3514,11 +3505,8 @@ function open_bed_file(event) {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    read_bed_file(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  read_bed_file(raw_data);
 }
 
 d3.select("#splitthreader_feature_bed_file").on("change", open_bed_file);
@@ -4331,10 +4319,7 @@ function use_coverage(raw_data) {
 
 }
 
-function open_coverage_file() {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_coverage_file() {
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
       "Error",
@@ -4343,17 +4328,11 @@ function open_coverage_file() {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    use_coverage(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  use_coverage(raw_data);
 }
 
-function open_variants_bedpe_file() {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_variants_bedpe_file() {
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
       "Error",
@@ -4362,22 +4341,19 @@ function open_variants_bedpe_file() {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    let variant_input = Papa.parse(raw_data, {
-      header: true,
-      skipEmptyLines: true,
-    });
-    if (variant_input.errors.length > 0) {
-      user_message_splitthreader(
-        "Error",
-        "Error reading CSV file: " + variant_input.errors[0].message
-      );
-      return;
-    }
-    load_variants(variant_input.data);
-  };
+  const raw_data = await this.files[0].text();
+  let variant_input = Papa.parse(raw_data, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (variant_input.errors.length > 0) {
+    user_message_splitthreader(
+      "Error",
+      "Error reading CSV file: " + variant_input.errors[0].message
+    );
+    return;
+  }
+  load_variants(variant_input.data);
 }
 
 async function read_bedpes_with_aioli(paths) {
@@ -4398,9 +4374,6 @@ async function read_bedpes_with_aioli(paths) {
 }
 
 async function open_variants_vcf_file() {
-  var raw_data;
-  var reader = new FileReader();
-
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
       "Error",

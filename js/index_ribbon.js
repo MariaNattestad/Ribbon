@@ -6069,21 +6069,16 @@ add_user_links_to_navbar();
 // == Load bed file
 // ===========================================================================
 
-function open_bedpe_file(event) {
+async function open_bedpe_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "bedpe") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      bedpe_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    bedpe_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Bedpe from file: " + this.files[0].name;
     set_variant_info_text();
@@ -6092,33 +6087,23 @@ function open_bedpe_file(event) {
   }
 }
 
-function open_variant_file() {
+async function open_variant_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "vcf") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      vcf_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    vcf_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
   } else if (file_extension == "bed") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      bed_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    bed_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
@@ -6180,20 +6165,15 @@ function read_feature_bed(raw_data) {
   make_feature_type_table();
 }
 
-function open_feature_bed_file(event) {
+async function open_feature_bed_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "bed") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      read_feature_bed(raw_data);
-    };
+    const raw_data = await this.files[0].text();
+    read_feature_bed(raw_data);
   } else {
     user_message_ribbon("Error", "File extension must be .bed");
   }
@@ -6207,19 +6187,13 @@ d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 // == Load coords file
 // ===========================================================================
 
-function open_coords_file() {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_coords_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    coords_input_changed(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  coords_input_changed(raw_data);
   _ribbon_settings.alignment_info_text =
     "Coords from file: " + this.files[0].name;
   set_alignment_info_text();
