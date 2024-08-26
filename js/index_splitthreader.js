@@ -477,7 +477,12 @@ function use_annotation_at_index(index) {
   let annotation_chosen = _splitthreader_static.annotations_available[index];
   d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
   show_positions();
-  read_ref_file();
+  // If genome data is already computed from the coverage data, we don't want to
+  // overwrite it with the new annotation data. Switching annotations shouldn't
+  // mess up anything else.
+  if (_Genome_data.length == 0) {
+    read_ref_file();
+  }
   read_annotation_file();
   d3.select("select#annotation_dropdown").property("selectedIndex", index);
 }
