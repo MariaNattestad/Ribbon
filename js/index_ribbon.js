@@ -6043,7 +6043,7 @@ function read_permalink(id) {
             );
           }
         } else if (json_data["bam_url"] != undefined) {
-          read_bam_url(json_data["bam_url"]);
+          read_bam_urls(json_data["bam_url"]);
         }
 
         if (json_data["bedpe"] != undefined) {
@@ -6275,7 +6275,6 @@ function wait_then_run_when_bam_file_loaded(counter) {
   
   if (_Bams !== undefined) {
     let all_ready = _Bams.every((b) => b.ready);
-    console.log("_Bams:", _Bams, "all_ready?:", all_ready);
     if (all_ready) {
       bam_loaded();
     }
@@ -6600,19 +6599,26 @@ d3.select("#submit_bam_url").on("click", submit_bam_url);
 
 const _bam_presets = [
   {
-    url: "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
+    urls: [
+      "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
+    ],
     name: "HG003 PacBio phased",
     "42basepairs_url":
       "https://42basepairs.com/browse/gs/deepvariant/pacbio-case-study-testdata?file=HG003.pfda_challenge.grch38.phased.bam",
   },
   {
-    url: "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+    urls: [
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-N-P_PacBio-HiFi-Revio_20240125_35x_CHM13v2.0.bam",
+    ],
     name: "HG008 PacBio Tumor from GIAB",
     "42basepairs_url":
       "https://42basepairs.com/browse/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
   },
   {
-    url: "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
+    urls: [
+      "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
+    ],
     name: "HG002 Illumina",
     "42basepairs_url":
       "https://42basepairs.com/browse/r2/genomics-data/alignments_HG002.bam",
@@ -6627,9 +6633,9 @@ function make_bam_presets_list() {
     let load_link = document.createElement("span");
     load_link.textContent = preset.name;
     load_link.style.cursor = "pointer";
-    load_link.title = preset.url; // Show URL on hover
+    load_link.title = preset.urls.join(','); // Show URL on hover
     load_link.addEventListener("click", () => {
-      read_bam_url(preset.url);
+      read_bam_urls(preset.urls);
     });
     listItem.appendChild(load_link);
     let link_to_42basepairs = document.createElement("a");

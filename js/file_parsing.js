@@ -59,11 +59,11 @@ export class BamFile extends GenomicFile {
     // using "samtools view -c" would only tell us the number of reads, which is misleading
     // for long-read data!). This is generally much much faster than trying to load the region
     // so for most cases, the additional runtime is negligible.
-    console.time("samtools coverage");
+    console.time(`samtools coverage ${region}`);
     const coverage = await this.CLI.exec(
       `samtools coverage ${this.paths[0]} -r ${region} --no-header`
     );
-    console.timeEnd("samtools coverage");
+    console.timeEnd(`samtools coverage ${region}`);
 
     // Estimate how much data we're looking at in the selected region, and subsample if
     // the user is trying to load too much data. Col #5 = "covbases", Col #7 = "meandepth".
@@ -90,7 +90,7 @@ export class BamFile extends GenomicFile {
     // converting bytes to strings each time, as opposed to doing it once at the end when we call
     // CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
     // "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
-    console.time("samtools view");
+    console.time(`samtools view ${region}`);
     let std_err_samtools = await this.CLI.exec(
       `samtools view${subsampling} -o /tmp/reads.sam ${this.paths[0]} ${region}`
     );
@@ -99,7 +99,7 @@ export class BamFile extends GenomicFile {
     }
 
     const raw = await this.CLI.cat("/tmp/reads.sam");
-    console.timeEnd("samtools view");
+    console.timeEnd(`samtools view ${region}`);
 
     if (!raw) {
       console.warn("No reads in the bam file at this location");
