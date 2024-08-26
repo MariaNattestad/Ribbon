@@ -1,39 +1,12 @@
 import * as d3 from "d3";
-import { parse_and_convert_vcf } from './vcf_utils.js';
-import {Graph} from './SplitThreader.js';
 import $ from 'jquery';
-import Aioli from "@biowasm/aioli";
 import Papa from "papaparse";
+import { parse_and_convert_vcf } from './vcf_utils.js';
+import { Graph } from './SplitThreader.js';
+import { CLI } from "./file_parsing.js";
 import { exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
-
-// ===========================================================================
-// == Biowasm / Aioli
-// ===========================================================================
-
-// TODO: Currently we're loading these in both index_splitthreader.js and index_ribbon.js,
-// perhaps there's a better way.
-
-let _CLI = null;
-
-// Initialize app on page load
-document.addEventListener("DOMContentLoaded", async () => {
-  // Create Aioli (and the WebWorker in which WASM code will run).
-  // Load assets locally instead of using the CDN.
-  const urlPrefix = `${window.location.origin}/wasm`;
-  _CLI = await new Aioli([
-    { tool: "samtools", version: "1.17", urlPrefix },
-    { tool: "bcftools", version: "1.10", urlPrefix },
-  ]);
-
-  // Get samtools version once initialized
-  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
-});
-
-// ===========================================================================
-
-var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
 var _splitthreader_layout = {
   svg: { width: null, height: null },
@@ -4359,8 +4332,8 @@ async function open_variants_bedpe_file() {
 async function read_bedpes_with_aioli(paths) {
   let variants = [];
   for (let vcf_path of paths) {
-    const vcf_header = await _CLI.exec("bcftools view -h " + vcf_path);
-    let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
+    const vcf_header = await CLI.exec("bcftools view -h " + vcf_path);
+    let vcf_data = await CLI.exec("bcftools view -H " + vcf_path);
 
     let records = parse_and_convert_vcf(vcf_header, vcf_data, {
       deduplicate_mates: true,
@@ -4382,14 +4355,14 @@ async function open_variants_vcf_file() {
     return;
   }
 
-  let paths = await _CLI.mount(this.files[0]);
+  let paths = await CLI.mount(this.files[0]);
 
   let variants = await read_bedpes_with_aioli(paths);
   load_variants(variants);
 }
 
 async function load_vcf_from_url(urls) {
-  let paths = await _CLI.mount(urls);
+  let paths = await CLI.mount(urls);
 
   let variants = await read_bedpes_with_aioli(paths);
   load_variants(variants);
@@ -4469,18 +4442,11 @@ function load_session_from_url() {
   }
 }
 
-function is_aioli_ready() {
-  if (_CLI) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 function load_session_if_present_in_url() {
-  if (is_aioli_ready()) {
+  if (CLI) {
     load_session_from_url();
   } else {
+    console.log("Waiting for Aioli...")
     setTimeout(load_session_if_present_in_url, 1000);
   }
 }
