@@ -1,32 +1,9 @@
 import * as d3 from "d3";
-import Aioli from "@biowasm/aioli";
 import { BamFile } from "./file_parsing";
 import { download, exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
 import pako from "pako";
-
-// ===========================================================================
-// == Biowasm / Aioli
-// ===========================================================================
-
-let _CLI = null;
-
-// Initialize app on page load
-document.addEventListener("DOMContentLoaded", async () => {
-  // Create Aioli (and the WebWorker in which WASM code will run).
-  // Load assets locally instead of using the CDN.
-  const urlPrefix = `${window.location.origin}/wasm`;
-  _CLI = await new Aioli([
-    { tool: "samtools", version: "1.17", urlPrefix },
-    { tool: "bcftools", version: "1.10", urlPrefix },
-  ]);
-
-  // Get samtools version once initialized
-  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
-});
-
-// ===========================================================================
 
 // URLs
 var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
@@ -5789,7 +5766,7 @@ async function read_bam_urls(urls, in_background = false) {
       return;
     }
 
-    let new_bam = new BamFile(_CLI, [url, url + ".bai"]);
+    let new_bam = new BamFile([url, url + ".bai"]);
     await new_bam.mount();
     await new_bam.parseHeader();
     _Bams.push(new_bam);
@@ -6233,7 +6210,7 @@ async function create_bam(files) {
   wait_then_run_when_bam_file_loaded();
 
   _Bams = [];
-  let new_bam = new BamFile(_CLI, [bamFile, indexFile]);
+  let new_bam = new BamFile([bamFile, indexFile]);
   await new_bam.mount();
   await new_bam.parseHeader();
   _Bams.push(new_bam);

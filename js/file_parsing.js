@@ -1,21 +1,37 @@
 // =============================================================================
+// Initialize Aioli
+// =============================================================================
+
+import Aioli from "@biowasm/aioli";
+
+// Create Aioli (and the WebWorker in which WASM code will run).
+// Load assets locally instead of using the CDN.
+const urlPrefix = `${window.location.origin}/wasm`;
+export const CLI = await new Aioli([
+  { tool: "samtools", version: "1.17", urlPrefix },
+  { tool: "bcftools", version: "1.10", urlPrefix },
+]);
+
+console.log("Loaded Aioli with:")
+console.log("- samtools", await CLI.exec("samtools --version-only"));
+console.log("- bcftools", await CLI.exec("bcftools --version-only"));
+
+// =============================================================================
 // Classes for managing genomic files
 // =============================================================================
 
 class GenomicFile {
-  CLI = null; // Aioli instance must be passed in
   format; // genomics file format
   files = []; // array of File objects or URLs
   paths = []; // paths where those files are mounted
   ready = false;
 
-  constructor(cli, files) {
+  constructor(files) {
     this.files = files;
-    this.CLI = cli;
   }
 
   async mount() {
-    this.paths = await this.CLI.mount(this.files);
+    this.paths = await CLI.mount(this.files);
   }
 
   async parseHeader() {
@@ -36,7 +52,7 @@ export class BamFile extends GenomicFile {
   };
 
   async parseHeader() {
-    const raw = await this.CLI.exec(`samtools view -H ${this.paths[0]}`);
+    const raw = await CLI.exec(`samtools view -H ${this.paths[0]}`);
     if (!raw) {
       console.error(
         "No header found when running `samtools view -H` This may not be a valid BAM file."
@@ -60,7 +76,7 @@ export class BamFile extends GenomicFile {
     // for long-read data!). This is generally much much faster than trying to load the region
     // so for most cases, the additional runtime is negligible.
     console.time(`samtools coverage ${region}`);
-    const coverage = await this.CLI.exec(
+    const coverage = await CLI.exec(
       `samtools coverage ${this.paths[0]} -r ${region} --no-header`
     );
     console.timeEnd(`samtools coverage ${region}`);
@@ -91,14 +107,14 @@ export class BamFile extends GenomicFile {
     // CLI.cat(). Based on a few tests run on Illumina and PacBio data, using the command
     // "samtools view -o" followed by "cat" is ~2-3X faster than simply using "samtools view".
     console.time(`samtools view ${region}`);
-    let std_err_samtools = await this.CLI.exec(
+    let std_err_samtools = await CLI.exec(
       `samtools view${subsampling} -o /tmp/reads.sam ${this.paths[0]} ${region}`
     );
     if (std_err_samtools.includes("[E::")) {
       console.error(std_err_samtools);
     }
 
-    const raw = await this.CLI.cat("/tmp/reads.sam");
+    const raw = await CLI.cat("/tmp/reads.sam");
     console.timeEnd(`samtools view ${region}`);
 
     if (!raw) {
