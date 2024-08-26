@@ -1,4 +1,4 @@
-class Graph {
+export class Graph {
 	constructor() {
 		this.nodes = {}; // key: node_name, value: Node
 		this.edges = {}; // key: edge_name, value: Edge

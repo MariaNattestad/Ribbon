@@ -13,8 +13,12 @@
 
 	<!-- CSS: -->
 	<link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
-	<!-- Bundled CSS (Bootstrap/jQuery/jQueryUI) -->
-	<link href="css/bundle.css" rel="stylesheet">
+
+	<!-- This still uses an old bootstrap version that doesn't play well with bundlers -->
+	<!-- Updates may require migrating a lot of html code, so we'll leave it like this for now. -->
+	<link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="node_modules/jquery-ui-dist/jquery-ui.min.css" rel="stylesheet">
+
 	<!-- My d3-livesearch plugin -->
 	<link href="css/d3-livesearch.css" rel="stylesheet">
 	<link href="css/d3-superTable.css" rel="stylesheet">
@@ -41,21 +45,11 @@
 			</div>
 			<!-- <div class="navbar-collapse collapse"> -->
 			<ul class="nav navbar-nav" id="navbar">
-				<li><a id="go_to_splitthreader_mode" onclick="go_to_splitthreader_mode()">SplitThreader</a></li>
-				<li><a id="go_to_ribbon_mode" onclick="go_to_ribbon_mode()">Ribbon</a></li>
+				<li><a id="go_to_splitthreader_mode">SplitThreader</a></li>
+				<li><a id="go_to_ribbon_mode">Ribbon</a></li>
 				<li><a id="click_getting_started_link">Info</a></li>
-				<li class="dropdown" id="examples_navbar_item">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">Examples <span class="caret"></span></a>
-					<ul class="dropdown-menu" role="menu" id="examples_list">
-						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-					</ul>
-				</li>
 				<li class="dropdown" id="user_data_navbar_item">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">My data <span class="caret"></span></a>
+					<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu" id="user_data_list">
 						<!-- Populated by add_user_links_to_navbar() in vis.js -->						
 					</ul>
@@ -79,14 +73,29 @@
 					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
 
 					<p><strong>Examples:</strong></p>
-					<p>PacBio, Illumina, and genome/assembly examples shown in the Examples tab above.</p>
+					<ul>
+						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+					</ul>
+
 					<p><strong>Visualize your own alignment data:</strong></p>
 					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
+
+					<h3>SplitThreader</h3>
+					SplitThreader is now available within Ribbon!
+					Just click "SplitThreader" in the top navigation bar, and you can load your own coverage and structural variant files to visualize them.
+					There are also some examples to get you started.
 
 					<h3>Paper and code</h3>
 					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
 					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
-					<p>Also see the preprint on the <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">bioRxiv:</a></p>
+					<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
+					<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
+					
+
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
 					
 					<p><strong>Local installation:</strong></p>
@@ -104,6 +113,7 @@
 						<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
 						<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
 					</ul>
+
 				</div>
 			</div>
 		</div>
@@ -144,7 +154,7 @@
 					<div class="tab-content">
 						<div id="tab_input_alignments" class="tab-pane fade in active">
 							<ul class="nav nav-tabs">
-								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from url (recommended)</a></li>
+								<li class="active"><a data-toggle="tab" href="#url_bam">BAM from URL (recommended)</a></li>
 								<li><a data-toggle="tab" href="#bam">Local BAM</a></li>
 								<li><a data-toggle="tab" href="#coords">MUMmer coordinates</a></li>
 							</ul>
@@ -154,9 +164,11 @@
 							<!-- Bam input -->
 								<div id="url_bam" class="tab-pane active">
 									<input type="text" id="bam_url_input" placeholder="https://" style="width: 100%">
-									<input type="submit" id="submit_bam_url" value="Load bam file from a url">
+									<input type="submit" id="submit_bam_url" value="Load bam file from a URL">
 									<p>Make sure the bam file exists and that it has a corresponding index (.bai or .csi) file with an identical filename except for the addition of the .bai or .csi suffix.
 									</p>
+
+									<p>You can also load multiple bams, comma-separated.</p>
 									<strong>Here are some sample BAMs to play with:</strong>
 									<div id="bam_presets"></div>
 								</div>
@@ -180,7 +192,7 @@
 								<textarea class="form-control" id="notes" placeholder="Add notes here (not saved)"></textarea>
 							</div>
 							<div>
-								<label>Alignment file</label>
+								<label>Alignment file(s)</label>
 								<div id="text_alignment_file_output"></div>
 							</div>
 							<div class="hide_when_no_variants">
@@ -525,20 +537,32 @@
 	</div>
 	<div id="main_body_container">
 		<ul class="nav nav-tabs">
-			<li class="active"><a data-toggle="tab" href="#setup_tab">Setup</a></li>
-			<li><a data-toggle="tab" href="#visualizer_tab">Visualizer</a></li>
-			<li><a data-toggle="tab" href="#variant_analysis_tab">Variant analysis</a></li>	
-			<li><a data-toggle="tab" href="#gene_fusions_tab">Gene fusions</a></li>
-			<li><a data-toggle="tab" href="#feature_search_tab">Graph search</a></li>
-			<li><a data-toggle="tab" href="#help_tab">Help</a></li>
+			<li id="nav_tab_splitthreader_setup" class="nav_tab_splitthreader active in"><a data-toggle="tab" href="#setup_tab">Setup</a></li>
+			<li id="nav_tab_splitthreader_viz"><a data-toggle="tab" href="#visualizer_tab">Visualizer</a></li>
+			<li id="nav_tab_splitthreader_analysis" class="nav_tab_splitthreader"><a data-toggle="tab" href="#variant_analysis_tab">Variant analysis</a></li>	
+			<li id="nav_tab_splitthreader_fusions" class="nav_tab_splitthreader"><a data-toggle="tab" href="#gene_fusions_tab">Gene fusions</a></li>
+			<li id="nav_tab_splitthreader_graph" class="nav_tab_splitthreader"><a data-toggle="tab" href="#feature_search_tab">Graph search</a></li>
+			<li id="nav_tab_splitthreader_help" class="nav_tab_splitthreader"><a data-toggle="tab" href="#help_tab">Help</a></li>
 		</ul>
 
 		<div class="tab-content">
-			<div id="setup_tab" class="tab-pane fade in active">
+			<div id="setup_tab" class="tab_splitthreader tab-pane fade in active">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							Examples
+						</h4>
+					</div>
+					<div class="panel-body">
+						<p>Click on an example to load it</p>
+						<div id="splitthreader_examples"></div>
+					</div>
+				</div>
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
 							Upload a coverage file
+							<span id="splitthreader_status_coverage_loaded" class="label label-success hidden">Done</span>
 						</h4>
 					</div>
 					<div class="panel-body">
@@ -547,9 +571,9 @@
 						<p>
 						<label>Instructions: </label>
 							We recommend using mosdepth to generate a bed file of coverage. The bed file should have the first three columns as chromosome, start, and end, and the fourth column as the coverage.
-	<pre>
-	mosdepth -n --fast-mode --by 10000 output_file_prefix read_alignments.bam
-	</pre>
+<pre>
+mosdepth -n --fast-mode --by 10000 output_file_prefix read_alignments.bam
+</pre>
 						</p>
 					</div>
 				</div>
@@ -557,30 +581,50 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
-							Upload structural variants
+							Upload structural variants 
+							<span id="splitthreader_status_variant_loaded" class="label label-success hidden">Done</span>
 						</h4>
 					</div>
 					<div class="panel-body">
-						<p>Temporarily, only a special bedpe format is allowed. VCF will be supported soon.</p>
-						<input type="file" id="input_variants_file" />
-						<p>
-						<label>Instructions: </label>
-							There's a python script in the github that may help convert a VCF from a structural variant caller
-							to this bedpe-like format.
+						Note: SplitThreader is only useful for large rearrangement variants, so only variants over 1kb in size and interchromosomal variants will be used.
 
-							The bedpe file should have the following columns (comma separated). Here's an example:
-	<pre>
-	chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
-	1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
-	1,152555137,152555830,1,152587256,152588236,671,-1,+,-,DEL,34
-	</pre>
-						</p>
+						There are two formats supported for variants: VCF and BEDPE.
+
+						<h3>VCF</h3>
+						<div class="alert alert-warning" role="alert">
+							VCF loading is in beta. Currently only BND variants will be used in SplitThreader, and some VCFs from different variant callers may not work.
+							If you have a VCF available publicly that doesn't work, please file a <a href="https://github.com/MariaNattestad/Ribbon/issues">Github issue</a> with a link to the VCF, and we'll see if we can support it.
+						</div>
+						.vcf or .vcf.gz are both fine.
+						<p>Upload a VCF of structural variants</p>
+						<input type="file" id="splitthreader_vcf_file" />
+
+						<!-- Input by URL: -->
+						<p>Or, load a VCF from a URL</p>
+						<input type="text" id="splitthreader_vcf_url" placeholder="https://" style="width: 300px;" />
+						<input type="submit" id="splitthreader_vcf_url_button" />
+						<hr>
+						<h3>Bedpe</h3>
+						<p>Upload a bedpe file of structural variants</p>
+						<input type="file" id="splitthreader_bedpe_file" />
+						<div>
+						<label>Instructions: </label>
+							Some variant callers produce bedpe files, so you can load that instead of a VCF.
+							The bedpe file should have the following columns (comma or tab separated both work).
+
+							<p>Here's an example:</p>
+<pre>
+chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split
+1,168186489,168186572,1,182274072,182274331,540,-1,+,+,INV,15
+1,152555137,152555830,1,152587256,152588236,671,-1,+,-,DEL,34
+</pre>
+</div>
 					</div>
 				</div>
 			</div>
 			
 		<!-- Variant settings -->
-			<div id="visualizer_tab" class="tab-pane fade in">
+			<div id="visualizer_tab" class="tab-pane fade">
 				<div id="svg_landing"></div>
 
 				<div id="right_panel_splitthreader">
@@ -695,16 +739,11 @@
 
 											<hr>
 
-											<p><label>Send to Ribbon long-read browser</label></p>
+											<p><label>Open in Ribbon</label></p>
 											<div id="send_to_ribbon_panel">
-												<p>Ribbon (<a href="https://genomeribbon.com">genomeribbon.com</a>) is a long-read alignment viewer that allows you to see all the reads mapping near a variant including their other alignments across the genome, and you can see detailed alignments for each read to determine which parts of the read are mapping where.</p>
-												<form id="send_to_ribbon_form" method="post" target="_blank">
-													<div id="data_to_send_ribbon">
-														<!-- Hidden fields go here -->
-													</div>
-													<label>Ribbon path: <input id='ribbon_path'></label>
-													<input class="btn btn-primary" type="submit" value="Send all variants to Ribbon">
-												</form>
+												Ribbon already has your rearrangements loaded under "Large variants".
+												If you have a BAM file, Ribbon can show the reads around the rearrangements, even if they span multiple chromosomes, you can see them in one view.
+												Just click on Ribbon in the top navigation bar to open it. Your SplitThreader view will still be right here when you click SplitThreader in the top navigation bar again.
 											</div>
 
 										</div>
@@ -717,7 +756,7 @@
 			</div> <!-- end of visualizer tab -->
 			
 
-			<div id="variant_analysis_tab" class="tab-pane fade">
+			<div id="variant_analysis_tab" class="tab_splitthreader tab-pane fade">
 				<div class="row">
 					<div class="col-md-5">
 						<svg id="histogram_landing"></svg>
@@ -763,25 +802,17 @@
 					</div>
 				</div> <!-- end of row -->
 				<p>Showing <span id="table_row_count"></span> variants out of <span class="filtered_number_of_variants"></span>. Unfiltered, there are <span class="number_of_variants"></span> variants</p>
-				<p>Filter in text boxes by =,>, or <, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
+				<p>Filter in text boxes by =,>, or &lt;, and click column names to sort. Click on a row in the table to see that variant in the visualizer</p>
 				<div class="scrollable_table_landing" id="splitthreader_variant_table_landing"></div>
 
 				<div id="table_export_buttons">
 					<a class="btn btn-info" id="export_variant_table_to_csv">Export table as csv</a>
-
-					<form id="send_filtered_table_to_ribbon_form" method="post" target="_blank">
-						<div id="filtered_data_to_send_ribbon">
-							<!-- Hidden fields go here -->
-						</div>
-						<input class="btn btn-primary" type="submit" value="Send all variants to Ribbon">	
-					</form>
 				</div>
 
 			</div> <!-- end variant analysis tab -->
 
 			<!-- Gene fusions -->
-
-			<div id="gene_fusions_tab" class="tab-pane fade">
+			<div id="gene_fusions_tab" class="tab_splitthreader tab-pane fade">
 
 				<div class="alert alert-info" role="alert">
 					Enter gene names by hand or upload a list, and SplitThreader will use its rearrangement graph to search for genomic connections between each pair of genes. 
@@ -897,7 +928,7 @@
 				</div>
 
 			</div> <!-- end of gene fusions tab -->
-			<div id="feature_search_tab" class="tab-pane fade">
+			<div id="feature_search_tab" class="tab_splitthreader tab-pane fade">
 				<div class="row">
 					<div class="col-md-6">
 						<div class="panel panel-default">
@@ -995,38 +1026,21 @@
 					</div>
 				</div>
 			</div> <!-- end of feature search tab -->
-			<div id="help_tab" class="tab-pane fade">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Navigation
-						</h4>
-					</div>
-					<div class="panel-body">
-						<p>Switch chromosomes by dragging chromosome names from the circos plot onto either the top or bottom coverage bar charts to switch that plot to the new chromosome.</p>
-						<p>Zoom by double-clicking the coverage bar charts and move around by dragging when you are zoomed in. Also click the + and - buttons to zoom in and out.</p>
-					</div>
-				</div>
-			</div> <!-- end of help tab -->
 		</div> <!-- end tab content class -->
 	</div>
 </div> <!-- end splitthreader app container -->
 
-<!-- Bundled JavaScript libraries -->
-<script src="js/bundle.js"></script>
+<!-- Keeping old bootstrap to avoid major html updates for now -->
+<!-- This old bootstrap can't really be imported by our own JS, but 
+ 	that's okay because we only need it to power basic things like tabs -->
+<!-- These are in the public/ folder to make this simpler. -->
+<script src="lib/jquery.min.js"></script>
+<script src="lib/bootstrap.min.js"></script>
+<script src="lib/jquery-ui.min.js"></script>
 
-<!-- My own d3-livesearch plugin -->
-<script src="js/d3-livesearch.js"></script>
-<script src="js/d3-superTable.js"></script>
-<!-- Shared utilities-->
-<script src="js/utils.js"></script>
-<!-- file_parsing also sets up Aioli and makes the global _CLI variable -->
-<script src="js/file_parsing.js"></script>
-<!-- SplitThreader's graph algorithms -->
-<script src="js/SplitThreader.js"></script>
 <!-- Index -->
-<script src="js/index_splitthreader.js"></script>
-<script src="js/index_ribbon.js"></script>
+<script type="module" src="js/index_splitthreader.js"></script>
+<script type="module" src="js/index_ribbon.js"></script>
 
 </body>
 </html>

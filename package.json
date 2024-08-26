@@ -1,26 +1,33 @@
 {
   "name": "ribbon",
   "version": "2.0.0",
+  "type": "module",
   "description": "A genome browser designed for long reads and complex variants",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MariaNattestad/Ribbon.git"
   },
   "scripts": {
-    "build": "./bin/build.sh",
-    "dev": "python3 -m http.server 1234 || python -m SimpleHTTPServer 1234"
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "author": "Maria Nattestad",
   "license": "MIT",
   "dependencies": {
     "@biowasm/aioli": "^3.1.0",
+    "@gmod/vcf": "^5.0.10",
     "bootstrap": "3.4.1",
-    "d3": "3.5.6",
+    "d3": "^4.0.0",
     "jquery": "3.5.1",
     "jquery-ui-dist": "1.12.1",
     "js-priority-queue": "^0.1.5",
     "moment": "^2.29.4",
     "pako": "^1.0.11",
     "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.2",
+    "vite-plugin-static-copy": "^1.0.6"
   }
 }

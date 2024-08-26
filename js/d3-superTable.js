@@ -1,4 +1,6 @@
-d3.superTable = function() {
+import * as d3 from 'd3';
+
+export const SuperTable = function() {
 	
 	var table_data = undefined;
 	var table_header = undefined;
@@ -140,7 +142,7 @@ d3.superTable = function() {
 
 		var reqs = text.split(/\s+/);
 		var acceptable_types = [">","<","="];
-		for (i in reqs) {
+		for (var i in reqs) {
 			if (acceptable_types.indexOf(reqs[i][0]) != -1) {
 				var value = reqs[i].substr(1,reqs[i].length);
 				if (value.length > 0) {
@@ -229,3 +231,5 @@ d3.superTable = function() {
 
 	return my;
 }
+
+export default SuperTable;

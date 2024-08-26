@@ -1,3 +1,33 @@
+import * as d3 from "d3";
+import Aioli from "@biowasm/aioli";
+import { BamFile } from "./file_parsing";
+import { download, exportViz } from "./utils.js";
+import Livesearch from "./d3-livesearch.js";
+import SuperTable from "./d3-superTable.js";
+import pako from "pako";
+
+// ===========================================================================
+// == Biowasm / Aioli
+// ===========================================================================
+
+let _CLI = null;
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", async () => {
+  // Create Aioli (and the WebWorker in which WASM code will run).
+  // Load assets locally instead of using the CDN.
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
+
+  // Get samtools version once initialized
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
+});
+
+// ===========================================================================
+
 // URLs
 var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
 
@@ -34,7 +64,7 @@ var _focal_region; // {chrom,start,end}:  one region that the bam file, variants
 
 // Reading bam file
 var _automation_running = false;
-var _Bam = undefined;
+var _Bams = undefined;
 var _Ref_sizes_from_header = {};
 
 // Selecting region
@@ -242,16 +272,15 @@ _ui_properties.align_length_slider_max = 0;
 
 // Scales for visualization
 var _ribbon_scales = {};
-_ribbon_scales.read_scale = d3.scale.linear();
-_ribbon_scales.whole_ref_scale = d3.scale.linear();
-_ribbon_scales.chunk_whole_ref_scale = d3.scale.linear();
-_ribbon_scales.ref_interval_scale = d3.scale.linear();
-_ribbon_scales.chunk_ref_interval_scale = d3.scale.linear();
-_ribbon_scales.ref_color_scale = d3.scale
-  .ordinal()
+_ribbon_scales.read_scale = d3.scaleLinear();
+_ribbon_scales.whole_ref_scale = d3.scaleLinear();
+_ribbon_scales.chunk_whole_ref_scale = d3.scaleLinear();
+_ribbon_scales.ref_interval_scale = d3.scaleLinear();
+_ribbon_scales.chunk_ref_interval_scale = d3.scaleLinear();
+_ribbon_scales.ref_color_scale = d3.scaleOrdinal()
   .range(_ribbon_static.color_collections[_ribbon_settings.color_index]);
-_ribbon_scales.variant_color_scale = d3.scale.ordinal();
-_ribbon_scales.feature_color_scale = d3.scale.ordinal();
+_ribbon_scales.variant_color_scale = d3.scaleOrdinal();
+_ribbon_scales.feature_color_scale = d3.scaleOrdinal();
 
 // Show each warning only the first time it comes up in a session
 var _ribbon_warnings = {};
@@ -468,7 +497,6 @@ function open_any_url_files() {
 }
 
 //////////////////// Region settings /////////////////////////
-
 $("#region_mq_slider").slider({
   min: 0,
   max: 1000,
@@ -2094,8 +2122,7 @@ function apply_ref_filters() {
     return a.length - b.length;
   });
 
-  var chrom_livesearch = d3
-    .livesearch()
+  var chrom_livesearch = Livesearch()
     .max_suggestions_to_show(5)
     .search_list(chromosomes)
     .selection_function(search_select_chrom)
@@ -2120,8 +2147,7 @@ function chunk_changed() {
 
     new_read_selected(0);
 
-    var readname_livesearch = d3
-      .livesearch()
+    var readname_livesearch = Livesearch()
       .max_suggestions_to_show(5)
       .search_list(_Chunk_alignments)
       .search_key("readname")
@@ -2270,7 +2296,7 @@ function parse_paired_end(record) {
   };
 }
 
-function consolidate_records(records) {
+function pair_up_any_paired_reads(records) {
   // Removing duplicates and pairing up records from paired-end reads
   _ribbon_settings.paired_end_mode = false;
   for (var i = 0; i < records.length; i++) {
@@ -2533,15 +2559,15 @@ function batch_bam_fetching(chrom, start, end, callback) {
 function flexible_bam_fetch(region_list) {
   _Additional_ref_intervals = [];
 
-  if (_Bam != undefined) {
+  if (_Bams != undefined) {
     show_waiting_for_bam();
 
     _num_bam_records_to_load = 0;
     _num_loaded_regions = 0;
     _Bam_records_from_multiregions = [];
 
-    fetch_whole_region = false;
-    region_fetch_margin = _ribbon_settings.bam_fetch_margin;
+    let fetch_whole_region = false;
+    let region_fetch_margin = _ribbon_settings.bam_fetch_margin;
 
     if (fetch_whole_region == true) {
       for (var i in region_list) {
@@ -2619,7 +2645,7 @@ function flexible_bam_fetch(region_list) {
     }
     d3.select("#bam_fetch_info").html(info);
   } else {
-    user_message_ribbon("Error", "No bam file");
+    user_message_ribbon("Error", "No bam file. Please load a bam file first from the 'Input alignments' tab.");
   }
 }
 
@@ -2689,8 +2715,7 @@ function show_feature_table() {
   d3.select("#feature_table_box").style("display", "block");
 
   d3.select("#feature_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Features_for_ribbon)
       .num_rows_to_show(1000)
       .click_function(feature_row_click)
@@ -2701,8 +2726,7 @@ function show_variant_table() {
   d3.select("#variant_table_box").style("display", "block");
 
   d3.select("#ribbon_variant_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Variants)
       .num_rows_to_show(1000)
       .show_advanced_filters(true)
@@ -2741,8 +2765,7 @@ function show_bedpe_table() {
   d3.select("#bedpe_table_panel").style("display", "block");
 
   d3.select("#bedpe_table_landing").call(
-    d3
-      .superTable()
+      SuperTable()
       .table_data(_Bedpe)
       .num_rows_to_show(1000)
       .show_advanced_filters(true)
@@ -2803,7 +2826,7 @@ function bed_input_changed(bed_input) {
           name: columns[3] || "",
           score: score,
           strand: columns[5],
-          type: columns[6] || "",
+          variant_type: columns[6] || "",
         });
       }
     }
@@ -2863,7 +2886,7 @@ function bedpe_input_changed(bedpe_input) {
         _Bedpe.push({
           name: name,
           score: score,
-          type: type,
+          variant_type: type,
           size: size,
           chrom1: chrom1,
           pos1: pos1,
@@ -2898,6 +2921,8 @@ function update_bedpe() {
     .domain(color_calculations.names)
     .range(color_calculations.colors);
   show_bedpe_table();
+  // Put bedpe data into a global variable that SplitThreader can adopt.
+  window.global_variants = _Bedpe;
 }
 
 function update_features() {
@@ -2965,7 +2990,7 @@ function vcf_input_changed(vcf_input) {
           name: name,
           score: score,
           strand: strand,
-          type: type,
+          variant_type: type,
         });
       }
     }
@@ -3545,7 +3570,7 @@ function user_message_ribbon(message_type, message) {
     default:
       message_style = "info";
   }
-  html = "<strong>" + message_type + ": </strong>" + message;
+  let html = "<strong>" + message_type + ": </strong>" + message;
 
   var alert = d3
     .select("#user-message")
@@ -3933,7 +3958,7 @@ function natural_sort(a, b) {
   var aa = chunk(a);
   var bb = chunk(b);
 
-  for (x = 0; aa[x] && bb[x]; x++) {
+  for (let x = 0; aa[x] && bb[x]; x++) {
     if (aa[x] !== bb[x]) {
       var c = Number(aa[x]),
         d = Number(bb[x]);
@@ -4282,7 +4307,7 @@ function organize_references_for_chunk() {
   // Gather starts and ends for each chromosome
   var ref_pieces = {};
   for (var j = 0; j < _Chunk_alignments.length; j++) {
-    alignments = _Chunk_alignments[j].alignments;
+    let alignments = _Chunk_alignments[j].alignments;
     for (var i = 0; i < alignments.length; i++) {
       if (ref_pieces[alignments[i].r] == undefined) {
         ref_pieces[alignments[i].r] = [];
@@ -4453,7 +4478,7 @@ function refresh_visibility() {
   if (
     _Chunk_alignments.length > 0 ||
     (_ribbon_settings.automation_mode == true &&
-      _Bam != undefined &&
+      _Bams != undefined &&
       _Bedpe.length > 0)
   ) {
     d3.select("#region_settings_panel").style("display", "block");
@@ -4466,7 +4491,7 @@ function refresh_visibility() {
   if (
     _Alignments.length > 0 ||
     (_ribbon_settings.automation_mode == true &&
-      _Bam != undefined &&
+      _Bams != undefined &&
       _Bedpe.length > 0)
   ) {
     d3.select("#settings").style("display", "block");
@@ -4777,10 +4802,8 @@ function draw_dotplot() {
       _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  var read_axis = d3.svg
-    .axis()
+  var read_axis = d3.axisLeft()
     .scale(_ribbon_scales.read_scale)
-    .orient("left")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -5656,10 +5679,8 @@ function draw_ribbons() {
       _ribbon_svg1.selectAll("g.tip").remove();
     });
 
-  var read_axis = d3.svg
-    .axis()
+  var read_axis = d3.axisBottom()
     .scale(_ribbon_scales.read_scale)
-    .orient("bottom")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -5720,9 +5741,9 @@ function add_user_links_to_navbar() {
 
   d3.select("#user_data_navbar_item").style(
     "visibility",
-    user_links == null ? "hidden" : "visible"
+    user_links ? "hidden" : "visible"
   );
-  if (user_links == null) return;
+  if (!user_links) return;
 
   // Each user_link = { name: ..., perma: ..., date: ... }
   d3.select("ul#user_data_list").html("");
@@ -5756,26 +5777,35 @@ function set_variant_info_text() {
   );
 }
 
-async function read_bam_url(url, in_background = false) {
-  if (url.startsWith("s3://")) {
-    url = url.replace("s3://", "https://42basepairs.com/download/s3/");
-  } else if (url.startsWith("gs://")) {
-    url = url.replace("gs://", "https://42basepairs.com/download/gs/");
-  } else if (!url.startsWith("https://")) {
-    alert("We only support HTTPS, s3:// or gs:// paths");
-    return;
+async function read_bam_urls(urls, in_background = false) {
+  _Bams = [];
+  for (let url of urls) {
+    if (url.startsWith("s3://")) {
+      url = url.replace("s3://", "https://42basepairs.com/download/s3/");
+    } else if (url.startsWith("gs://")) {
+      url = url.replace("gs://", "https://42basepairs.com/download/gs/");
+    } else if (!url.startsWith("https://")) {
+      alert("We only support HTTPS, s3:// or gs:// paths");
+      return;
+    }
+
+    let new_bam = new BamFile(_CLI, [url, url + ".bai"]);
+    await new_bam.mount();
+    await new_bam.parseHeader();
+    _Bams.push(new_bam);
   }
 
-  _ribbon_settings.alignment_info_text = "Bam from url: " + url;
-  _ribbon_settings.bam_url = url;
+  if (urls.length == 1) {
+    _ribbon_settings.alignment_info_text = `Bam from url: ${urls[0]}`;
+  } else {
+  _ribbon_settings.alignment_info_text = `Bam(s) from url(s):<br>${urls.join("<br>")}`;
+  }
+  _ribbon_settings.bam_url = urls;
   if (!in_background) {
     set_alignment_info_text();
   }
 
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile([url, url + ".bai"]);
-  await _Bam.mount();
-  await _Bam.parseHeader();
 }
 
 function load_json_bam(header) {
@@ -5919,7 +5949,7 @@ function read_permalink(id) {
           json_data["ribbon_perma"]["config"]["settings"]["bam_url"] !=
           undefined
         ) {
-          read_bam_url(
+          read_bam_urls(
             json_data["ribbon_perma"]["config"]["settings"]["bam_url"],
             true
           );
@@ -6013,7 +6043,7 @@ function read_permalink(id) {
             );
           }
         } else if (json_data["bam_url"] != undefined) {
-          read_bam_url(json_data["bam_url"]);
+          read_bam_urls(json_data["bam_url"]);
         }
 
         if (json_data["bedpe"] != undefined) {
@@ -6039,21 +6069,16 @@ add_user_links_to_navbar();
 // == Load bed file
 // ===========================================================================
 
-function open_bedpe_file(event) {
+async function open_bedpe_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "bedpe") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      bedpe_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    bedpe_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Bedpe from file: " + this.files[0].name;
     set_variant_info_text();
@@ -6062,33 +6087,23 @@ function open_bedpe_file(event) {
   }
 }
 
-function open_variant_file() {
+async function open_variant_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "vcf") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      vcf_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    vcf_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
   } else if (file_extension == "bed") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      bed_input_changed(raw_data);
-      variants_just_loaded();
-    };
+    const raw_data = await this.files[0].text();
+    bed_input_changed(raw_data);
+    variants_just_loaded();
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
@@ -6150,20 +6165,15 @@ function read_feature_bed(raw_data) {
   make_feature_type_table();
 }
 
-function open_feature_bed_file(event) {
+async function open_feature_bed_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
   var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
   if (file_extension == "bed") {
-    var raw_data;
-    var reader = new FileReader();
-    reader.readAsText(this.files[0]);
-    reader.onload = function (event) {
-      raw_data = event.target.result;
-      read_feature_bed(raw_data);
-    };
+    const raw_data = await this.files[0].text();
+    read_feature_bed(raw_data);
   } else {
     user_message_ribbon("Error", "File extension must be .bed");
   }
@@ -6177,19 +6187,13 @@ d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 // == Load coords file
 // ===========================================================================
 
-function open_coords_file() {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_coords_file() {
   if (this.files[0].size > 1000000) {
     user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    coords_input_changed(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  coords_input_changed(raw_data);
   _ribbon_settings.alignment_info_text =
     "Coords from file: " + this.files[0].name;
   set_alignment_info_text();
@@ -6227,9 +6231,12 @@ async function create_bam(files) {
 
   // Initialize bam file
   wait_then_run_when_bam_file_loaded();
-  _Bam = new BamFile([bamFile, indexFile]);
-  await _Bam.mount();
-  await _Bam.parseHeader();
+
+  _Bams = [];
+  let new_bam = new BamFile(_CLI, [bamFile, indexFile]);
+  await new_bam.mount();
+  await new_bam.parseHeader();
+  _Bams.push(new_bam);
 }
 
 function wait_then_run_when_bam_file_loaded(counter) {
@@ -6239,8 +6246,12 @@ function wait_then_run_when_bam_file_loaded(counter) {
     user_message_ribbon("Error", "File taking too long to load");
     return;
   }
-  if (_Bam != null && _Bam.ready) {
-    bam_loaded();
+  
+  if (_Bams !== undefined) {
+    let all_ready = _Bams.every((b) => b.ready);
+    if (all_ready) {
+      bam_loaded();
+    }
   } else {
     window.setTimeout(function () {
       wait_then_run_when_bam_file_loaded(counter + 1);
@@ -6257,7 +6268,7 @@ function bam_loaded() {
   refresh_ui_for_new_dataset();
   reset_settings_for_new_dataset();
   clear_data();
-  record_bam_header(_Bam.header.sq);
+  record_bam_header(_Bams[0].header.sq); // This uses first bam file only.
   organize_references_for_chunk();
   show_all_chromosomes();
   apply_ref_filters();
@@ -6366,9 +6377,18 @@ var _Bam_records_from_multiregions = [];
 var _num_loaded_regions = 0;
 var _num_bam_records_to_load = 0;
 
-function my_fetch(chrom, start, end, callback) {
+async function my_fetch(chrom, start, end, callback) {
   _num_bam_records_to_load += 1;
-  _Bam.fetch(chrom, start, end).then(callback);
+  // _Bam.fetch(chrom, start, end).then(callback);
+  let all_bam_records = [];
+  for (let bam of _Bams) {
+    let records = await bam.fetch(chrom, start, end);
+    all_bam_records.push(records);
+  }
+
+  Promise.all(all_bam_records).then((records) => {
+    callback(records.flat());
+  });
 }
 
 function check_if_all_bam_records_loaded() {
@@ -6448,7 +6468,7 @@ function use_fetched_data(records) {
     }
   }
 
-  _Chunk_alignments = consolidate_records(parsed_bam_records);
+  _Chunk_alignments = pair_up_any_paired_reads(parsed_bam_records);
   parsed_bam_records = []; // reset to save memory
 
   chunk_changed();
@@ -6539,26 +6559,40 @@ d3.select("#region_start").on("keyup", function () {
 });
 
 function submit_bam_url() {
-  var url = d3.select("#bam_url_input").property("value");
-  read_bam_url(url);
+  var url_input = d3.select("#bam_url_input").property("value");
+  console.log("url_input:", url_input);
+  // Parse by comma-separated
+  var urls = url_input.split(",").map((d) => d.trim());
+  console.log("urls:", urls);
+  read_bam_urls(urls);
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
 
+// https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam, https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-N-P_PacBio-HiFi-Revio_20240125_35x_CHM13v2.0.bam
+
+
 const _bam_presets = [
   {
-    url: "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
+    urls: [
+      "https://42basepairs.com/download/gs/deepvariant/pacbio-case-study-testdata/HG003.pfda_challenge.grch38.phased.bam",
+    ],
     name: "HG003 PacBio phased",
     "42basepairs_url":
       "https://42basepairs.com/browse/gs/deepvariant/pacbio-case-study-testdata?file=HG003.pfda_challenge.grch38.phased.bam",
   },
   {
-    url: "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+    urls: [
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-N-P_PacBio-HiFi-Revio_20240125_35x_CHM13v2.0.bam",
+    ],
     name: "HG008 PacBio Tumor from GIAB",
     "42basepairs_url":
       "https://42basepairs.com/browse/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
   },
   {
-    url: "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
+    urls: [
+      "https://42basepairs.com/download/r2/genomics-data/alignments_HG002.bam",
+    ],
     name: "HG002 Illumina",
     "42basepairs_url":
       "https://42basepairs.com/browse/r2/genomics-data/alignments_HG002.bam",
@@ -6573,9 +6607,9 @@ function make_bam_presets_list() {
     let load_link = document.createElement("span");
     load_link.textContent = preset.name;
     load_link.style.cursor = "pointer";
-    load_link.title = preset.url; // Show URL on hover
+    load_link.title = preset.urls.join(','); // Show URL on hover
     load_link.addEventListener("click", () => {
-      read_bam_url(preset.url);
+      read_bam_urls(preset.urls);
     });
     listItem.appendChild(load_link);
     let link_to_42basepairs = document.createElement("a");
@@ -6588,10 +6622,6 @@ function make_bam_presets_list() {
 }
 
 make_bam_presets_list();
-
-window.addEventListener("beforeunload", function (event) {
-  event.preventDefault();
-});
 
 // ===========================================================================
 // == Automation
@@ -6828,12 +6858,38 @@ function resizeWindow() {
 function go_to_ribbon_mode() {
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
+
+  // Grab any shared data that SplitThreader may have deposited.
+  if (window.global_variants) {
+    _Bedpe = window.global_variants;
+    update_bedpe();
+  }
+}
+d3.select("#go_to_ribbon_mode").on("click", function() {
+  go_to_ribbon_mode();
+  window.location.hash = '#ribbon';
+});
+
+function check_url_for_mode() {
+  const hash = window.location.hash;
+
+  if (hash === '#splitthreader') {
+    // handled in index_splitthreader.js because it needs to update variables in there.
+  } else if (hash === '#ribbon') {
+    go_to_ribbon_mode();
+  } else if (hash === '') {
+    // Do nothing
+  } else {
+    console.error('unknown hash in URL:', hash);
+  }
 }
 
-function go_to_splitthreader_mode() {
-  d3.select("#ribbon-app-container").style("display", "none");
-  d3.select("#splitthreader-app-container").style("display", "block");
-}
+// Add event listener for hash change
+window.addEventListener('hashchange', check_url_for_mode);
+
+// Call switchMode on page load
+check_url_for_mode();
+
 
 // ===========================================================================
 // == Main
@@ -6841,3 +6897,8 @@ function go_to_splitthreader_mode() {
 
 run_ribbon();
 open_any_url_files();
+
+
+// window.addEventListener("beforeunload", function (event) {
+//   event.preventDefault();
+// });

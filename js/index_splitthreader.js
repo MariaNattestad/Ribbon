@@ -1,3 +1,38 @@
+import * as d3 from "d3";
+import { parse_and_convert_vcf } from './vcf_utils.js';
+import {Graph} from './SplitThreader.js';
+import $ from 'jquery';
+import Aioli from "@biowasm/aioli";
+import Papa from "papaparse";
+import { exportViz } from "./utils.js";
+import Livesearch from "./d3-livesearch.js";
+import SuperTable from "./d3-superTable.js";
+
+// ===========================================================================
+// == Biowasm / Aioli
+// ===========================================================================
+
+// TODO: Currently we're loading these in both index_splitthreader.js and index_ribbon.js,
+// perhaps there's a better way.
+
+let _CLI = null;
+
+// Initialize app on page load
+document.addEventListener("DOMContentLoaded", async () => {
+  // Create Aioli (and the WebWorker in which WASM code will run).
+  // Load assets locally instead of using the CDN.
+  const urlPrefix = `${window.location.origin}/wasm`;
+  _CLI = await new Aioli([
+    { tool: "samtools", version: "1.17", urlPrefix },
+    { tool: "bcftools", version: "1.10", urlPrefix },
+  ]);
+
+  // Get samtools version once initialized
+  console.log("Loaded: samtools", await _CLI.exec("samtools --version-only"), " bcftools", await _CLI.exec("bcftools --version-only"));
+});
+
+// ===========================================================================
+
 var _input_file_prefix = "my_sample"; // deprecated, should be removed.
 
 var _splitthreader_layout = {
@@ -12,9 +47,81 @@ var _splitthreader_padding = {};
 
 var _splitthreader_static = {};
 _splitthreader_static.color_collections = [
-  [ "#E41A1C", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470", "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30", "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#999999" ],
-  [ "#ffff00", "#ad0000", "#bdadc6", "#00ffff", "#e75200", "#de1052", "#ffa5a5", "#7b7b00", "#7bffff", "#008c00", "#00adff", "#ff00ff", "#ff0000", "#ff527b", "#84d6a5", "#e76b52", "#8400ff", "#6b4242", "#52ff52", "#0029ff", "#ffcc66", "#ff94ff", "#004200", "gray", "black" ],
-  [ "#ff9896", "#c5b0d5", "#8c564b", "#e377c2", "#bcbd22", "#9edae5", "#c7c7c7", "#d62728", "#ffbb78", "#98df8a", "#ff7f0e", "#f7b6d2", "#c49c94", "#dbdb8d", "#aec7e8", "#17becf", "#2ca02c", "#7f7f7f", "#1f77b4", "#9467bd" ],
+  [
+    "#E41A1C",
+    "#A73C52",
+    "#6B5F88",
+    "#3780B3",
+    "#3F918C",
+    "#47A266",
+    "#53A651",
+    "#6D8470",
+    "#87638F",
+    "#A5548D",
+    "#C96555",
+    "#ED761C",
+    "#FF9508",
+    "#FFC11A",
+    "#FFEE2C",
+    "#EBDA30",
+    "#CC9F2C",
+    "#AD6428",
+    "#BB614F",
+    "#D77083",
+    "#F37FB8",
+    "#DA88B3",
+    "#B990A6",
+    "#999999",
+  ],
+  [
+    "#ffff00",
+    "#ad0000",
+    "#bdadc6",
+    "#00ffff",
+    "#e75200",
+    "#de1052",
+    "#ffa5a5",
+    "#7b7b00",
+    "#7bffff",
+    "#008c00",
+    "#00adff",
+    "#ff00ff",
+    "#ff0000",
+    "#ff527b",
+    "#84d6a5",
+    "#e76b52",
+    "#8400ff",
+    "#6b4242",
+    "#52ff52",
+    "#0029ff",
+    "#ffcc66",
+    "#ff94ff",
+    "#004200",
+    "gray",
+    "black",
+  ],
+  [
+    "#ff9896",
+    "#c5b0d5",
+    "#8c564b",
+    "#e377c2",
+    "#bcbd22",
+    "#9edae5",
+    "#c7c7c7",
+    "#d62728",
+    "#ffbb78",
+    "#98df8a",
+    "#ff7f0e",
+    "#f7b6d2",
+    "#c49c94",
+    "#dbdb8d",
+    "#aec7e8",
+    "#17becf",
+    "#2ca02c",
+    "#7f7f7f",
+    "#1f77b4",
+    "#9467bd",
+  ],
 ];
 _splitthreader_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
@@ -28,16 +135,21 @@ _splitthreader_static.foot_spacing_from_axis = 5;
 _splitthreader_static.foot_length = 15;
 _splitthreader_static.annotations_available = [
   {
-    name: "Human hg19 Gencode",
-    ucsc: "hg19",
-    path: "resources/annotation/Human_hg19.genes.csv",
-  },
-  {
     name: "Human GRCh38 Gencode",
     ucsc: "hg38",
+    id: "GRCh38",
     path: "resources/annotation/Human_GRCh38.genes.csv",
+    ref: "resources/reference/GRCh38.csv",
   },
+  {
+    name: "Human hg19 Gencode",
+    id: "hg19",
+    ucsc: "hg19",
+    path: "resources/annotation/Human_hg19.genes.csv",
+    ref: "resources/reference/hg19.csv",
+  }
 ];
+
 _splitthreader_static.max_variants_to_show = 10000;
 
 var _splitthreader_settings = {};
@@ -53,9 +165,7 @@ _splitthreader_settings.min_variant_size = -1;
 _splitthreader_settings.min_split_reads = -1;
 _splitthreader_settings.min_discordant_pairs = -1;
 _splitthreader_settings.min_other_read_evidence = -1;
-_splitthreader_settings.annotation_path =
-  "resources/annotation/Human_hg19.genes.csv";
-_splitthreader_settings.ucsc_database = "hg19";
+_splitthreader_settings.annotation_index = 0;
 _splitthreader_settings.coverage_divisor = 1;
 _splitthreader_settings.cov_diff_for_CNV = 1;
 _splitthreader_settings.publication_style_plot = false;
@@ -72,19 +182,18 @@ _splitthreader_settings.margin_for_nearby = 100000;
 
 var _splitthreader_scales = {};
 _splitthreader_scales.zoom_plots = {
-  top: { x: d3.scale.linear(), y: d3.scale.linear() },
-  bottom: { x: d3.scale.linear(), y: d3.scale.linear() },
+  top: { x: d3.scaleLinear(), y: d3.scaleLinear() },
+  bottom: { x: d3.scaleLinear(), y: d3.scaleLinear() },
 };
-_splitthreader_scales.chromosome_colors = d3.scale
-  .ordinal()
+_splitthreader_scales.chromosome_colors = d3.scaleOrdinal()
   .range(
     _splitthreader_static.color_collections[_splitthreader_settings.color_index]
   );
 _splitthreader_scales.connection_loops = {
-  top: d3.scale.linear(),
-  bottom: d3.scale.linear(),
+  top: d3.scaleLinear(),
+  bottom: d3.scaleLinear(),
 };
-_splitthreader_scales.hist = { x: d3.scale.linear(), y: d3.scale.linear() };
+_splitthreader_scales.hist = { x: d3.scaleLinear(), y: d3.scaleLinear() };
 
 var _axes = {};
 _axes.top = { x: null, y: null };
@@ -93,7 +202,7 @@ var _axis_labels = {};
 _axis_labels.top = { x: null, y: null };
 _axis_labels.bottom = { x: null, y: null };
 
-_zoom_behaviors = { top: d3.behavior.zoom(), bottom: d3.behavior.zoom() };
+let _zoom_behaviors = { top: d3.zoom(), bottom: d3.zoom() };
 
 ///////////////////////    Data    ///////////////////////
 // For plotting:
@@ -112,6 +221,7 @@ var _variant_superTable = null;
 // For lookups and calculations:
 var _SplitThreader_graph = new Graph();
 var _Chromosome_start_positions = {};
+var _Chromosome_size_lookup = {};
 var _Annotation_by_chrom = {};
 var _Gene_fusions = [];
 var _max_coverage_by_chrom = {};
@@ -131,6 +241,7 @@ var _chosen_chromosomes = { top: null, bottom: null };
 var _dragging_chromosome = null; // Which chromosome are you dragging from the circos plot?
 var _hover_plot = null; // Which plot (top or bottom) are you about to drop the chromosome onto?
 var _bins_per_bar = { top: 5, bottom: 5 };
+var _y_coordinate_for_connection = { top: 0, bottom: 0 };
 
 // Elements on the page
 var _splitthreader_svg;
@@ -334,9 +445,9 @@ d3.select("#publication_style_plot_checkbox").on("change", function () {
 
 d3.select("#take_screenshot").on("click", async function () {
   await exportViz({
-      format: "png",
-      element: document.querySelector("#svg"),
-      filename: "splitthreader.png"
+    format: "png",
+    element: document.querySelector("#svg"),
+    filename: "splitthreader.png",
   });
 });
 
@@ -361,22 +472,32 @@ d3.select("select#annotation_dropdown")
     return d.ucsc;
   });
 
+
+function use_annotation_at_index(index) {
+  let annotation_chosen = _splitthreader_static.annotations_available[index];
+  d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
+  show_positions();
+  // If genome data is already computed from the coverage data, we don't want to
+  // overwrite it with the new annotation data. Switching annotations shouldn't
+  // mess up anything else.
+  if (_Genome_data.length == 0) {
+    read_ref_file();
+  }
+  read_annotation_file();
+  d3.select("select#annotation_dropdown").property("selectedIndex", index);
+}
+
+function use_annotation_by_id(annotation_id) {
+  let index = _splitthreader_static.annotations_available.findIndex(
+    (d) => d.id == annotation_id
+  );
+  use_annotation_at_index(index);
+}
+
 d3.select("select#annotation_dropdown").on("change", function (d) {
-  if (
-    !(
-      _splitthreader_settings.annotation_path ==
-      _splitthreader_static.annotations_available[
-        this.options[this.selectedIndex].value
-      ]
-    )
-  ) {
-    _splitthreader_settings.annotation_path =
-      this.options[this.selectedIndex].value;
-    _splitthreader_settings.ucsc_database =
-      this.options[this.selectedIndex].getAttribute("ucsc");
-    d3.select("#ucsc_database").html(_splitthreader_settings.ucsc_database);
-    show_positions();
-    read_annotation_file();
+  if (this.selectedIndex !== _splitthreader_settings.annotation_index) {
+    _splitthreader_settings.annotation_index = this.selectedIndex;
+    use_annotation_at_index(_splitthreader_settings.annotation_index);
   }
 });
 
@@ -392,14 +513,20 @@ d3.select("select#splitthreader_color_scheme_dropdown")
     return d.colors;
   });
 
-d3.select("select#splitthreader_color_scheme_dropdown").on("change", function (d) {
-  _splitthreader_settings.color_index = this.options[this.selectedIndex].value;
-  _splitthreader_scales.chromosome_colors.range(
-    _splitthreader_static.color_collections[_splitthreader_settings.color_index]
-  );
-  resize_splitthreader_views();
-  draw_everything();
-});
+d3.select("select#splitthreader_color_scheme_dropdown").on(
+  "change",
+  function (d) {
+    _splitthreader_settings.color_index =
+      this.options[this.selectedIndex].value;
+    _splitthreader_scales.chromosome_colors.range(
+      _splitthreader_static.color_collections[
+        _splitthreader_settings.color_index
+      ]
+    );
+    resize_splitthreader_views();
+    draw_everything();
+  }
+);
 
 d3.select("#coverage_divisor").on("change", function () {
   _splitthreader_settings.coverage_divisor = parseInt(this.value);
@@ -422,9 +549,9 @@ function set_ribbon_path(path) {
 set_ribbon_path("https://genomeribbon.com");
 
 function update_variants() {
-  analyze_variants();
+  analyze_variants_with_coverage();
   make_variant_table();
-  show_statistics();
+  show_high_level_statistics();
 
   draw_histogram(_Filtered_variant_data);
   draw_connections();
@@ -512,7 +639,7 @@ function update_categorization_parameters() {
     _splitthreader_settings.margin_for_reciprocal
   );
 
-  analyze_variants();
+  analyze_variants_with_coverage();
 }
 
 d3.select("#submit_category_parameters").on(
@@ -613,8 +740,8 @@ function show_splitthreader_tooltip(text, x, y, parent_object) {
 ///////////  Run the whole program by loading all files and when they are loaded drawing everything ///////////
 
 function run_splitthreader() {
+  read_ref_file();
   read_annotation_file();
-  wait_then_run_when_all_data_loaded();
 }
 
 function draw_everything() {
@@ -626,67 +753,131 @@ function draw_everything() {
   draw_histogram(_Filtered_variant_data);
 }
 
-function wait_then_run_when_all_data_loaded() {
-  if (
-    _data_ready.coverage[_splitthreader_settings.segment_copy_number]["top"] &
+function show_visualizer_tab() {
+  // Switch to viz once data is ready, or e.g. when a variant is clicked in the table.
+  d3.select(".nav_tab_splitthreader").classed("active", false);
+  d3.select(".tab_splitthreader").classed("active", false);
+  d3.select(".tab_splitthreader").classed("in", false);
+
+  d3.select("#nav_tab_splitthreader_viz").classed("active", true);
+  d3.select("#visualizer_tab").classed("active", true);
+  d3.select("#visualizer_tab").classed("in", true);
+}
+
+function run_everything_that_needs_variants() {
+  _Statistics.number_of_variants = _Filtered_variant_data.length;
+
+  draw_circos();
+  draw_circos_connections();
+
+  set_x_scale_for_new_chromosome("top");
+  draw_zoom_plot("top");
+
+  set_x_scale_for_new_chromosome("bottom");
+  draw_zoom_plot("bottom");
+
+  draw_connections();
+  draw_histogram(_Filtered_variant_data);
+}
+
+function run_everything_that_needs_coverage() {
+  set_x_scale_for_new_chromosome("top");
+  initialize_coverage_for_chosen_chromosome("top");
+  draw_zoom_plot("top");
+
+  set_x_scale_for_new_chromosome("bottom");
+  initialize_coverage_for_chosen_chromosome("bottom");
+  draw_zoom_plot("bottom");
+  analyze_copynumber();
+}
+
+function check_and_run_if_both_variants_and_coverage_loaded() {
+  let coverage_ready = _data_ready.coverage[_splitthreader_settings.segment_copy_number]["top"] &&
     _data_ready.coverage[_splitthreader_settings.segment_copy_number][
       "bottom"
-    ] &
-    _data_ready.spansplit
-  ) {
-    scale_to_new_chrom("top");
-    scale_to_new_chrom("bottom");
-    draw_everything();
-    analyze_copynumber();
-    _Statistics.number_of_variants = _Filtered_variant_data.length;
-    show_statistics();
+    ];
+  if (coverage_ready && _data_ready.spansplit) {
+    show_high_level_statistics();
 
     if (
       _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
     ) {
       user_message_splitthreader(
         "Warning",
-        "Too many variants to run SplitThreader graph computations (" +
-          _Filtered_variant_data.length +
-          ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
+        `Too many variants to run SplitThreader graph computations (${_Filtered_variant_data.length}).
+        Use the 'Settings' tab to filter them down by minimum split reads and variant size, 
+        and they will be drawn when there are 5000 variants or less.`
       );
       return;
-    } else {
-      // for SplitThreader.js graph the variants should be: {"variant_name":"variant1","chrom1":"1","pos1":50100,"strand1":"-","chrom2":"2","pos2":1000,"strand2":"-"},
-      _SplitThreader_graph.from_genomic_variants(
-        _Filtered_variant_data,
-        _Genome_data
-      );
-
-      analyze_variants();
-      make_variant_table();
-      user_message_splitthreader("", "");
     }
-  } else {
-    window.setTimeout(wait_then_run_when_all_data_loaded, 300);
+  
+    // for SplitThreader.js graph the variants should be: {"variant_name":"variant1","chrom1":"1","pos1":50100,"strand1":"-","chrom2":"2","pos2":1000,"strand2":"-"},
+    _SplitThreader_graph.from_genomic_variants(
+      _Filtered_variant_data,
+      _Genome_data
+    );
+
+    analyze_variants_with_coverage();
+    make_variant_table();
+    user_message_splitthreader("", "");
   }
 }
 
 function apply_variant_filters() {
   _Filtered_variant_data = [];
+
+  let num_filtered_bad_chromosomes = 0;
+  let num_filtered_not_enough_split_reads = 0;
+  let num_filtered_not_enough_discordant_pairs = 0;
+  let num_filtered_not_enough_other_read_evidence = 0;
+  let num_filtered_too_small = 0;
+
   for (var i in _Variant_data) {
     var d = _Variant_data[i];
     var variant_size = Math.abs(d.pos2 - d.pos1);
-    if (
-      _Chromosome_start_positions[d.chrom1] != undefined &&
-      _Chromosome_start_positions[d.chrom2] != undefined &&
-      d.split >= _splitthreader_settings.min_split_reads &&
-      d.pairs >= _splitthreader_settings.min_discordant_pairs &&
-      d.other_read_support >= _splitthreader_settings.min_other_read_evidence &&
-      (variant_size >= _splitthreader_settings.min_variant_size ||
-        d.chrom1 != d.chrom2)
-    ) {
-      _Filtered_variant_data.push(d);
+    if (_Chromosome_start_positions[d.chrom1] == undefined ||
+      _Chromosome_start_positions[d.chrom2] == undefined) {
+      num_filtered_bad_chromosomes++;
+      continue;
     }
+    if (d.split < _splitthreader_settings.min_split_reads) {
+      num_filtered_not_enough_split_reads++;
+      continue;
+    }
+    if (d.pairs < _splitthreader_settings.min_discordant_pairs) {
+      num_filtered_not_enough_discordant_pairs++;
+      continue;
+    }
+    if (d.other_read_support < _splitthreader_settings.min_other_read_evidence) {
+      num_filtered_not_enough_other_read_evidence++;
+      continue;
+    }
+
+    if (d.chrom1 == d.chrom2 && variant_size < _splitthreader_settings.min_variant_size) {
+      num_filtered_too_small++;
+      continue;
+    }
+    // Only if passing all those filters do we add the variant to the filtered list.
+    _Filtered_variant_data.push(d);
+  }
+  if (num_filtered_bad_chromosomes > 0) {
+    console.warn(`Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference chromosome names. This can happen if the coverage file has different chromosome names or if no coverage file is loaded, in which case GRCh38 is assumed.`);
+  }
+  if (num_filtered_not_enough_split_reads > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_split_reads} variants because they have too few split reads`);
+  }
+  if (num_filtered_not_enough_discordant_pairs > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_discordant_pairs} variants because they have too few discordant pairs`);
+  }
+  if (num_filtered_not_enough_other_read_evidence > 0) {
+    console.warn(`Filtered out ${num_filtered_not_enough_other_read_evidence} variants because they have too few other read evidence`);
+  }
+  if (num_filtered_too_small > 0) {
+    console.warn(`Filtered out ${num_filtered_too_small} variants because they are too small (computed size < ${_splitthreader_settings.min_variant_size})`);
   }
 }
 
-function read_genome_file(genome_input) {
+function use_genome_input(genome_input) {
   var sum_genome_size = 0;
   for (var i = 0; i < genome_input.length; i++) {
     genome_input[i].size = +genome_input[i].size;
@@ -695,6 +886,7 @@ function read_genome_file(genome_input) {
   _splitthreader_settings.circos_padding_in_bp = sum_genome_size / 400;
 
   _Genome_data = []; // set global variable for accessing this elsewhere
+  _Chromosome_size_lookup = {};
   var cumulative_genome_size = 0;
   _Chromosome_start_positions = {};
   for (var i = 0; i < genome_input.length; i++) {
@@ -705,6 +897,7 @@ function read_genome_file(genome_input) {
         size: genome_input[i].size,
         cum_pos: cumulative_genome_size,
       });
+      _Chromosome_size_lookup[genome_input[i].chromosome] = genome_input[i].size;
       _Chromosome_start_positions[genome_input[i].chromosome] =
         cumulative_genome_size;
       cumulative_genome_size +=
@@ -726,32 +919,6 @@ function read_genome_file(genome_input) {
       _chosen_chromosomes["bottom"] = _Genome_data[0].chromosome;
     }
   }
-}
-
-function load_coverage(chromosome, top_or_bottom) {
-  d3.csv(
-    _input_file_prefix +
-      ".copynumber.segmented." +
-      chromosome +
-      ".csv?id=" +
-      Math.random(),
-    function (error, coverage_input) {
-      if (error) throw error;
-
-      _Coverage_by_chromosome["unsegmented"][chromosome] = [];
-      for (var i = 0; i < coverage_input.length; i++) {
-        // Make columns numerical:
-        _Coverage_by_chromosome["unsegmented"][chromosome].push({});
-        _Coverage_by_chromosome["unsegmented"][chromosome][i].start =
-          +coverage_input[i].start;
-        _Coverage_by_chromosome["unsegmented"][chromosome][i].end =
-          +coverage_input[i].end;
-        _Coverage_by_chromosome["unsegmented"][chromosome][i].coverage =
-          +coverage_input[i].coverage;
-      }
-      _data_ready.coverage["unsegmented"][top_or_bottom] = true;
-    }
-  );
 }
 
 function parse_variant_data(spansplit_input) {
@@ -802,49 +969,89 @@ function parse_variant_data(spansplit_input) {
   return variant_data;
 }
 
-function read_variant_file(variants_input) {
-  _Variant_data = parse_variant_data(variants_input);
+function remove_chr(chrom) {
+  return chrom.replace(/^chr/, "");
+}
+function mark_variant_loaded_successfully() {
+  d3.select("#splitthreader_status_variant_loaded").classed("hidden", false);
+}
+function mark_coverage_loaded_successfully() {
+  d3.select("#splitthreader_status_coverage_loaded").classed("hidden", false);
+}
+
+function load_variants(variants_input) {
+  let clean_variants = variants_input.map((d) => {
+    let chrom1 = d.chrom1 || d['#chrom1'];
+    return d;
+    // Skipping remove_chr for now since it messes up BAM loading. We'll instead
+    // just make the user be consistent across their files.
+    // return { ...d, chrom1: remove_chr(chrom1), chrom2: remove_chr(d.chrom2) };
+  });
+
+  _Variant_data = parse_variant_data(clean_variants);
   apply_variant_filters();
-  populate_ribbon_link();
+  update_variants();
+  
+  // To share between SplitThreader and Ribbon that are separate JS scripts, we can use the window object
+  // to pass data.
+  window.global_variants = _Filtered_variant_data;
+
   _data_ready.spansplit = true;
+  mark_variant_loaded_successfully();
+  
+  run_everything_that_needs_variants();
+  check_and_run_if_both_variants_and_coverage_loaded();
+
 }
 
 function read_annotation_file() {
-  if (_splitthreader_settings.annotation_path != "none") {
-    d3.csv(
-      _splitthreader_settings.annotation_path,
-      function (error, annotation_input) {
-        if (error) {
-          user_message_splitthreader("Error", "Could not find annotation.");
-          throw error;
-        }
+  const annotation_path = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].path;
 
-        // annotation_genes_available = []
-        _Annotation_by_chrom = {};
-        for (var i = 0; i < annotation_input.length; i++) {
-          annotation_input[i].start = +annotation_input[i].start;
-          annotation_input[i].end = +annotation_input[i].end;
-          if (
-            _Annotation_by_chrom[annotation_input[i].chromosome] == undefined
-          ) {
-            _Annotation_by_chrom[annotation_input[i].chromosome] = [];
-          }
-          _Annotation_by_chrom[annotation_input[i].chromosome].push(
-            annotation_input[i]
-          );
-        }
-        _Annotation_data = annotation_input;
-        _Annotation_data.sort(function (a, b) {
-          return a["gene"].length - b["gene"].length;
-        });
-
-        create_gene_search_boxes();
-        make_gene_type_table();
-
-        _Annotation_to_highlight = [];
+  d3.csv(
+    annotation_path,
+    function (error, annotation_input) {
+      if (error) {
+        user_message_splitthreader("Error", "Could not find annotation.");
+        throw error;
       }
-    );
-  }
+
+      // annotation_genes_available = []
+      _Annotation_by_chrom = {};
+      for (var i = 0; i < annotation_input.length; i++) {
+        annotation_input[i].start = +annotation_input[i].start;
+        annotation_input[i].end = +annotation_input[i].end;
+        if (
+          _Annotation_by_chrom[annotation_input[i].chromosome] == undefined
+        ) {
+          _Annotation_by_chrom[annotation_input[i].chromosome] = [];
+        }
+        _Annotation_by_chrom[annotation_input[i].chromosome].push(
+          annotation_input[i]
+        );
+      }
+      _Annotation_data = annotation_input;
+      _Annotation_data.sort(function (a, b) {
+        return a["gene"].length - b["gene"].length;
+      });
+
+      create_gene_search_boxes();
+      make_gene_type_table();
+
+      _Annotation_to_highlight = [];
+    }
+  );
+}
+
+function read_ref_file() {
+  const ref_path = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ref;
+  d3.csv(ref_path, function (error, genome_input) {
+    if (error) {
+      user_message_splitthreader("Error", "Could not find reference genome.");
+      throw error;
+    }
+
+    use_genome_input(genome_input);
+  });
 }
 
 //////////////  Handle dragging chromosomes from circos onto zoom plots to select chromosomes to show /////////////////
@@ -869,18 +1076,15 @@ function dragmove(d) {
 function draw_circos() {
   ///////////////////// Set up circos plot ////////////////////////////
 
-  var drag = d3.behavior
+  var drag = d3
     .drag()
-    .origin(function (d) {
-      return d;
-    })
-    .on("dragstart", function (d) {
+    .on("start", function (d) {
       _hover_plot = null; // reset _hover_plot so we only detect mouseover events after the chromosome has been picked up
       _dragging_chromosome = d.chromosome;
       d3.event.sourceEvent.stopPropagation();
     })
     .on("drag", dragmove)
-    .on("dragend", function (d) {
+    .on("end", function (d) {
       // return chromosome (arc) to its original position
       d3.select(this).attr("transform", function (d) {
         return "translate(0,0)"; // return the chromosome label to its original position
@@ -909,7 +1113,7 @@ function draw_circos() {
       _circos_canvas.selectAll("g.tip").remove();
     });
 
-  var arc = d3.svg
+  var arc = d3
     .arc()
     .outerRadius(_splitthreader_layout.circos.radius)
     .innerRadius(
@@ -943,7 +1147,8 @@ function draw_circos() {
     .style("font-size", _splitthreader_settings.font_size * 0.8)
     .attr("class", "chromosome_label")
     .text(function (d, i) {
-      return d.chromosome;
+      // Remove chr prefix only for drawing the plot.
+      return remove_chr(d.chromosome);
     });
 }
 
@@ -999,40 +1204,22 @@ function draw_circos_connections() {
 
 ////////////////  Draw the top zoom plot  ////////////////////
 
-function scale_to_new_chrom(top_or_bottom) {
-  var bp_min = d3.min(
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ],
-    function (d) {
-      return d.start;
-    }
-  );
+function set_x_scale_for_new_chromosome(top_or_bottom) {
+  var bp_min = 0;
+  var bp_max = _Chromosome_size_lookup[_chosen_chromosomes[top_or_bottom]];
+  _splitthreader_scales.zoom_plots[top_or_bottom].x.domain([bp_min, bp_max]);
+}
 
-  var bp_max = d3.max(
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ],
-    function (d) {
-      return d.end;
-    }
-  );
-
+function initialize_coverage_for_chosen_chromosome(top_or_bottom) {
   //////////////// Bin data to at most one bin per pixel ////////////////////////////
-  var bp_per_genomic_bin =
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ][0].end -
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-      _chosen_chromosomes[top_or_bottom]
-    ][0].start;
+
+  if (_Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
+    _chosen_chromosomes[top_or_bottom]
+  ] == undefined) {
+    return;
+  }
 
   var num_genomic_bins_per_pixel = 1;
-  Math.ceil(
-    (bp_max - bp_min) /
-      bp_per_genomic_bin /
-      _splitthreader_layout.zoom_plot.width
-  );
   var new_coverage = [];
 
   if (_splitthreader_settings.segment_copy_number == "unsegmented") {
@@ -1088,9 +1275,7 @@ function scale_to_new_chrom(top_or_bottom) {
     }
   }
 
-  /////////////////////// Set scales //////////////////////////////////
-
-  _splitthreader_scales.zoom_plots[top_or_bottom].x.domain([bp_min, bp_max]);
+  /////////////////////// Set y scale based on coverage //////////////////////////////////
 
   var max_local_coverage = 0;
   for (var i in new_coverage) {
@@ -1131,10 +1316,9 @@ function draw_zoom_plot(top_or_bottom) {
 
   ///////////////// Plot axes and labels ////////////////////////////////
   if (top_or_bottom == "top") {
-    _axes[top_or_bottom].x = d3.svg
-      .axis()
+    _axes[top_or_bottom].x = d3
+      .axisTop()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-      .orient(top_or_bottom)
       .ticks(5)
       .tickSize(5, 0, 0)
       .tickFormat(d3.format("s"));
@@ -1145,10 +1329,9 @@ function draw_zoom_plot(top_or_bottom) {
       .attr("transform", "translate(" + 0 + "," + 0 + ")")
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.svg
-      .axis()
+    _axes[top_or_bottom].y = d3
+      .axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
-      .orient("left")
       .ticks(8)
       .tickSize(5, 0, 1);
     _axis_labels[top_or_bottom].y = _zoom_containers[top_or_bottom]
@@ -1170,11 +1353,10 @@ function draw_zoom_plot(top_or_bottom) {
           -30 +
           ")"
       );
-  } else {
-    _axes[top_or_bottom].x = d3.svg
-      .axis()
+  } else if (top_or_bottom == "bottom") {
+    _axes[top_or_bottom].x = d3
+      .axisBottom()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-      .orient(top_or_bottom)
       .ticks(5)
       .tickSize(5, 0, 0)
       .tickFormat(d3.format("s"));
@@ -1188,10 +1370,9 @@ function draw_zoom_plot(top_or_bottom) {
       .style("font-size", _splitthreader_settings.font_size)
       .call(_axes[top_or_bottom].x);
 
-    _axes[top_or_bottom].y = d3.svg
-      .axis()
+    _axes[top_or_bottom].y = d3
+      .axisLeft()
       .scale(_splitthreader_scales.zoom_plots[top_or_bottom].y)
-      .orient("left")
       .ticks(8)
       .tickSize(5, 0, 1);
     _axis_labels[top_or_bottom].y = _zoom_containers[top_or_bottom]
@@ -1213,6 +1394,8 @@ function draw_zoom_plot(top_or_bottom) {
           40 +
           ")"
       );
+  } else {
+    console.error("top_or_bottom must be 'top' or 'bottom'");
   }
 
   // Plot background color:
@@ -1304,89 +1487,107 @@ function draw_zoom_plot(top_or_bottom) {
         .attr("dominant-baseline", "middle");
     }
 
-    d3.selectAll(".zoom_button").on("click", zoom_click);
+    d3.selectAll(".zoom_button").on("click", clicked_zoom_button);
   }
 
   update_coverage(top_or_bottom);
 
-  /////////////////  Zoom  /////////////////
-  var zoom_handler = function () {
-    _axis_labels[top_or_bottom].x.call(_axes[top_or_bottom].x);
-    var zoom_scale_factor = d3.event.scale;
-    _bins_per_bar[top_or_bottom] = Math.ceil(1 / zoom_scale_factor);
+  //////////////// Set up zoom behavior ////////////////////////////////
+  // ???????????????????????????????????????
+
+  let x_scale = _splitthreader_scales.zoom_plots[top_or_bottom].x;
+  let gX = _axis_labels[top_or_bottom].x;
+  let xAxis = _axes[top_or_bottom].x;
+  // Scale is _splitthreader_scales.zoom_plots[top_or_bottom].x
+  // const zoomed = function({transform}) { // works in d3 v7 but not v4.
+  const zoomed = function () {
+    const transform = d3.event.transform; // Needed for d3 v4, but in v7 we can update to the above.
+    if (!transform) {
+      console.error("No transform in zoomed function");
+    }
+    // TODO: Switch coverage updates to use the below:
+    // This transform is more performant than redrawing all the coverage rectangles,
+    // but it may be finicky, so I will save that for later.
+    // let x_only_transform = `translate(${transform.x},0) scale(${transform.k}, 1)`;
+    // _plot_canvas[top_or_bottom].attr("transform", x_only_transform);
+
+    let new_x_scale = transform.rescaleX(x_scale);
+    let new_domain = new_x_scale.domain();
+
+    // Constrain the domain to not go below zero.
+    // This fixes a weird panning bug that made the x-axis start at -73192642.
+    if (new_domain[0] < 0) {
+      const domain_width = new_domain[1] - new_domain[0];
+      new_domain = [0, domain_width];
+      new_x_scale.domain(new_domain);
+    }
+    _splitthreader_scales.zoom_plots[top_or_bottom].x = new_x_scale;
+    gX.call(xAxis.scale(new_x_scale));
+    // This redraws everything, which uses the updated scale.
     update_coverage(top_or_bottom);
   };
 
-  _zoom_behaviors[top_or_bottom]
-    .x(_splitthreader_scales.zoom_plots[top_or_bottom].x)
-    .duration(200)
-    .on("zoom", zoom_handler)
-    .center([
-      _splitthreader_layout.zoom_plot.width / 2,
-      _splitthreader_layout.zoom_plot.height / 2,
+  _zoom_behaviors[top_or_bottom] = d3
+    .zoom()
+    .scaleExtent([1, 10000])
+    .translateExtent([
+      [0, 0],
+      [
+        _splitthreader_layout.zoom_plot.width,
+        _splitthreader_layout.zoom_plot.height,
+      ],
     ])
-    .size([
-      _splitthreader_layout.zoom_plot.width,
-      _splitthreader_layout.zoom_plot.height,
-    ]);
+    .on("zoom", zoomed);
 
+  // Apply the zoom behavior to the canvas
+  // g element to apply transform to is _plot_canvas[top_or_bottom].
   _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom]);
-
-  _plot_canvas[top_or_bottom].on("wheel.zoom", function (d) {
-    d3.event.preventDefault();
-  });
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function coordinates(point, zoom) {
-  var scale = zoom.scale(),
-    translate = zoom.translate();
+function coordinates(point, transform) {
+  var scale = transform.k,
+    translate = [transform.x, transform.y];
   return [(point[0] - translate[0]) / scale, (point[1] - translate[1]) / scale];
 }
 
-function find_point(coordinates, zoom) {
-  var scale = zoom.scale(),
-    translate = zoom.translate();
+function find_point(coordinates, transform) {
+  var scale = transform.k,
+    translate = [transform.x, transform.y];
   return [
     coordinates[0] * scale + translate[0],
     coordinates[1] * scale + translate[1],
   ];
 }
 
-function zoom_click() {
-  top_or_bottom = this.getAttribute("data-plot");
-  _plot_canvas[top_or_bottom].call(_zoom_behaviors[top_or_bottom].event); // https://github.com/mbostock/d3/issues/2387
+function clicked_zoom_button() {
+  // ???????????????????????????????????????
+  let top_or_bottom = this.getAttribute("data-plot");
 
-  var zoom = _zoom_behaviors[top_or_bottom];
-  // Record the coordinates (in data space) of the center (in screen space).
-  var center0 = zoom.center();
-  var translate0 = zoom.translate();
-  var coordinates0 = coordinates(center0, zoom);
-  zoom.scale(zoom.scale() * Math.pow(2, +this.getAttribute("data-zoom")));
-
-  // Translate back to the center.
-  var center1 = find_point(coordinates0, zoom);
-  _zoom_behaviors[top_or_bottom].translate([
-    translate0[0] + center0[0] - center1[0],
-    translate0[1] + center0[1] - center1[1],
-  ]);
-
-  _plot_canvas[top_or_bottom]
-    .transition()
-    .duration(200)
-    .call(_zoom_behaviors[top_or_bottom].event);
+  // Update the zoom scale.
+  let zoom_in_or_out = this.getAttribute("data-zoom");
+  let relative_scale = 1;
+  if (zoom_in_or_out === "+1") {
+    relative_scale = 2;
+  } else if (zoom_in_or_out === "-1") {
+    relative_scale = 0.5;
+  }
+  _zoom_behaviors[top_or_bottom].scaleBy(_plot_canvas[top_or_bottom], relative_scale);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//////////// Draw or redraw the coverage (at resoluton matching the current zoom level) ///////////////
-
-function update_coverage(top_or_bottom) {
-  show_positions(); // coordinates for UCSC genome browser, etc.
-
-  _plot_canvas[top_or_bottom].selectAll("rect.coverage_rect").remove();
-
+function compute_coverage_within_view(top_or_bottom) {
+  let coverage_this_chromosome =
+    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
+      _chosen_chromosomes[top_or_bottom]
+    ];
+  
+  if (coverage_this_chromosome === undefined) {
+    return [];
+  }
+  
   var genomic_bins_per_bar = _bins_per_bar[top_or_bottom];
 
   var xlim_start =
@@ -1395,27 +1596,13 @@ function update_coverage(top_or_bottom) {
 
   var new_coverage = [];
   if (_splitthreader_settings.segment_copy_number == "unsegmented") {
-    var num_bins =
-      _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-        _chosen_chromosomes[top_or_bottom]
-      ].length - genomic_bins_per_bar;
     for (
       var i = 0;
-      i <
-      _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-        _chosen_chromosomes[top_or_bottom]
-      ].length -
-        genomic_bins_per_bar;
+      i < coverage_this_chromosome.length - genomic_bins_per_bar;
       i = i + genomic_bins_per_bar
     ) {
-      var start =
-        _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-          _chosen_chromosomes[top_or_bottom]
-        ][i].start;
-      var end =
-        _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-          _chosen_chromosomes[top_or_bottom]
-        ][i + genomic_bins_per_bar - 1].end;
+      var start = coverage_this_chromosome[i].start;
+      var end = coverage_this_chromosome[i + genomic_bins_per_bar - 1].end;
 
       if (
         (start >= xlim_start && start <= xlim_end) ||
@@ -1441,22 +1628,9 @@ function update_coverage(top_or_bottom) {
       }
     }
   } else {
-    for (
-      var i = 0;
-      i <
-      _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-        _chosen_chromosomes[top_or_bottom]
-      ].length;
-      i++
-    ) {
-      var start =
-        _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-          _chosen_chromosomes[top_or_bottom]
-        ][i].start;
-      var end =
-        _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][
-          _chosen_chromosomes[top_or_bottom]
-        ][i].end;
+    for (var i = 0; i < coverage_this_chromosome.length; i++) {
+      var start = coverage_this_chromosome[i].start;
+      var end = coverage_this_chromosome[i].end;
       if (
         (start >= xlim_start && start <= xlim_end) ||
         (end >= xlim_start && end <= xlim_end) ||
@@ -1466,15 +1640,24 @@ function update_coverage(top_or_bottom) {
           start: start,
           end: end,
           coverage:
-            _Coverage_by_chromosome[
-              _splitthreader_settings.segment_copy_number
-            ][_chosen_chromosomes[top_or_bottom]][i].coverage /
+            coverage_this_chromosome[i].coverage /
             _splitthreader_settings.coverage_divisor,
         });
       }
     }
   }
+  return new_coverage;
+}
 
+//////////// Draw or redraw the coverage (at resolution matching the current zoom level) ///////////////
+
+function update_coverage(top_or_bottom) {
+  show_positions(); // coordinates for UCSC genome browser, etc.
+
+  _plot_canvas[top_or_bottom].selectAll("rect.coverage_rect").remove();
+
+  let new_coverage = compute_coverage_within_view(top_or_bottom);
+  
   if (_splitthreader_settings.adaptive_coverage_scaling) {
     var max_local_coverage = 0;
     for (var i in new_coverage) {
@@ -1626,44 +1809,7 @@ function top_plus_bottom_minus(chromosome) {
   return Number(chromosome == _chosen_chromosomes["top"]) * 2 - 1;
 }
 
-/////////   Draw connections between top and bottom zoom plots   /////////////
-
-function draw_connections() {
-  if (
-    _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
-  ) {
-    user_message_splitthreader(
-      "Warning",
-      "Too many variants to draw (" +
-        _Filtered_variant_data.length +
-        ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
-    );
-    return;
-  } else {
-    user_message_splitthreader("");
-  }
-
-  var y_coordinate_for_connection = d3.scale
-    .ordinal()
-    .domain(["top", "bottom"])
-    .range([
-      _splitthreader_layout.zoom_plot.height +
-        _splitthreader_padding.top +
-        _splitthreader_static.foot_spacing_from_axis,
-      _splitthreader_layout.zoom_plot.bottom_y -
-        _splitthreader_static.foot_spacing_from_axis,
-    ]);
-
-  var y_coordinate_for_zoom_plot_base = d3.scale
-    .ordinal()
-    .domain(["top", "bottom"])
-    .range([
-      _splitthreader_layout.zoom_plot.height + _splitthreader_padding.top,
-      _splitthreader_layout.zoom_plot.bottom_y,
-    ]);
-
-  //////////   Classify connections so we can plot them differently   ///////////
-
+function categorize_variants_by_where_they_are_visible(variants) {
   var categorized_variant_data = {};
   categorized_variant_data.top_to_bottom = [];
   categorized_variant_data.within_top = [];
@@ -1671,13 +1817,15 @@ function draw_connections() {
   categorized_variant_data.top_to_other = [];
   categorized_variant_data.bottom_to_other = [];
 
-  for (var i = 0; i < _Filtered_variant_data.length; i++) {
-    var d = _Filtered_variant_data[i];
+  let count_skipped = {user_filtered_out_variant_type: 0};
+  for (var i = 0; i < variants.length; i++) {
+    var d = variants[i];
     if (
       _splitthreader_settings.show_variant_types[
-        _Filtered_variant_data[i].variant_type
+        variants[i].variant_type
       ] == false
     ) {
+      count_skipped.user_filtered_out_variant_type += 1;
       continue;
     }
 
@@ -1871,124 +2019,88 @@ function draw_connections() {
     } // end check that one of chromosomes is visible for this variant
   }
 
-  // Line path generator for connections with feet on both sides to indicate strands
-  function connection_path_generator(d) {
-    var x1 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, "top"), // top
-      y1 = y_coordinate_for_connection("top"),
-      x2 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom2, d.pos2, "bottom"), // bottom
-      y2 = y_coordinate_for_connection("bottom");
-    (direction1 = Number(d.strand1 == "-") * 2 - 1), // negative strands means the read is mappping to the right of the breakpoint
-      (direction2 = Number(d.strand2 == "-") * 2 - 1);
+  return categorized_variant_data;
+}
 
-    return (
-      "M " +
-      (x1 + _splitthreader_static.foot_length * direction1) +
-      " " +
+// Line path generator for connections with feet on both sides to indicate strands
+function connection_path_generator(d) {
+  let x1 =
+    _splitthreader_layout.zoom_plot.x +
+    scale_position_by_chromosome(d.chrom1, d.pos1, "top"); // top
+  let y1 = _y_coordinate_for_connection.top;
+  let x2 =
+    _splitthreader_layout.zoom_plot.x +
+    scale_position_by_chromosome(d.chrom2, d.pos2, "bottom"); // bottom
+  let y2 = _y_coordinate_for_connection.bottom;
+
+  let direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+  let direction2 = Number(d.strand2 == "-") * 2 - 1;
+
+  let foot1 = _splitthreader_static.foot_length * direction1;
+  let foot2 = _splitthreader_static.foot_length * direction2;
+  return `M ${x1 + foot1} ${y1} 
+          L ${x1} ${y1} 
+          L ${x2} ${y2} 
+          L ${x2 + foot2} ${y2}`;
+}
+
+function stub_path_generator(d, top_or_bottom) {
+  let x1 =
+      _splitthreader_layout.zoom_plot.x +
+      scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom);
+  let y1 = _y_coordinate_for_connection[top_or_bottom];
+
+  var x2 = x1;
+  let y2 = y1 +
+      _splitthreader_layout.connections.stub_height *
+        (Number(top_or_bottom == "top") * 2 - 1);
+  let direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+
+  let foot1 = _splitthreader_static.foot_length * direction1;
+  return `M ${x1 + foot1} ${y1} 
+          L ${x1} ${y1} 
+          L ${x2} ${y2}`;
+}
+
+function loop_path_generator_splitthreader(d, top_or_bottom) {
+  let x1 =
+    _splitthreader_layout.zoom_plot.x +
+    scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom);
+  let y1 = _y_coordinate_for_connection[top_or_bottom];
+  let x2 =
+    _splitthreader_layout.zoom_plot.x +
+    scale_position_by_chromosome(d.chrom2, d.pos2, top_or_bottom);
+  let y2 = _y_coordinate_for_connection[top_or_bottom];
+
+  var xmid = (x1 + x2) / 2;
+  var ymid = y1;
+  if (top_or_bottom == "top") {
+    ymid =
       y1 +
-      " L " +
-      x1 +
-      " " +
-      y1 +
-      " L " +
-      x2 +
-      " " +
-      y2 +
-      " L " +
-      (x2 + _splitthreader_static.foot_length * direction2) +
-      " " +
-      y2
-    );
+      _splitthreader_scales.connection_loops["top"](Math.abs(d.pos1 - d.pos2));
+  } else {
+    ymid =
+      y1 -
+      _splitthreader_scales.connection_loops["bottom"](
+        Math.abs(d.pos1 - d.pos2)
+      );
   }
 
-  function stub_path_generator(d, top_or_bottom) {
-    var x1 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom),
-      y1 = y_coordinate_for_connection(top_or_bottom);
+  let direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+  let direction2 = Number(d.strand2 == "-") * 2 - 1;
 
-    var x2 = x1,
-      y2 =
-        y1 +
-        _splitthreader_layout.connections.stub_height *
-          (Number(top_or_bottom == "top") * 2 - 1);
-    direction1 = Number(d.strand1 == "-") * 2 - 1; // negative strands means the read is mappping to the right of the breakpoint
+  const foot1 = _splitthreader_static.foot_length * direction1;
+  const foot2 = _splitthreader_static.foot_length * direction2;
 
-    return (
-      "M " +
-      (x1 + _splitthreader_static.foot_length * direction1) +
-      " " +
-      y1 +
-      " L " +
-      x1 +
-      " " +
-      y1 +
-      " L " +
-      x2 +
-      " " +
-      y2
-    );
-  }
+  return `M ${x1 + foot1} ${y1} 
+          L ${x1} ${y1} 
+          S ${xmid} ${ymid} ${x2} ${y2} 
+          L ${x2 + foot2} ${y2}`;
+}
 
-  function loop_path_generator_splitthreader(d, top_or_bottom) {
-    var x1 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom1, d.pos1, top_or_bottom),
-      y1 = y_coordinate_for_connection(top_or_bottom),
-      x2 =
-        _splitthreader_layout.zoom_plot.x +
-        scale_position_by_chromosome(d.chrom2, d.pos2, top_or_bottom),
-      y2 = y_coordinate_for_connection(top_or_bottom);
+/////////   Draw connections between top and bottom zoom plots   /////////////
 
-    var xmid = (x1 + x2) / 2;
-    var ymid = y1;
-    if (top_or_bottom == "top") {
-      ymid =
-        y1 +
-        _splitthreader_scales.connection_loops["top"](
-          Math.abs(d.pos1 - d.pos2)
-        );
-    } else {
-      ymid =
-        y1 -
-        _splitthreader_scales.connection_loops["bottom"](
-          Math.abs(d.pos1 - d.pos2)
-        );
-    }
-
-    var direction1 = Number(d.strand1 == "-") * 2 - 1, // negative strands means the read is mappping to the right of the breakpoint
-      direction2 = Number(d.strand2 == "-") * 2 - 1;
-
-    return (
-      "M " +
-      (x1 + _splitthreader_static.foot_length * direction1) +
-      " " +
-      y1 +
-      " L " +
-      x1 +
-      " " +
-      y1 +
-      " S " +
-      xmid +
-      " " +
-      ymid +
-      " " +
-      x2 +
-      " " +
-      y2 +
-      // + " L " + x2                          + " " + y2
-      " L " +
-      (x2 + _splitthreader_static.foot_length * direction2) +
-      " " +
-      y2
-    );
-  }
-
-  //////////////////   Draw direct connections between these two chromosomes   /////////////////////////
-
+function draw_connections_by_category(categorized_variant_data) {
   // Clear previous lines
   _splitthreader_svg.selectAll("path.spansplit_connection").remove();
   _splitthreader_svg.selectAll("path.spansplit_stub_top").remove();
@@ -2013,8 +2125,7 @@ function draw_connections() {
       var x =
         _splitthreader_layout.zoom_plot.x +
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
-      var y =
-        y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
+      var y = _y_coordinate_for_connection.top - _splitthreader_padding.tooltip;
       show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
@@ -2053,8 +2164,7 @@ function draw_connections() {
       var x =
         _splitthreader_layout.zoom_plot.x +
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
-      var y =
-        y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
+      var y = _y_coordinate_for_connection.top - _splitthreader_padding.tooltip;
       show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
@@ -2080,7 +2190,7 @@ function draw_connections() {
         _splitthreader_layout.zoom_plot.x +
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
-        y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
+        _y_coordinate_for_connection.bottom + _splitthreader_padding.tooltip;
       show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
@@ -2106,8 +2216,7 @@ function draw_connections() {
       var x =
         _splitthreader_layout.zoom_plot.x +
         scale_position_by_chromosome(d.chrom1, d.pos1, "top");
-      var y =
-        y_coordinate_for_connection("top") - _splitthreader_padding.tooltip;
+      var y = _y_coordinate_for_connection.top - _splitthreader_padding.tooltip;
       show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
@@ -2133,7 +2242,7 @@ function draw_connections() {
         _splitthreader_layout.zoom_plot.x +
         scale_position_by_chromosome(d.chrom1, d.pos1, "bottom");
       var y =
-        y_coordinate_for_connection("bottom") + _splitthreader_padding.tooltip;
+        _y_coordinate_for_connection.bottom + _splitthreader_padding.tooltip;
       show_splitthreader_tooltip(text, x, y, _splitthreader_svg);
     })
     .on("mouseout", function (d) {
@@ -2141,12 +2250,38 @@ function draw_connections() {
     });
 }
 
+function draw_connections() {
+  if (
+    _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
+  ) {
+    user_message_splitthreader(
+      "Warning",
+      "Too many variants to draw (" +
+        _Filtered_variant_data.length +
+        ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
+    );
+    return;
+  } else {
+    user_message_splitthreader("");
+  }
+
+  _y_coordinate_for_connection = {
+    top: _splitthreader_layout.zoom_plot.height +
+        _splitthreader_padding.top +
+        _splitthreader_static.foot_spacing_from_axis,
+    bottom:
+      _splitthreader_layout.zoom_plot.bottom_y -
+        _splitthreader_static.foot_spacing_from_axis,
+  };
+  let categorized_variant_data = categorize_variants_by_where_they_are_visible(_Filtered_variant_data);
+  draw_connections_by_category(categorized_variant_data);
+}
+
 function variant_click(d) {
   choose_row(d);
 
   d3.select("#variant_detail_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data([d])
       .table_header([
         "chrom1",
@@ -2165,7 +2300,7 @@ function variant_click(d) {
       ])
   );
 
-  $('.nav-tabs a[href="#variant_settings"]').tab("show");
+  // $('.nav-tabs a[href="#variant_settings"]').tab("show");
 }
 
 function arrow_path_generator(d, top_or_bottom) {
@@ -2314,7 +2449,7 @@ function draw_genes(top_or_bottom) {
   }
 
   var show_local = false;
-  for (type in _splitthreader_settings.show_gene_types) {
+  for (let type in _splitthreader_settings.show_gene_types) {
     if (_splitthreader_settings.show_gene_types[type] == true) {
       show_local = true;
       break;
@@ -2466,21 +2601,10 @@ function draw_genes(top_or_bottom) {
 
 function select_chrom_for_zoom_plot(d, top_or_bottom) {
   _chosen_chromosomes[top_or_bottom] = d;
-  if (
-    _Coverage_by_chromosome[_splitthreader_settings.segment_copy_number][d] ==
-    undefined
-  ) {
-    _data_ready.coverage[_splitthreader_settings.segment_copy_number][
-      top_or_bottom
-    ] = false;
-    if (_splitthreader_settings.segment_copy_number == "unsegmented") {
-      load_coverage(d, top_or_bottom);
-    }
-    wait_then_draw(top_or_bottom);
-  } else {
-    scale_to_new_chrom(top_or_bottom);
-    draw_zoom_plot(top_or_bottom);
-  }
+  
+  set_x_scale_for_new_chromosome(top_or_bottom);
+  initialize_coverage_for_chosen_chromosome(top_or_bottom);
+  draw_zoom_plot(top_or_bottom);
 }
 
 function wait_then_update(top_or_bottom) {
@@ -2502,7 +2626,8 @@ function wait_then_draw(top_or_bottom) {
       top_or_bottom
     ]
   ) {
-    scale_to_new_chrom(top_or_bottom);
+    set_x_scale_for_new_chromosome(top_or_bottom);
+    initialize_coverage_for_chosen_chromosome(top_or_bottom);
     draw_zoom_plot(top_or_bottom);
   } else {
     window.setTimeout(function () {
@@ -2580,7 +2705,7 @@ function highlight_feature(d) {
 }
 
 function highlight_gene_fusion(d) {
-  $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  show_visualizer_tab();
 
   hide_all_genes();
   highlight_gene(d.annotation1);
@@ -2660,8 +2785,7 @@ function search_select_fusion2(d) {
   }
 }
 function create_gene_search_boxes() {
-  var gene_livesearch = d3
-    .livesearch()
+  var gene_livesearch = Livesearch()
     .max_suggestions_to_show(15)
     .search_list(_Annotation_data)
     .search_key("gene")
@@ -2741,7 +2865,7 @@ function choose_row(d) {
         _Filtered_variant_data[i].pos2,
         "bottom"
       );
-      $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+      show_visualizer_tab();
     } else {
       _Filtered_variant_data[i].highlight = false;
     }
@@ -2785,8 +2909,7 @@ function count_filtered_data(dataset) {
 
 function make_variant_table() {
   d3.select("#splitthreader_variant_table_landing").call(
-    (_variant_superTable = d3
-      .superTable()
+    (_variant_superTable = SuperTable()
       .table_data(_Filtered_variant_data)
       .table_header([
         "chrom1",
@@ -2812,15 +2935,6 @@ function make_variant_table() {
   );
 
   make_variant_type_filter_table();
-}
-
-function populate_ribbon_link() {
-  d3.select("#data_to_send_ribbon").html("");
-  d3.select("#data_to_send_ribbon")
-    .append("input")
-    .attr("type", "hidden")
-    .attr("name", "splitthreader")
-    .property("value", JSON.stringify(_Filtered_variant_data));
 }
 
 function update_fusions_for_Ribbon_and_CSV() {
@@ -2972,10 +3086,8 @@ function draw_histogram(variant_data_to_use) {
     .domain([0, Math.max.apply(null, hist_data)])
     .range([0 + _splitthreader_layout.hist.height, 0]);
 
-  var x_axis = d3.svg
-    .axis()
+  var x_axis = d3.axisBottom()
     .scale(_splitthreader_scales.hist.x)
-    .orient("bottom")
     .ticks(3)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -2998,10 +3110,8 @@ function draw_histogram(variant_data_to_use) {
       "translate(" + (0 + _splitthreader_layout.hist.width / 2) + "," + 40 + ")"
     );
 
-  var y_axis = d3.svg
-    .axis()
+  var y_axis = d3.axisLeft()
     .scale(_splitthreader_scales.hist.y)
-    .orient("left")
     .ticks(5)
     .tickSize(5, 0, 0)
     .tickFormat(d3.format("s"));
@@ -3125,24 +3235,38 @@ function thickness_of_connections(d) {
 function jump_to_location(chrom, pos, top_or_bottom) {
   select_chrom_for_zoom_plot(chrom, top_or_bottom);
 
-  var chrom_size = 0;
-  for (var i in _Genome_data) {
-    if (_Genome_data[i].chromosome == chrom) {
-      chrom_size = _Genome_data[i].size;
-    }
-  }
+  // TODO: Bring back this zooming feature.
 
-  _zoom_behaviors[top_or_bottom].scale(chrom_size / 2000000);
-  _zoom_behaviors[top_or_bottom].translate([
-    _splitthreader_layout.zoom_plot.width / 2 -
-      _splitthreader_scales.zoom_plots[top_or_bottom].x(pos),
-    0,
-  ]);
+  // var chrom_size = 0;
+  // for (var i in _Genome_data) {
+  //   if (_Genome_data[i].chromosome == chrom) {
+  //     chrom_size = _Genome_data[i].size;
+  //   }
+  // }
+ 
+  // let new_center = _splitthreader_scales.zoom_plots[top_or_bottom].x(pos);
 
-  _plot_canvas[top_or_bottom]
-    .transition()
-    .duration(200)
-    .call(_zoom_behaviors[top_or_bottom].event);
+  // let newTranslate = [
+  //   100,
+  //   0
+  // ];
+  // // let newTranslate = [
+  // //   _splitthreader_layout.zoom_plot.width / 2 - new_center,
+  // //   0
+  // // ];
+  // const newScale = 100; // 2000000;
+
+  // const newTransform = d3.zoomIdentity
+  //   .translate(...newTranslate)
+  //   .scale(newScale);
+
+  // _zoom_behaviors[top_or_bottom].transform(_plot_canvas[top_or_bottom], newTransform);
+
+  // Apply the transformation to the zoom behavior
+  // _plot_canvas[top_or_bottom]
+  //   .transition()
+  //   .duration(200)
+  //   .call(_zoom_behaviors[top_or_bottom].transform, newTransform);
 }
 
 function jump_to_gene(annotation_for_new_gene, top_or_bottom) {
@@ -3238,10 +3362,7 @@ function read_gene_fusion_file(raw_input) {
   update_fusion_table();
 }
 
-function open_gene_fusion_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_gene_fusion_file() {
   if (this.files[0].size > 100000) {
     user_message_splitthreader(
       "Error",
@@ -3250,11 +3371,8 @@ function open_gene_fusion_file(event) {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    read_gene_fusion_file(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  read_gene_fusion_file(raw_data);
 }
 
 d3.select("#gene_fusion_file").on("change", open_gene_fusion_file);
@@ -3288,8 +3406,7 @@ set_search_intervals["to"] = function (data) {
 function update_search_input_table(to_or_from, data_type) {
   if (data_type == "genes") {
     d3.select("#search_" + to_or_from + "_table_landing").call(
-      d3
-        .superTable()
+      SuperTable()
         .table_data(_Annotation_data)
         .num_rows_to_show(1000)
         .show_advanced_filters(true)
@@ -3310,8 +3427,7 @@ function update_search_input_table(to_or_from, data_type) {
       );
     } else {
       d3.select("#search_" + to_or_from + "_table_landing").call(
-        d3
-          .superTable()
+        SuperTable()
           .table_data(_Features_for_splitthreader)
           .num_rows_to_show(1000)
           .show_advanced_filters(true)
@@ -3380,10 +3496,7 @@ function read_bed_file(raw_data) {
   d3.selectAll(".only_when_features").style("display", "table-row");
 }
 
-function open_bed_file(event) {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_bed_file(event) {
   if (this.files[0].size > 10000000) {
     user_message_splitthreader(
       "Error",
@@ -3392,11 +3505,8 @@ function open_bed_file(event) {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    read_bed_file(raw_data);
-  };
+  const raw_data = await this.files[0].text();
+  read_bed_file(raw_data);
 }
 
 d3.select("#splitthreader_feature_bed_file").on("change", open_bed_file);
@@ -3452,7 +3562,7 @@ function run_graph_search() {
 }
 
 function highlight_graph_search_result(d) {
-  $('.nav-tabs a[href="#visualizer_tab"]').tab("show");
+  show_visualizer_tab();
 
   hide_all_genes();
   if (_splitthreader_settings.search_dataset["from"] == "genes") {
@@ -3490,8 +3600,7 @@ function highlight_graph_search_result(d) {
 
 function update_search_results_table() {
   d3.select("#feature_search_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Feature_search_results)
       .table_header([
         "from",
@@ -3568,8 +3677,7 @@ function update_fusion_table() {
   d3.select("#show_when_fusions_submitted").style("display", "block");
 
   d3.select("#gene_fusion_table_landing").call(
-    d3
-      .superTable()
+    SuperTable()
       .table_data(_Gene_fusions)
       .table_header([
         "gene1",
@@ -3622,6 +3730,7 @@ function Mb_format(x) {
 }
 function show_positions() {
   var options = ["top", "bottom"];
+  const ucsc_database = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ucsc_database;
   for (var i in options) {
     var top_or_bottom = options[i];
     var pos = _splitthreader_scales.zoom_plots[top_or_bottom].x.domain();
@@ -3635,7 +3744,7 @@ function show_positions() {
     d3.select("#ucsc_go_" + top_or_bottom).property(
       "href",
       "https://genome.ucsc.edu/cgi-bin/hgTracks?db=" +
-        _splitthreader_settings.ucsc_database +
+        ucsc_database +
         "&position=chr" +
         _chosen_chromosomes["top"] +
         "%3A" +
@@ -3675,7 +3784,7 @@ function binary_search_closest(search_list, b, e, pos) {
   }
 }
 
-function show_statistics() {
+function show_high_level_statistics() {
   _Statistics.number_of_variants = _Filtered_variant_data.length;
 
   _Statistics.num_interchromosomal = 0;
@@ -3685,9 +3794,11 @@ function show_statistics() {
     }
   }
 
-  d3.select("#mean_copynumber").html(
-    " " + _Statistics.mean_copynumber.toFixed(2) + "X"
-  );
+  if (_Statistics.mean_copynumber) {
+    d3.select("#mean_copynumber").html(
+      " " + _Statistics.mean_copynumber.toFixed(2) + "X"
+    );
+  }
   d3.selectAll(".number_of_variants").html(
     " " + _Statistics.number_of_variants
   );
@@ -3729,7 +3840,7 @@ function analyze_copynumber() {
   _Statistics.mean_copynumber = weighted_total_copynumber / total_bases;
 }
 
-function analyze_variants() {
+function analyze_variants_with_coverage() {
   // Calculate distance to nearest CNV
   // where CNV is defined as a change in segmented coverage of at least _settings.cov_diff_for_CNV
   for (var i in _Filtered_variant_data) {
@@ -3974,7 +4085,9 @@ function analyze_variants() {
         unique_nearby_variants[j] = true;
       }
     }
-    _Filtered_variant_data[i].nearby_variant_count = Object.keys(unique_nearby_variants).length;
+    _Filtered_variant_data[i].nearby_variant_count = Object.keys(
+      unique_nearby_variants
+    ).length;
   }
 
   for (var i in _Filtered_variant_data) {
@@ -4190,10 +4303,23 @@ function genome_input_from_coverage(coverage_by_chromosome) {
   return genome_input;
 }
 
-function open_coverage_file() {
-  var raw_data;
-  var reader = new FileReader();
+function use_coverage(raw_data) {
+  let bed_data = read_coverage_file(raw_data);
+  assign_coverage_bed_to_chromosomes(bed_data);
 
+  let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
+  // genome_input in the future can come from a .fai or a .bam header perhaps.
+  // That would allow using SplitThreader with only variants if there's no coverage file available.
+  // For now we depend on the coverage file to figure out the chromosome sizes.
+  use_genome_input(genome_input);
+  mark_coverage_loaded_successfully();
+
+  run_everything_that_needs_coverage();
+  check_and_run_if_both_variants_and_coverage_loaded();
+
+}
+
+async function open_coverage_file() {
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
       "Error",
@@ -4202,25 +4328,11 @@ function open_coverage_file() {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    let bed_data = read_coverage_file(raw_data);
-    assign_coverage_bed_to_chromosomes(bed_data);
-
-    let genome_input = genome_input_from_coverage(_Coverage_by_chromosome);
-    // genome_input in the future can come from a .fai or a .bam header perhaps.
-    // That would allow using SplitThreader with only variants if there's no coverage file available.
-    // For now we depend on the coverage file to figure out the chromosome sizes.
-    read_genome_file(genome_input);
-    wait_then_run_when_all_data_loaded();
-  };
+  const raw_data = await this.files[0].text();
+  use_coverage(raw_data);
 }
 
-function open_variants_file() {
-  var raw_data;
-  var reader = new FileReader();
-
+async function open_variants_bedpe_file() {
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
       "Error",
@@ -4229,26 +4341,241 @@ function open_variants_file() {
     return;
   }
 
-  reader.readAsText(this.files[0]);
-  reader.onload = function (event) {
-    raw_data = event.target.result;
-    let variant_input = Papa.parse(raw_data, {
-      header: true,
-      skipEmptyLines: true,
+  const raw_data = await this.files[0].text();
+  let variant_input = Papa.parse(raw_data, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (variant_input.errors.length > 0) {
+    user_message_splitthreader(
+      "Error",
+      "Error reading CSV file: " + variant_input.errors[0].message
+    );
+    return;
+  }
+  load_variants(variant_input.data);
+}
+
+async function read_bedpes_with_aioli(paths) {
+  let variants = [];
+  for (let vcf_path of paths) {
+    const vcf_header = await _CLI.exec("bcftools view -h " + vcf_path);
+    let vcf_data = await _CLI.exec("bcftools view -H " + vcf_path);
+
+    let records = parse_and_convert_vcf(vcf_header, vcf_data, {
+      deduplicate_mates: true,
+      splitthreader_extra_fields: true,
+      remove_chr: false
     });
-    if (variant_input.errors.length > 0) {
-      user_message_splitthreader(
-        "Error",
-        "Error reading CSV file: " + variant_input.errors[0].message
-      );
-      return;
+    variants = variants.concat(records);
+  }
+
+  return variants;
+}
+
+async function open_variants_vcf_file() {
+  if (this.files[0].size > 100000000) {
+    user_message_splitthreader(
+      "Error",
+      "This file is larger than 100 MB. Please choose a smaller file."
+    );
+    return;
+  }
+
+  let paths = await _CLI.mount(this.files[0]);
+
+  let variants = await read_bedpes_with_aioli(paths);
+  load_variants(variants);
+}
+
+async function load_vcf_from_url(urls) {
+  let paths = await _CLI.mount(urls);
+
+  let variants = await read_bedpes_with_aioli(paths);
+  load_variants(variants);
+}
+
+function load_bedpe_from_url(url) {
+  // TODO: Test this once we have a sample BEDPE available by URL.
+  let variant_input = Papa.parse(url, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (variant_input.errors.length > 0) {
+    user_message_splitthreader(
+      "Error",
+      "Error reading BEDPE/CSV file: " + variant_input.errors[0].message
+    );
+    return;
+  }
+  load_variants(variant_input.data);
+}
+
+function load_session(session) {
+  console.log("Loading session with JSON:", session);
+  if (session.annotation_id) {
+    use_annotation_by_id(session.annotation_id);
+  }
+  if (session.vcf) {
+    load_vcf_from_url(session.vcf);
+  }
+
+  // if (session.bedpe) {
+  //   console.log("Loading BEDPE:", session.bedpe);
+  //   Not tested yet:
+  //   load_bedpe_from_url(session.bedpe);
+  // }
+
+  if (session.bedpe_backend) {
+    d3.csv(session.bedpe_backend, function (error, data) {
+      if (error) {
+        console.error("Error loading BEDPE:", error);
+      } else {
+        load_variants(data);
+      }
+    });
+  }
+  if (session.coverage_backend) {
+    d3.text(session.coverage_backend, function (error, raw_text) {
+      if (error) {
+        console.error("Error reading coverage file from examples in backend:", error);
+      } else {
+        use_coverage(raw_text);
+      }
+    });
+  }
+
+  show_visualizer_tab();
+}
+
+function load_session_from_url() {
+  let url = new URL(window.location.href);
+  let session = url.searchParams.get("session");
+  if (session) {
+    if (session.startsWith('example:')) {
+      let example_name = session.split(':')[1];
+      let example_id = example_sessions.findIndex((d) => d.name == example_name);
+      if (example_id == -1) {
+        user_message_splitthreader("Error", "Failed to load example session found in URL. Please choose an example from the list in Splithreader -> Setup -> Examples");
+        return;
+      }
+      let session_json = example_sessions[example_id];
+      load_session(session_json);
+    } else {
+      // Assume session is a URL.
+      // TODO: Read session from a URL -- need an example for this. For now, testing with example sessions.
     }
-    read_variant_file(variant_input.data);
-    wait_then_run_when_all_data_loaded();
-  };
+  }
+}
+
+function is_aioli_ready() {
+  if (_CLI) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function load_session_if_present_in_url() {
+  if (is_aioli_ready()) {
+    load_session_from_url();
+  } else {
+    setTimeout(load_session_if_present_in_url, 1000);
+  }
+}
+
+const example_sessions = [
+  {
+    name: "GIAB HG008 DRAGEN (vcf only)",
+    vcf: [
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
+    ],
+    annotation_id: "GRCh38",
+  },
+  {
+    name: "skbr3",
+    bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+    coverage_backend: "resources/examples/skbr3.coverage.bed",
+    annotation_id: "hg19",
+  },
+  // {
+  //   name: "bedpe without coverage",
+  //   bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+  //   // coverage_backend: "resources/examples/skbr3.coverage.bed",
+  // },
+  // {
+  //   name: "coverage without bedpe",
+  //   // bedpe_backend: "resources/examples/skbr3.bedpe.csv",
+  //   coverage_backend: "resources/examples/skbr3.coverage.bed",
+  // },
+];
+
+// List examples in #splitthreader_examples:
+d3.select("#splitthreader_examples")
+  .append("ul")
+  .selectAll("li")
+  .data(example_sessions)
+  .enter()
+  .append("li")
+  .append("a")
+  .text(function (d) {
+    return d.name;
+  })
+  .attr("href", function (d) {
+    return `?session=example:${d.name}#splitthreader`;
+  });
+
+load_session_if_present_in_url();
+
+function go_to_splitthreader_mode() {
+  d3.select("#ribbon-app-container").style("display", "none");
+  d3.select("#splitthreader-app-container").style("display", "block");
+  if (window.global_variants) {
+    _Filtered_variant_data = window.global_variants;
+    update_variants();
+  }
+}
+d3.select("#go_to_splitthreader_mode").on("click", function() {
+  go_to_splitthreader_mode();
+  // Set hash to #splitthreader:
+  window.location.hash = '#splitthreader';
+});
+
+function check_url_for_mode() {
+  const hash = window.location.hash;
+
+  if (hash === '#splitthreader') {
+    go_to_splitthreader_mode();
+  } else if (hash === '#ribbon') {
+    // handled in index_ribbon.js because it needs to update variables in there.
+  } else if (hash === '') {
+    // Do nothing
+  } else {
+    console.error('unknown hash in URL:', hash);
+  }
 }
 
 d3.select("#input_coverage_file").on("change", open_coverage_file);
-d3.select("#input_variants_file").on("change", open_variants_file);
+
+d3.select("#splitthreader_bedpe_file").on("change", open_variants_bedpe_file);
+d3.select("#splitthreader_vcf_file").on("change", open_variants_vcf_file);
+
+function submit_vcf_url() {
+  var url = d3.select("#splitthreader_vcf_url").property("value");
+  load_vcf_from_url(url);
+}
+d3.select("#splitthreader_vcf_url_button").on("click", submit_vcf_url);
+d3.select("#splitthreader_vcf_url").on("keypress", function () {
+  if (d3.event.keyCode == 13) {
+    submit_vcf_url();
+  }
+});
+
+// Add event listener for hash change
+window.addEventListener("hashchange", check_url_for_mode);
+
+// Call check_url_for_mode on page load
+check_url_for_mode();
 
 run_splitthreader();
