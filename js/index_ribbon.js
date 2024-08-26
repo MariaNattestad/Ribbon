@@ -1600,10 +1600,10 @@ function draw_chunk_alignments() {
     });
   }
 
-  //////////////  FLIP READS  //////////////
+  //////////////  Re-orient reads  //////////////
   var num_reads_to_show = chunks.length;
 
-  for (var i = 0; i < chunks.length; i++) {    
+  for (var i = 0; i < chunks.length; i++) {
     // Read flipping computations only necessary if it affects color or
     // for paired-end mode where it affects filtering.
     const need_to_compute_flips =
@@ -1613,15 +1613,11 @@ function draw_chunk_alignments() {
     if (need_to_compute_flips) {
       // Whether to flip orientation across all alignments of the read
       if (_ribbon_settings.orient_reads_by == "primary") {
-        chunks[i].flip =
-          chunks[i].unfiltered_alignments[chunks[i].index_primary].qe -
-            chunks[i].unfiltered_alignments[chunks[i].index_primary].qs <
-          0;
+        const primary_alignment = chunks[i].unfiltered_alignments[chunks[i].index_primary];
+        chunks[i].flip = primary_alignment.qe < primary_alignment.qs;
       } else if (_ribbon_settings.orient_reads_by == "longest") {
-        chunks[i].flip =
-          chunks[i].unfiltered_alignments[chunks[i].index_longest].qe -
-            chunks[i].unfiltered_alignments[chunks[i].index_longest].qs <
-          0;
+        const longest_alignment = chunks[i].unfiltered_alignments[chunks[i].index_longest];
+        chunks[i].flip = longest_alignment.qe < longest_alignment.qs;
       } else if (_ribbon_settings.orient_reads_by == "original") {
         chunks[i].flip = false;
       } else {
@@ -1630,7 +1626,8 @@ function draw_chunk_alignments() {
         );
       }
     }
-    
+
+    ////////////  Color alignments  //////////////
     if (_ribbon_settings.color_alignments_by === "strand") {
       // Original strand from the data.
       for (let alignment of chunks[i].alignments) {
@@ -1648,8 +1645,9 @@ function draw_chunk_alignments() {
       }
     } else if (_ribbon_settings.color_alignments_by === "HP") {
       // Color by HP tag
+      let HP_color = _ribbon_scales.HP_color_scale(chunks[i].raw.HP);
       for (let alignment of chunks[i].alignments) {
-        alignment.color = _ribbon_scales.HP_color_scale(alignment.HP);
+        alignment.color = HP_color;
       }
     } else {
       console.error(
