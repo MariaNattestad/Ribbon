@@ -7,6 +7,7 @@ import { CLI } from "./file_parsing.js";
 import { exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
+import { EXAMPLE_SESSIONS } from "./constants.js";
 
 var _splitthreader_layout = {
   svg: { width: null, height: null },
@@ -18,7 +19,7 @@ var _splitthreader_layout = {
 
 var _splitthreader_padding = {};
 
-var _splitthreader_static = {};
+export let _splitthreader_static = {};
 _splitthreader_static.color_collections = [
   [
     "#E41A1C",
@@ -446,7 +447,7 @@ d3.select("select#annotation_dropdown")
   });
 
 
-function use_annotation_at_index(index) {
+export function use_annotation_at_index(index) {
   let annotation_chosen = _splitthreader_static.annotations_available[index];
   d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
   show_positions();
@@ -458,13 +459,6 @@ function use_annotation_at_index(index) {
   }
   read_annotation_file();
   d3.select("select#annotation_dropdown").property("selectedIndex", index);
-}
-
-function use_annotation_by_id(annotation_id) {
-  let index = _splitthreader_static.annotations_available.findIndex(
-    (d) => d.id == annotation_id
-  );
-  use_annotation_at_index(index);
 }
 
 d3.select("select#annotation_dropdown").on("change", function (d) {
@@ -726,7 +720,7 @@ function draw_everything() {
   draw_histogram(_Filtered_variant_data);
 }
 
-function show_visualizer_tab() {
+export function show_visualizer_tab() {
   // Switch to viz once data is ready, or e.g. when a variant is clicked in the table.
   d3.select(".nav_tab_splitthreader").classed("active", false);
   d3.select(".tab_splitthreader").classed("active", false);
@@ -2702,7 +2696,7 @@ function highlight_gene_fusion(d) {
   }
 }
 
-function user_message_splitthreader(message_type, message) {
+export function user_message_splitthreader(message_type, message) {
   if (message_type == "") {
     d3.select("#user_message_splitthreader")
       .html("")
@@ -4234,6 +4228,7 @@ function read_coverage_file(raw_data) {
       var start = parseInt(columns[1]);
       var end = parseInt(columns[2]);
       var coverage = parseFloat(columns[3]);
+      var score = 0; // FIXME:
       if (isNaN(coverage)) {
         score = 0;
       }
@@ -4361,7 +4356,7 @@ async function open_variants_vcf_file() {
   load_variants(variants);
 }
 
-async function load_vcf_from_url(urls) {
+export async function load_vcf_from_url(urls) {
   let paths = await CLI.mount(urls);
 
   let variants = await read_bedpes_with_aioli(paths);
@@ -4385,103 +4380,11 @@ function load_bedpe_from_url(url) {
   load_variants(variant_input.data);
 }
 
-function load_session(session) {
-  console.log("Loading session with JSON:", session);
-  if (session.annotation_id) {
-    use_annotation_by_id(session.annotation_id);
-  }
-  if (session.vcf) {
-    load_vcf_from_url(session.vcf);
-  }
-
-  // if (session.bedpe) {
-  //   console.log("Loading BEDPE:", session.bedpe);
-  //   Not tested yet:
-  //   load_bedpe_from_url(session.bedpe);
-  // }
-
-  if (session.bedpe_backend) {
-    d3.csv(session.bedpe_backend, function (error, data) {
-      if (error) {
-        console.error("Error loading BEDPE:", error);
-      } else {
-        load_variants(data);
-      }
-    });
-  }
-  if (session.coverage_backend) {
-    d3.text(session.coverage_backend, function (error, raw_text) {
-      if (error) {
-        console.error("Error reading coverage file from examples in backend:", error);
-      } else {
-        use_coverage(raw_text);
-      }
-    });
-  }
-
-  show_visualizer_tab();
-}
-
-function load_session_from_url() {
-  let url = new URL(window.location.href);
-  let session = url.searchParams.get("session");
-  if (session) {
-    if (session.startsWith('example:')) {
-      let example_name = session.split(':')[1];
-      let example_id = example_sessions.findIndex((d) => d.name == example_name);
-      if (example_id == -1) {
-        user_message_splitthreader("Error", "Failed to load example session found in URL. Please choose an example from the list in Splithreader -> Setup -> Examples");
-        return;
-      }
-      let session_json = example_sessions[example_id];
-      load_session(session_json);
-    } else {
-      // Assume session is a URL.
-      // TODO: Read session from a URL -- need an example for this. For now, testing with example sessions.
-    }
-  }
-}
-
-function load_session_if_present_in_url() {
-  if (CLI) {
-    load_session_from_url();
-  } else {
-    console.log("Waiting for Aioli...")
-    setTimeout(load_session_if_present_in_url, 1000);
-  }
-}
-
-const example_sessions = [
-  {
-    name: "GIAB HG008 DRAGEN (vcf only)",
-    vcf: [
-      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/analysis/DRAGEN-v4.2.4_ILMN-WGS_20240312/standard/dragen_4.2.4_HG008-mosaic_tumor.sv.vcf.gz",
-    ],
-    annotation_id: "GRCh38",
-  },
-  {
-    name: "skbr3",
-    bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-    coverage_backend: "resources/examples/skbr3.coverage.bed",
-    annotation_id: "hg19",
-  },
-  // {
-  //   name: "bedpe without coverage",
-  //   bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-  //   // coverage_backend: "resources/examples/skbr3.coverage.bed",
-  // },
-  // {
-  //   name: "coverage without bedpe",
-  //   // bedpe_backend: "resources/examples/skbr3.bedpe.csv",
-  //   coverage_backend: "resources/examples/skbr3.coverage.bed",
-  // },
-];
-
 // List examples in #splitthreader_examples:
 d3.select("#splitthreader_examples")
   .append("ul")
   .selectAll("li")
-  .data(example_sessions)
+  .data(EXAMPLE_SESSIONS)
   .enter()
   .append("li")
   .append("a")
@@ -4491,8 +4394,6 @@ d3.select("#splitthreader_examples")
   .attr("href", function (d) {
     return `?session=example:${d.name}#splitthreader`;
   });
-
-load_session_if_present_in_url();
 
 function go_to_splitthreader_mode() {
   d3.select("#ribbon-app-container").style("display", "none");
