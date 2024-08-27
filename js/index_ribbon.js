@@ -188,6 +188,8 @@ _ribbon_static.singleread_layout_fractions = {
   bottom_bar: 0.03,
 };
 
+const LARGE_FILE_THRESHOLD = 10000000; // Above 10 MB we throw a warning.
+
 var _ribbon_settings = {};
 _ribbon_settings.region_min_mapping_quality = 0;
 _ribbon_settings.max_num_alignments = 1000000;
@@ -2798,8 +2800,6 @@ function bed_input_changed(bed_input) {
     }
   }
 
-  user_message_ribbon("Info", "Loaded " + _Variants.length + " bed entries");
-
   update_variants();
   draw_region_view();
   refresh_ui_elements();
@@ -2865,8 +2865,6 @@ function bedpe_input_changed(bedpe_input) {
       }
     }
   }
-
-  user_message_ribbon("Info", "Loaded " + _Bedpe.length + " bedpe entries");
 
   update_bedpe();
   draw_region_view();
@@ -2962,7 +2960,6 @@ function vcf_input_changed(vcf_input) {
     }
   }
 
-  user_message_ribbon("Info", "Loaded " + _Variants.length + " vcf entries");
   update_variants();
   draw_region_view();
   refresh_ui_elements();
@@ -6012,7 +6009,7 @@ add_user_links_to_navbar();
 // ===========================================================================
 
 async function open_bedpe_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
@@ -6030,7 +6027,7 @@ async function open_bedpe_file() {
 }
 
 async function open_variant_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
@@ -6094,11 +6091,6 @@ function read_feature_bed(raw_data) {
     }
   }
 
-  user_message_ribbon(
-    "Info",
-    "Loaded " + _Features_for_ribbon.length + " features from bed file"
-  );
-
   update_features();
   draw_region_view();
   draw();
@@ -6108,7 +6100,7 @@ function read_feature_bed(raw_data) {
 }
 
 async function open_feature_bed_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
@@ -6130,7 +6122,7 @@ d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 // ===========================================================================
 
 async function open_coords_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
@@ -6220,13 +6212,6 @@ function bam_loaded() {
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
-
-  user_message_ribbon(
-    "Success",
-    "Loaded alignments from " +
-      _Whole_refs.length +
-      " reference sequences (chromosomes). Navigate to a position by pasting it above or loading some variants/features."
-  );
 
   refresh_visibility();
 }

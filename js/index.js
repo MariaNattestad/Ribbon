@@ -57,7 +57,6 @@ async function load_session() {
     load_bedpe_from_url(session.bedpe);
   }
 
-
   // Load genomic files
   if (session.annotation_id) {
     const index = _splitthreader_static.annotations_available.findIndex((d) => d.id == session.annotation_id);

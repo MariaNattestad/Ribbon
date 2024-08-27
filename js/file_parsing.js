@@ -3,6 +3,7 @@
 // =============================================================================
 
 import Aioli from "@biowasm/aioli";
+import { user_message_ribbon } from "./index_ribbon";
 
 // Create Aioli (and the WebWorker in which WASM code will run).
 // Load assets locally instead of using the CDN.
@@ -25,7 +26,6 @@ class GenomicFile {
   files = []; // array of File objects or URLs
   paths = []; // paths where those files are mounted
   ready = false;
-  ref_lookup = {}; // lookup table for reference sequence (e.g. chromosome) names
 
   constructor(files) {
     this.files = files;
@@ -51,7 +51,6 @@ export class BamFile extends GenomicFile {
     raw: "",
     sq: [],
   };
-  ref_lookup = {};
 
   async parseHeader() {
     const raw = await CLI.exec(`samtools view -H ${this.paths[0]}`);
@@ -65,26 +64,15 @@ export class BamFile extends GenomicFile {
     this.header = {
       sq: parseBamHeader(raw),
     };
-    // Holds {chromosome: size} pairs: {chr1: 248956422, chr2: 242193529, ...}
-    this.sq_lookup = this.header.sq.reduce((acc, d) => {
-      acc[d.name] = d.end;
-      return acc;
-    }, {});
-    console.log("this.sq_lookup:", this.sq_lookup);
     this.ready = true;
     return this.header;
   }
 
   async fetch(chrom, start, end) {
-    if (!this.sq_lookup[chrom]) {
-      if (chrom.startsWith("chr") && this.sq_lookup[chrom.slice(3)]) {
-        chrom = chrom.slice(3);
-      } else if (this.sq_lookup[`chr${chrom}`]) {
-        chrom = `chr${chrom}`;
-      } else {
-        console.warn(`Chromosome ${chrom} not found in header, and adding/removing "chr" didn't help.`);
+    if (!this.header.sq.find((d) => d.name === chrom)) {
+      user_message_ribbon("Warning", `Reference sequence "${chrom}" was not found in the header of the BAM. Note that chr prefix must be consistent across files.`);
+      console.warn(`Reference sequence "${chrom}" was not found in the header of the BAM. Note that chr prefix must be consistent across files.`);
         return [];
-      }
     }
 
     const region = `${chrom}:${start}-${end}`;

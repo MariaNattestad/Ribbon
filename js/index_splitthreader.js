@@ -2213,6 +2213,9 @@ function draw_connections_by_category(categorized_variant_data) {
 }
 
 function draw_connections() {
+  if (!_Filtered_variant_data) {
+    return;
+  }
   if (
     _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
   ) {
@@ -4340,7 +4343,7 @@ export async function load_bedpe_from_url(url) {
   if (variant_input.errors.length > 0) {
     user_message_splitthreader(
       "Error",
-      "Error reading BEDPE/CSV file: " + variant_input.errors[0].message
+      "Error reading BEDPE file: " + variant_input.errors[0].message
     );
     return;
   }
