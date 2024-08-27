@@ -64,14 +64,19 @@ _ribbon_static.read_sort_options = [
   { id: "num_alignments", description: "Number of alignments" },
 ];
 _ribbon_static.read_orientation_options = [
-  { id: "original", description: "Original orientation" },
-  { id: "reverse", description: "Reverse orientation" },
+  { id: "original", description: "Original strand" },
   { id: "longest", description: "Orientation of longest alignment" },
   {
     id: "primary",
     description: "Orientation of alignment in selected locus (SAM/BAM)",
   },
 ];
+_ribbon_static.color_alignments_by_options = [
+  { id: 'strand', description: 'Strand (actual strand from data)' },
+  { id: 'orientation', description: 'Orientation (from "Orient reads by")' },
+  { id: 'HP', description: 'Haplotype phasing (HP) (1=orange, 2=green)' },
+];
+
 _ribbon_static.color_schemes = [
   { name: "Color scheme 1", colors: 0 },
   { name: "Color scheme 2", colors: 1 },
@@ -202,6 +207,7 @@ _ribbon_settings.show_only_known_references = true;
 _ribbon_settings.keep_duplicate_reads = false;
 _ribbon_settings.feature_to_sort_reads = "original";
 _ribbon_settings.orient_reads_by = "primary";
+_ribbon_settings.color_alignments_by = "strand";
 
 _ribbon_settings.current_input_type = "";
 _ribbon_settings.ref_match_chunk_ref_intervals = true;
@@ -258,6 +264,9 @@ _ribbon_scales.ref_color_scale = d3.scaleOrdinal()
   .range(_ribbon_static.color_collections[_ribbon_settings.color_index]);
 _ribbon_scales.variant_color_scale = d3.scaleOrdinal();
 _ribbon_scales.feature_color_scale = d3.scaleOrdinal();
+_ribbon_scales.HP_color_scale = d3.scaleOrdinal()
+  .domain(["1", "2"])
+  .range(["#ff7f0e", "#2ca02c"]); // orange, green
 
 // Show each warning only the first time it comes up in a session
 var _ribbon_warnings = {};
@@ -1566,24 +1575,59 @@ function draw_chunk_alignments() {
     });
   }
 
-  //////////////  FLIP READS  //////////////
+  //////////////  Re-orient reads  //////////////
   var num_reads_to_show = chunks.length;
+
   for (var i = 0; i < chunks.length; i++) {
-    // Whether to flip orientation across all alignments of the read
-    if (_ribbon_settings.orient_reads_by == "primary") {
-      chunks[i].flip =
-        chunks[i].unfiltered_alignments[chunks[i].index_primary].qe -
-          chunks[i].unfiltered_alignments[chunks[i].index_primary].qs <
-        0;
-    } else if (_ribbon_settings.orient_reads_by == "longest") {
-      chunks[i].flip =
-        chunks[i].unfiltered_alignments[chunks[i].index_longest].qe -
-          chunks[i].unfiltered_alignments[chunks[i].index_longest].qs <
-        0;
-    } else if (_ribbon_settings.orient_reads_by == "reverse") {
-      chunks[i].flip = true;
+    // Read flipping computations only necessary if it affects color or
+    // for paired-end mode where it affects filtering.
+    const need_to_compute_flips =
+      (_ribbon_settings.color_alignments_by === "orientation" ||
+      _ribbon_settings.paired_end_mode);
+
+    if (need_to_compute_flips) {
+      // Whether to flip orientation across all alignments of the read
+      if (_ribbon_settings.orient_reads_by == "primary") {
+        const primary_alignment = chunks[i].unfiltered_alignments[chunks[i].index_primary];
+        chunks[i].flip = primary_alignment.qe < primary_alignment.qs;
+      } else if (_ribbon_settings.orient_reads_by == "longest") {
+        const longest_alignment = chunks[i].unfiltered_alignments[chunks[i].index_longest];
+        chunks[i].flip = longest_alignment.qe < longest_alignment.qs;
+      } else if (_ribbon_settings.orient_reads_by == "original") {
+        chunks[i].flip = false;
+      } else {
+        console.error(
+          "Unknown orientation mode in _ribbon_settings.orient_reads_by"
+        );
+      }
+    }
+
+    ////////////  Color alignments  //////////////
+    if (_ribbon_settings.color_alignments_by === "strand") {
+      // Original strand from the data.
+      for (let alignment of chunks[i].alignments) {
+        let forward = alignment.qs < alignment.qe;
+        alignment.color = forward ? "blue" : "red";
+      }
+    } else if (_ribbon_settings.color_alignments_by === "orientation") {
+      for (let alignment of chunks[i].alignments) {
+        let forward = alignment.qs < alignment.qe; // query start before query end means alignment is forward.
+        if (chunks[i].flip) {
+          alignment.color = forward ? "red" : "blue";
+        } else {
+          alignment.color = forward ? "blue" : "red";
+        }
+      }
+    } else if (_ribbon_settings.color_alignments_by === "HP") {
+      // Color by HP tag
+      let HP_color = _ribbon_scales.HP_color_scale(chunks[i].raw.HP);
+      for (let alignment of chunks[i].alignments) {
+        alignment.color = HP_color;
+      }
     } else {
-      chunks[i].flip = false;
+      console.error(
+        "Unknown color mode in _ribbon_settings.color_alignments_by"
+      );
     }
 
     // Vertical position:
@@ -1658,21 +1702,7 @@ function draw_chunk_alignments() {
       })
       .attr("y1", 0)
       .attr("y2", 0)
-      .style("stroke", function (d) {
-        if (d3.select(this.parentNode).datum().flip == false) {
-          if (d.qs < d.qe) {
-            return "blue";
-          } else {
-            return "red";
-          }
-        } else {
-          if (d.qs < d.qe) {
-            return "red";
-          } else {
-            return "blue";
-          }
-        }
-      })
+      .style("stroke", d => d.color)
       .on("mouseover", function (d) {
         var text = "select read";
         var x = _ribbon_scales.chunk_ref_interval_scale(
@@ -1721,21 +1751,7 @@ function draw_chunk_alignments() {
       .append("path")
       .attr("class", "alignment")
       .attr("d", chunk_alignment_path_generator)
-      .style("stroke", function (d) {
-        if (d3.select(this.parentNode).datum().flip == false) {
-          if (d.qs < d.qe) {
-            return "blue";
-          } else {
-            return "red";
-          }
-        } else {
-          if (d.qs < d.qe) {
-            return "red";
-          } else {
-            return "blue";
-          }
-        }
-      })
+      .style("stroke", d => d.color)
       .on("mouseover", function (d) {
         var text = "select read";
         var x = _ribbon_scales.chunk_ref_interval_scale(
@@ -1839,21 +1855,7 @@ function draw_chunk_alignments() {
           })
           .attr("y1", 0)
           .attr("y2", 0)
-          .style("stroke", function (d) {
-            if (d3.select(this.parentNode).datum().flip == false) {
-              if (d.qs < d.qe) {
-                return "blue";
-              } else {
-                return "red";
-              }
-            } else {
-              if (d.qs < d.qe) {
-                return "red";
-              } else {
-                return "blue";
-              }
-            }
-          })
+          .style("stroke", (d) => d.color)
           .style("stroke-width", 1)
           .style("stroke-opacity", 0.5);
 
@@ -1902,21 +1904,7 @@ function draw_chunk_alignments() {
               ) * 0.5
             );
           })
-          .style("fill", function (d) {
-            if (d3.select(this.parentNode).datum().flip == false) {
-              if (d.qs < d.qe) {
-                return "blue";
-              } else {
-                return "red";
-              }
-            } else {
-              if (d.qs < d.qe) {
-                return "red";
-              } else {
-                return "blue";
-              }
-            }
-          })
+          .style("fill", d => d.color)
           .style("stroke", "black")
           .style("stroke-width", 1);
 
@@ -3116,6 +3104,27 @@ function make_feature_type_table() {
 }
 
 function create_dropdowns() {
+  d3.select("select#color_alignments_by")
+    .selectAll("option")
+    .data(_ribbon_static.color_alignments_by_options)
+    .enter()
+    .append("option")
+    .text(function (d) {
+      return d.description;
+    })
+    .property("value", function (d) {
+      return d.id;
+    })
+    .property("selected", function (d) {
+      return d.id === _ribbon_settings.color_alignments_by;
+    });
+  
+  d3.select("select#color_alignments_by").on("change", function (d) {
+    _ribbon_settings.color_alignments_by = this.options[this.selectedIndex].value;
+    draw_region_view();
+    draw();
+  });
+
   d3.select("select#read_orientation_dropdown")
     .selectAll("option")
     .data(_ribbon_static.read_orientation_options)
@@ -6372,7 +6381,6 @@ function check_if_all_bam_records_loaded() {
   if (_num_loaded_regions >= _num_bam_records_to_load) {
     // All bam records loaded, now consolidate to prevent duplicate reads:
     show_bam_is_ready();
-
     use_fetched_data(_Bam_records_from_multiregions);
     _Bam_records_from_multiregions = [];
   }
