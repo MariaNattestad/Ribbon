@@ -1441,8 +1441,6 @@ function draw_chunk_variants() {
 }
 
 function draw_chunk_alignments() {
-
-  console.log("draw_chunk_alignments");
   if (_Chunk_alignments.length == 0) {
     return;
   }
@@ -3123,7 +3121,6 @@ function create_dropdowns() {
   
   d3.select("select#color_alignments_by").on("change", function (d) {
     _ribbon_settings.color_alignments_by = this.options[this.selectedIndex].value;
-    console.log("color_alignments_by", _ribbon_settings.color_alignments_by);
     draw_region_view();
     draw();
   });
@@ -3145,7 +3142,6 @@ function create_dropdowns() {
 
   d3.select("select#read_orientation_dropdown").on("change", function (d) {
     _ribbon_settings.orient_reads_by = this.options[this.selectedIndex].value;
-    console.log('orient_reads_by', _ribbon_settings.orient_reads_by);
     draw_region_view();
     draw();
   });
