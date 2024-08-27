@@ -5754,7 +5754,7 @@ function set_variant_info_text() {
   );
 }
 
-async function read_bam_urls(urls, in_background = false) {
+export async function read_bam_urls(urls, in_background = false) {
   _Bams = [];
   for (let url of urls) {
     if (url.startsWith("s3://")) {

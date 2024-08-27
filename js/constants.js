@@ -12,6 +12,13 @@ export const EXAMPLE_SESSIONS = [
     coverage: "/resources/examples/skbr3.coverage.bed",
     annotation_id: "hg19",
   },
+  {
+    name: "Revio CHM13",
+    bam: [
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-T_PacBio-HiFi-Revio_20240125_116x_CHM13v2.0.bam",
+      "https://42basepairs.com/download/s3/giab/data_somatic/HG008/Liss_lab/PacBio_Revio_20240125/HG008-N-P_PacBio-HiFi-Revio_20240125_35x_CHM13v2.0.bam",
+    ]
+  },
   // {
   //   name: "bedpe without coverage",
   //   bedpe: "/resources/examples/skbr3.bedpe.csv",

@@ -1,5 +1,6 @@
 import { EXAMPLE_SESSIONS } from "./constants";
 import { CLI } from "./file_parsing";
+import { read_bam_urls } from "./index_ribbon";
 import { _splitthreader_static, load_bedpe_from_url, load_vcf_from_url, show_visualizer_tab, use_annotation_at_index, use_coverage, user_message_splitthreader } from "./index_splitthreader";
 
 // Load session from URL
@@ -34,6 +35,11 @@ async function load_session() {
   if (session.vcf) {
     console.log("Loading VCFs:", session.vcf);
     load_vcf_from_url(session.vcf);
+  }
+
+  if(session.bam) {
+    console.log("Loading BAMs:", session.bam);
+    read_bam_urls(session.bam);
   }
 
   if (session.bedpe) {
