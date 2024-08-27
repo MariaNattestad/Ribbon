@@ -6840,7 +6840,7 @@ function resizeWindow() {
 
 // ===========================================================================
 
-function go_to_ribbon_mode() {
+export function go_to_ribbon_mode() {
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
 
@@ -6854,27 +6854,6 @@ d3.select("#go_to_ribbon_mode").on("click", function() {
   go_to_ribbon_mode();
   window.location.hash = '#ribbon';
 });
-
-function check_url_for_mode() {
-  const hash = window.location.hash;
-
-  if (hash === '#splitthreader') {
-    // handled in index_splitthreader.js because it needs to update variables in there.
-  } else if (hash === '#ribbon') {
-    go_to_ribbon_mode();
-  } else if (hash === '') {
-    // Do nothing
-  } else {
-    console.error('unknown hash in URL:', hash);
-  }
-}
-
-// Add event listener for hash change
-window.addEventListener('hashchange', check_url_for_mode);
-
-// Call switchMode on page load
-check_url_for_mode();
-
 
 // ===========================================================================
 // == Main

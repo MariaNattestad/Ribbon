@@ -4323,7 +4323,7 @@ async function open_variants_bedpe_file() {
   load_variants(variant_input.data);
 }
 
-async function read_bedpes_with_aioli(paths) {
+async function read_vcfs_with_aioli(paths) {
   let variants = [];
   for (let vcf_path of paths) {
     const vcf_header = await CLI.exec("bcftools view -h " + vcf_path);
@@ -4351,14 +4351,14 @@ async function open_variants_vcf_file() {
 
   let paths = await CLI.mount(this.files[0]);
 
-  let variants = await read_bedpes_with_aioli(paths);
+  let variants = await read_vcfs_with_aioli(paths);
   load_variants(variants);
 }
 
-export async function load_vcf_from_url(urls) {
+export async function load_vcf_from_urls(urls) {
   let paths = await CLI.mount(urls);
 
-  let variants = await read_bedpes_with_aioli(paths);
+  let variants = await read_vcfs_with_aioli(paths);
   load_variants(variants);
 }
 
@@ -4393,7 +4393,7 @@ d3.select("#splitthreader_examples")
     return `?session=example:${d.name}#splitthreader`;
   });
 
-function go_to_splitthreader_mode() {
+export function go_to_splitthreader_mode() {
   d3.select("#ribbon-app-container").style("display", "none");
   d3.select("#splitthreader-app-container").style("display", "block");
   if (window.global_variants) {
@@ -4406,20 +4406,6 @@ d3.select("#go_to_splitthreader_mode").on("click", function() {
   // Set hash to #splitthreader:
   window.location.hash = '#splitthreader';
 });
-
-function check_url_for_mode() {
-  const hash = window.location.hash;
-
-  if (hash === '#splitthreader') {
-    go_to_splitthreader_mode();
-  } else if (hash === '#ribbon') {
-    // handled in index_ribbon.js because it needs to update variables in there.
-  } else if (hash === '') {
-    // Do nothing
-  } else {
-    console.error('unknown hash in URL:', hash);
-  }
-}
 
 d3.select("#input_coverage_file").on("change", open_coverage_file);
 
@@ -4436,11 +4422,5 @@ d3.select("#splitthreader_vcf_url").on("keypress", function () {
     submit_vcf_url();
   }
 });
-
-// Add event listener for hash change
-window.addEventListener("hashchange", check_url_for_mode);
-
-// Call check_url_for_mode on page load
-check_url_for_mode();
 
 run_splitthreader();

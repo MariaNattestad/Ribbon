@@ -1,7 +1,16 @@
 import { EXAMPLE_SESSIONS } from "./constants";
 import { CLI } from "./file_parsing";
-import { read_bam_urls } from "./index_ribbon";
-import { _splitthreader_static, load_bedpe_from_url, load_vcf_from_url, show_visualizer_tab, use_annotation_at_index, use_coverage, user_message_splitthreader } from "./index_splitthreader";
+import { read_bam_urls, go_to_ribbon_mode } from "./index_ribbon";
+import {
+  _splitthreader_static,
+  load_bedpe_from_url,
+  load_vcf_from_urls,
+  show_visualizer_tab,
+  use_annotation_at_index,
+  use_coverage,
+  user_message_splitthreader,
+  go_to_splitthreader_mode,
+} from "./index_splitthreader";
 
 // Load session from URL
 async function load_session() {
@@ -34,7 +43,7 @@ async function load_session() {
 
   if (session.vcf) {
     console.log("Loading VCFs:", session.vcf);
-    load_vcf_from_url(session.vcf);
+    load_vcf_from_urls(session.vcf);
   }
 
   if(session.bam) {
@@ -65,6 +74,27 @@ function check_for_session() {
     setTimeout(check_for_session, 1000);
   }
 }
+
+function check_url_for_mode() {
+  const hash = window.location.hash;
+
+  if (hash === "#splitthreader") {
+    go_to_splitthreader_mode();
+  } else if (hash === "#ribbon") {
+    go_to_ribbon_mode();
+  } else if (hash === "") {
+    // Do nothing
+  } else {
+    console.error("unknown hash in URL:", hash);
+  }
+}
+
+// Add event listener for hash change
+window.addEventListener("hashchange", check_url_for_mode);
+
+// Call check_url_for_mode on page load
+check_url_for_mode();
+
 
 // Initialize
 check_for_session();
