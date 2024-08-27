@@ -43,7 +43,7 @@ async function load_session() {
 
   if (session.coverage) {
     console.log("Loading coverage:", session.coverage);
-    const raw_text = await fetch(session.coverage).then(d => d.text())
+    const raw_text = await fetch(session.coverage).then(d => d.text());
     use_coverage(raw_text);
   }
 

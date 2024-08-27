@@ -1,4 +1,3 @@
-
 export const EXAMPLE_SESSIONS = [
   {
     name: "GIAB HG008 DRAGEN (vcf only)",

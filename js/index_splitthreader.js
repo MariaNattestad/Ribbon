@@ -1,10 +1,9 @@
 import * as d3 from "d3";
 import $ from 'jquery';
-import Papa from "papaparse";
 import { parse_and_convert_vcf } from './vcf_utils.js';
 import { Graph } from './SplitThreader.js';
 import { CLI } from "./file_parsing.js";
-import { exportViz } from "./utils.js";
+import { exportViz, papaParse } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
 import { EXAMPLE_SESSIONS } from "./constants.js";
@@ -4310,7 +4309,7 @@ async function open_variants_bedpe_file() {
   }
 
   const raw_data = await this.files[0].text();
-  let variant_input = Papa.parse(raw_data, {
+  const variant_input = await papaParse(raw_data, {
     header: true,
     skipEmptyLines: true,
   });
@@ -4363,9 +4362,8 @@ export async function load_vcf_from_url(urls) {
   load_variants(variants);
 }
 
-export function load_bedpe_from_url(url) {
-  // TODO: Test this once we have a sample BEDPE available by URL.
-  let variant_input = Papa.parse(url, {
+export async function load_bedpe_from_url(url) {
+  const variant_input = await papaParse(url, {
     download: true,
     header: true,
     skipEmptyLines: true,

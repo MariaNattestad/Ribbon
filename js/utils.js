@@ -1,3 +1,5 @@
+import Papa from "papaparse";
+
 export function download(filename, textOrBlob) {
     const blob = textOrBlob instanceof Blob ? textOrBlob : new Blob([textOrBlob]);
     const url = URL.createObjectURL(blob);
@@ -40,4 +42,16 @@ export async function exportViz({ format, element, filename } = {format: "svg"})
     } else {
         throw new Error("Format not supported:", format);
     }
+}
+
+// Enable using await on papaParse so don't need annoying callbacks.
+// Based on <https://github.com/mholt/PapaParse/issues/752#issuecomment-567294386>
+export async function papaParse(file, options) {
+	return new Promise((resolve, reject) => {
+		Papa.parse(file, {
+			...options,
+			complete: (results) => resolve(results),
+			error: (error) => reject(error)
+		});
+	});
 }
