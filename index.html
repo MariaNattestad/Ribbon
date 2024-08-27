@@ -117,7 +117,7 @@
 				<input class="small_input" type="number" id="region_start" placeholder="123456789">
 				<button id="region_go">Go</button>
 			</div>
-			<div id='user-message'></div>
+			<div id='user_message_ribbon'></div>
 		</div>
 		<div id='right-panel-under-alert' style="overflow: scroll; flex: 1;">
 			<div class="panel panel-default">
@@ -520,15 +520,6 @@
 </div>
 
 <div id="splitthreader-app-container" style="display: none">
-	<!-- SplitThreader starts out hidden. -->
-	<div class="row">
-		<div class="col-md-8">
-			<h1 id="title"></h1>
-		</div>
-		<div class="col-md-4">
-			<div id="user_message_splitthreader" class="alert alert-default" role="alert"></div>
-		</div>
-	</div>
 	<div id="main_body_container">
 		<ul class="nav nav-tabs">
 			<li id="nav_tab_splitthreader_setup" class="nav_tab_splitthreader active in"><a data-toggle="tab" href="#setup_tab">Setup</a></li>
@@ -623,6 +614,7 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 
 				<div id="right_panel_splitthreader">
 					<div class="panel-group ">
+						<div id="user_message_splitthreader"></div>
 						<div class="panel panel-default">
 							<div class="panel-heading">
 								<h4 class="panel-title">
