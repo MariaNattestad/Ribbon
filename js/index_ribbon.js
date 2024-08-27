@@ -2761,50 +2761,6 @@ function show_bedpe_table() {
     });
 }
 
-function bed_input_changed(bed_input) {
-  var input_text = bed_input.split("\n");
-
-  _Variants = [];
-  for (var i in input_text) {
-    if (input_text[i][0] != "#") {
-      var columns = input_text[i].split(/\s+/);
-      if (columns.length > 2) {
-        var start = parseInt(columns[1]);
-        var end = parseInt(columns[2]);
-        var score = parseFloat(columns[4]);
-        if (isNaN(score)) {
-          score = 0;
-        }
-        if (isNaN(start) || isNaN(end)) {
-          user_message_ribbon(
-            "Error",
-            "Bed file must contain numbers in columns 2 and 3. Found: <pre>" +
-              columns[1] +
-              " and " +
-              columns[2] +
-              "</pre>."
-          );
-          return;
-        }
-        _Variants.push({
-          chrom: columns[0],
-          start: start,
-          end: end,
-          size: end - start,
-          name: columns[3] || "",
-          score: score,
-          strand: columns[5],
-          variant_type: columns[6] || "",
-        });
-      }
-    }
-  }
-
-  update_variants();
-  draw_region_view();
-  refresh_ui_elements();
-}
-
 function bedpe_input_changed(bedpe_input) {
   var input_text = bedpe_input.split("\n");
   // chrom1, start1, stop1, chrom2, start2, stop2, name, score, strand1, strand2, type
@@ -5989,9 +5945,7 @@ function read_permalink(id) {
           bedpe_input_changed(json_data["bedpe"]);
         }
 
-        if (json_data["bed"] != undefined) {
-          bed_input_changed(json_data["bed"]);
-        } else if (json_data["vcf"] != undefined) {
+        if (json_data["vcf"] != undefined) {
           vcf_input_changed(json_data["vcf"]);
         }
       }
@@ -6039,15 +5993,8 @@ async function open_variant_file() {
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
-  } else if (file_extension == "bed") {
-    const raw_data = await this.files[0].text();
-    bed_input_changed(raw_data);
-    variants_just_loaded();
-    _ribbon_settings.variant_info_text =
-      "Variants from file: " + this.files[0].name;
-    set_variant_info_text();
   } else {
-    user_message_ribbon("Error", "File extension must be .bed or .vcf");
+    user_message_ribbon("Error", "File extension must be .vcf");
   }
 }
 

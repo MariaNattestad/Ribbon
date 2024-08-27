@@ -427,7 +427,7 @@
 				
 						<div id="tab_variant_input_panel" class="tab-pane fade">
 							<div>
-								<p>Upload a .vcf or .bed file</p>
+								<p>Upload a .vcf</p>
 								<input type="file" id="variant_file" />
 							</div>
 							<div id="variant_table_box" style="display: none;">
@@ -437,11 +437,6 @@
 								</div>
 							</div>
 							<div>
-								<h3>Bed instructions</h3>
-								Upload a bed file of variants or other features to look at.
-								<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
-								All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
-								<h3>VCF instructions</h3>
 								Upload a vcf file of variants to look at.
 								<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
 								The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
