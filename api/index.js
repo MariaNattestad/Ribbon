@@ -14,6 +14,11 @@ var ALLOWED_HOSTS = {
     store: {
       prefix: "ribbon"
     }
+  },
+  "v1.genomeribbon.com": {
+    store: {
+      prefix: "ribbon"
+    }
   }
 };
 
