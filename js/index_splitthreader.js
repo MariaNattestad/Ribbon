@@ -2220,7 +2220,7 @@ function draw_connections() {
     return;
   }
   if (
-    _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
+    _Filtered_variant_data?.length > _splitthreader_static.max_variants_to_show
   ) {
     user_message_splitthreader(
       "Warning",
@@ -4354,18 +4354,11 @@ export async function load_bedpe_from_url(url) {
 }
 
 export function go_to_splitthreader_mode() {
-  d3.select("#ribbon-app-container").style("display", "none");
-  d3.select("#splitthreader-app-container").style("display", "block");
   if (window.global_variants) {
     _Filtered_variant_data = window.global_variants;
     update_variants();
   }
 }
-d3.select("#go_to_splitthreader_mode").on("click", function() {
-  go_to_splitthreader_mode();
-  // Set hash to #splitthreader:
-  window.location.hash = '#splitthreader';
-});
 
 d3.select("#input_coverage_file").on("change", open_coverage_file);
 

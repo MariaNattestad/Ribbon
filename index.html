@@ -27,94 +27,102 @@
 	<link href="css/splitthreader.css" rel="stylesheet">
 </head>
 
-<!--    NAVIGATION BAR-->
-
 <body role="document">
+	<!-- Navigation bar -->
 	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-		<div class="container">
-			
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
+		<ul class="nav navbar-nav" id="navbar">
+			<li><a href="/">Ribbon</a></li>
+			<li class="dropdown" id="user_data_navbar_item" style="visibility: hidden">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
+				<ul class="dropdown-menu" role="menu" id="user_data_list">
+					<!-- Populated by add_user_links_to_navbar() in vis.js -->
+				</ul>
+			</li>
+		</ul>
+		<ul class="nav navbar-nav navbar-right" style="margin-right: 10px;">
+			<li class="navbar-text small">
+				<small>
+					This is a beta of Ribbon 2.0
+					(<a style="padding:0; display:inline; color:#fff" href="https://github.com/MariaNattestad/Ribbon/blob/v2/docs/release_notes_v2.md" target="_blank">learn more</a>).
+					You can go <a style="padding:0; display:inline; color:#fff" href="https://v1.genomeribbon.com" target="_blank">back to v1</a>.
+				</small>
+			</li>
+		</ul>
+	</div>
 
-			<!-- <a class="navbar-brand" href=".">        Ribbon</a> -->
+	<!-- Main tabs -->
+	<ul class="nav nav-tabs" style="margin:10px;">
+		<li class="active"><a id="go_to_examples_mode" data-toggle="tab" href="#examples_panel">Examples</a></li>
+		<li><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
+		<li><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
+		<li><a id="go_to_about_mode" data-toggle="tab" href="#start_panel">About</a></li>
+		
+	</ul>
+
+<div class="tab-content">
+	<div id="examples_panel" class="tab-pane active">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					Examples
+				</h4>
 			</div>
-			<!-- <div class="navbar-collapse collapse"> -->
-			<ul class="nav navbar-nav" id="navbar">
-				<li><a id="go_to_splitthreader_mode">SplitThreader</a></li>
-				<li><a id="go_to_ribbon_mode">Ribbon</a></li>
-				<li><a id="click_getting_started_link">Info</a></li>
-				<li class="dropdown" id="user_data_navbar_item">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
-					<ul class="dropdown-menu" role="menu" id="user_data_list">
-						<!-- Populated by add_user_links_to_navbar() in vis.js -->						
-					</ul>
-				</li>
-			</ul>
-			<!-- </div> -->
-			<!--/.nav-collapse -->
+			<div class="panel-body">
+				<h3>Example sessions</h3>
+				<div id="example_sessions"></div>
+
+				<strong>JSON specification for the selected session:</strong>
+				<textarea id="json_session_input" style="width: 100%; height: 300px;" readonly></textarea>
+
+				<h4>Ribbon-specific examples</h4>
+				<ul>
+					<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+					<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+					<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+					<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+					<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+				</ul>
+				These use the older permalink structure, giving a specific snapshot of an analysis, but they may not be connected to the original files necessary to navigate to new loci.
+			</div>
 		</div>
 	</div>
-<!--            End of Navigation Bar        -->
+	<div id="start_panel" class="tab-pane">
+		<h4>Getting started</h4>
+		<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
+			alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
+		<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
+		<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
 
-<div id="ribbon-app-container">
+		<h3>SplitThreader</h3>
+		SplitThreader is now available within Ribbon!
+		Just click "SplitThreader" in the top navigation bar, and you can load your own coverage and structural variant files to visualize them.
+		There are also some examples to get you started.
+
+		<h3>Paper and code</h3>
+		<p><strong>Please cite the Ribbon paper in Bioinformatics:</strong></p>
+		<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
+		<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
+		<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
+		
+
+		<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+		
+		<p><strong>Local installation:</strong></p>
+		<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
+</div>
+
+<div id="ribbon-app-container" class="tab-pane">
 	<div id="left_panel">
-		<div id="start_panel">
-			<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Examples
-						</h4>
-					</div>
-					<div class="panel-body">
-						<p>Click on an example to load it</p>
-						<div id="example_sessions"></div>
-
-						<p>More Ribbon-specific examples</p>
-						<ul>
-							<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-							<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-							<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-							<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-							<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-						</ul>
-					</div>
-				</div>
-			<div class="panel panel-default">
-				<div class="panel-heading"><h3 class="panel-title">Info about Ribbon</h3></div>
-				<div class="panel-body">
-					<h3>Getting started</h3>
-					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
-						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
-					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
-
-					<p><strong>Visualize your own alignment data:</strong></p>
-					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
-
-					<h3>SplitThreader</h3>
-					SplitThreader is now available within Ribbon!
-					Just click "SplitThreader" in the top navigation bar, and you can load your own coverage and structural variant files to visualize them.
-					There are also some examples to get you started.
-
-					<h3>Paper and code</h3>
-					<p><strong>Please cite the Ribbon paper in Bioinformatics:</strong></p>
-					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
-					<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
-					<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
-					
-					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-					
-					<p><strong>Local installation:</strong></p>
-					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-
-				</div>
-			</div>
+		<div id="left_ribbon_examples">
+			<p><strong>Examples:</strong></p>
+			<ul>
+				<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+				<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+				<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+				<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+				<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+			</ul>
 		</div>
-
 		<div id="svg2_panel"></div>
 		<div id="svg1_panel"></div>
 	</div>
@@ -523,7 +531,7 @@
 	</div>
 </div>
 
-<div id="splitthreader-app-container" style="display: none">
+<div id="splitthreader-app-container" class="tab-pane">
 	<div id="main_body_container">
 		<ul class="nav nav-tabs">
 			<li id="nav_tab_splitthreader_setup" class="nav_tab_splitthreader active in"><a data-toggle="tab" href="#setup_tab">Setup</a></li>
@@ -1008,6 +1016,8 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 		</div> <!-- end tab content class -->
 	</div>
 </div> <!-- end splitthreader app container -->
+
+</div>
 
 <!-- Keeping old bootstrap to avoid major html updates for now -->
 <!-- This old bootstrap can't really be imported by our own JS, but 
