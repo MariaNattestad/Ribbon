@@ -3,6 +3,7 @@
 // =============================================================================
 
 import Aioli from "@biowasm/aioli";
+import { user_message_ribbon } from "./index_ribbon";
 
 // Create Aioli (and the WebWorker in which WASM code will run).
 // Load assets locally instead of using the CDN.
@@ -68,6 +69,12 @@ export class BamFile extends GenomicFile {
   }
 
   async fetch(chrom, start, end) {
+    if (!this.header.sq.find((d) => d.name === chrom)) {
+      user_message_ribbon("Warning", `Reference sequence "${chrom}" was not found in the header of the BAM. Note that chr prefix must be consistent across files.`);
+      console.warn(`Reference sequence "${chrom}" was not found in the header of the BAM. Note that chr prefix must be consistent across files.`);
+        return [];
+    }
+
     const region = `${chrom}:${start}-${end}`;
     let subsampling = "";
 

@@ -6,6 +6,7 @@ import { CLI } from "./file_parsing.js";
 import { exportViz, papaParse } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
+import { user_message } from "./user_message.js";
 import { EXAMPLE_SESSIONS } from "./constants.js";
 
 var _splitthreader_layout = {
@@ -532,8 +533,6 @@ function update_variants() {
         ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
     );
     return;
-  } else {
-    user_message_splitthreader("");
   }
   _SplitThreader_graph = new Graph();
   _SplitThreader_graph.from_genomic_variants(
@@ -785,7 +784,6 @@ function check_and_run_if_both_variants_and_coverage_loaded() {
 
     analyze_variants_with_coverage();
     make_variant_table();
-    user_message_splitthreader("", "");
   }
 }
 
@@ -1120,6 +1118,9 @@ function draw_circos() {
 
 ///////////    Add connections to the circos plot   /////////////////////
 function draw_circos_connections() {
+  if (!_Filtered_variant_data) {
+    return;
+  }
   if (
     _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
   ) {
@@ -1130,8 +1131,6 @@ function draw_circos_connections() {
         ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
     );
     return;
-  } else {
-    user_message_splitthreader("");
   }
 
   var connection_point_radius =
@@ -2217,6 +2216,9 @@ function draw_connections_by_category(categorized_variant_data) {
 }
 
 function draw_connections() {
+  if (!_Filtered_variant_data) {
+    return;
+  }
   if (
     _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
   ) {
@@ -2227,8 +2229,6 @@ function draw_connections() {
         ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
     );
     return;
-  } else {
-    user_message_splitthreader("");
   }
 
   _y_coordinate_for_connection = {
@@ -2696,30 +2696,7 @@ function highlight_gene_fusion(d) {
 }
 
 export function user_message_splitthreader(message_type, message) {
-  if (message_type == "") {
-    d3.select("#user_message_splitthreader")
-      .html("")
-      .style("visibility", "hidden");
-  } else {
-    d3.select("#user_message_splitthreader").style("visibility", "visible");
-    var message_style = "default";
-    switch (message_type) {
-      case "error":
-        message_style = "danger";
-        break;
-      case "Error":
-        message_style = "danger";
-        break;
-      case ("warning", "Warning"):
-        message_style = "warning";
-        break;
-      default:
-        message_style = "info";
-    }
-    d3.select("#user_message_splitthreader")
-      .html("<strong>" + message_type + ": </strong>" + message)
-      .attr("class", "alert alert-" + message_style);
-  }
+  user_message(message_type, message, "#user_message_splitthreader");
 }
 
 function search_select_gene(d) {
@@ -3603,8 +3580,6 @@ function search_graph_for_fusion() {
           ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
       );
       return;
-    } else {
-      user_message_splitthreader("");
     }
     var results = _SplitThreader_graph.gene_fusion(
       _current_fusion_genes[1],
@@ -4323,7 +4298,7 @@ async function open_variants_bedpe_file() {
   load_variants(variant_input.data);
 }
 
-async function read_bedpes_with_aioli(paths) {
+async function read_vcfs_with_aioli(paths) {
   let variants = [];
   for (let vcf_path of paths) {
     const vcf_header = await CLI.exec("bcftools view -h " + vcf_path);
@@ -4351,14 +4326,14 @@ async function open_variants_vcf_file() {
 
   let paths = await CLI.mount(this.files[0]);
 
-  let variants = await read_bedpes_with_aioli(paths);
+  let variants = await read_vcfs_with_aioli(paths);
   load_variants(variants);
 }
 
-export async function load_vcf_from_url(urls) {
+export async function load_vcf_from_urls(urls) {
   let paths = await CLI.mount(urls);
 
-  let variants = await read_bedpes_with_aioli(paths);
+  let variants = await read_vcfs_with_aioli(paths);
   load_variants(variants);
 }
 
@@ -4371,29 +4346,14 @@ export async function load_bedpe_from_url(url) {
   if (variant_input.errors.length > 0) {
     user_message_splitthreader(
       "Error",
-      "Error reading BEDPE/CSV file: " + variant_input.errors[0].message
+      "Error reading BEDPE file: " + variant_input.errors[0].message
     );
     return;
   }
   load_variants(variant_input.data);
 }
 
-// List examples in #splitthreader_examples:
-d3.select("#splitthreader_examples")
-  .append("ul")
-  .selectAll("li")
-  .data(EXAMPLE_SESSIONS)
-  .enter()
-  .append("li")
-  .append("a")
-  .text(function (d) {
-    return d.name;
-  })
-  .attr("href", function (d) {
-    return `?session=example:${d.name}#splitthreader`;
-  });
-
-function go_to_splitthreader_mode() {
+export function go_to_splitthreader_mode() {
   d3.select("#ribbon-app-container").style("display", "none");
   d3.select("#splitthreader-app-container").style("display", "block");
   if (window.global_variants) {
@@ -4406,20 +4366,6 @@ d3.select("#go_to_splitthreader_mode").on("click", function() {
   // Set hash to #splitthreader:
   window.location.hash = '#splitthreader';
 });
-
-function check_url_for_mode() {
-  const hash = window.location.hash;
-
-  if (hash === '#splitthreader') {
-    go_to_splitthreader_mode();
-  } else if (hash === '#ribbon') {
-    // handled in index_ribbon.js because it needs to update variables in there.
-  } else if (hash === '') {
-    // Do nothing
-  } else {
-    console.error('unknown hash in URL:', hash);
-  }
-}
 
 d3.select("#input_coverage_file").on("change", open_coverage_file);
 
@@ -4436,11 +4382,5 @@ d3.select("#splitthreader_vcf_url").on("keypress", function () {
     submit_vcf_url();
   }
 });
-
-// Add event listener for hash change
-window.addEventListener("hashchange", check_url_for_mode);
-
-// Call check_url_for_mode on page load
-check_url_for_mode();
 
 run_splitthreader();
