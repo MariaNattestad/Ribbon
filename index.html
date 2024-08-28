@@ -65,21 +65,32 @@
 	<div id="left_panel">
 		<div id="start_panel">
 			<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							Examples
+						</h4>
+					</div>
+					<div class="panel-body">
+						<p>Click on an example to load it</p>
+						<div id="example_sessions"></div>
+
+						<p>More Ribbon-specific examples</p>
+						<ul>
+							<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+							<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+							<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+							<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+							<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+						</ul>
+					</div>
+				</div>
+			<div class="panel panel-default">
 				<div class="panel-heading"><h3 class="panel-title">Info about Ribbon</h3></div>
 				<div class="panel-body">
 					<h3>Getting started</h3>
 					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
 						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
 					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
-
-					<p><strong>Examples:</strong></p>
-					<ul>
-						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-					</ul>
 
 					<p><strong>Visualize your own alignment data:</strong></p>
 					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
@@ -90,29 +101,15 @@
 					There are also some examples to get you started.
 
 					<h3>Paper and code</h3>
-					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
+					<p><strong>Please cite the Ribbon paper in Bioinformatics:</strong></p>
 					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
 					<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
 					<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
 					
-
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
 					
 					<p><strong>Local installation:</strong></p>
 					<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
-
-					<h3>Acknowledgements</h3>
-					<p>Ribbon stands on the shoulders of giants:</p>
-					<ul>
-						<li>Visualizations created using <a href="https://d3js.org/">D3</a> from Mike Bostock</li>
-						<li>Panel and navigation bar created using styles from <a href="http://getbootstrap.com/">Bootstrap</a></li>
-						<li>Local bam files are read using Samtools compiled into WebAssembly.</li>
-					</ul>
-					<p>Ribbon also uses two D3 plug-ins created by Maria Nattestad:</p>
-					<ul>
-						<li>Variant table with advanced filtering and sorting created using <a href="https://github.com/MariaNattestad/d3-superTable">D3-superTable</a></li>
-						<li>Live search for chromosome and read names created using <a href="https://github.com/MariaNattestad/d3-livesearch">D3-livesearch</a></li>
-					</ul>
 
 				</div>
 			</div>
@@ -129,7 +126,7 @@
 				<input type="text" id="locus_input" placeholder="chr1:123456789">
 				<button id="region_go">Go</button>
 			</div>
-			<div id='user-message'></div>
+			<div id='user_message_ribbon'></div>
 		</div>
 		<div id='right-panel-under-alert' style="overflow: scroll; flex: 1;">
 			<div class="panel panel-default">
@@ -439,23 +436,19 @@
 				
 						<div id="tab_variant_input_panel" class="tab-pane fade">
 							<div>
-								<p>Upload a .vcf or .bed file</p>
+								<p>Upload a .vcf</p>
 								<input type="file" id="variant_file" />
-
-								<h3>Bed instructions</h3>
-								Upload a bed file of variants or other features to look at.
-								<p> Columns: </p><ol><li>chromosome (reference) </li><li>start position (reference)</li><li>end position (reference)</li><li>name (optional)</li><li>score (optional)</li><li>strand (optional)</li><li>type/category (optional)</li></ol>
-								All optional fields can be used for filtering or showing tooltips with information, but only the first 3 columns are required for basic functionality.
-								<h3>VCF instructions</h3>
-								Upload a vcf file of variants to look at.
-								<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
-								The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
 							</div>
 							<div id="variant_table_box" style="display: none;">
 								<p> Showing only the first 1000 variants. Sort by clicking column names. Filter by typing =chr20, >2000, etc. for each column. For bam files, click on a row in the table to fetch reads around that feature. </p>
 								<div id="ribbon_variant_table_landing" class="scrollable_table_landing">
 									<!-- superTable creates a table here out of _Variants -->
 								</div>
+							</div>
+							<div>
+								Upload a vcf file of variants to look at.
+								<p> Requirements: columns: </p><ol><li>chromosome (reference) </li><li> position (reference)</li><li>ID (optional)</li></ol>
+								The 8th column may contain optional information including STRAND (+/-), TYPE or SVTYPE, and END (the end position where the 2nd column is the start). All optional fields can be used for filtering or showing tooltips with information, but only the first 2 columns are required for basic functionality.
 							</div>
 						</div>
 						<div id="tab_feature_input_panel" class="tab-pane fade">
@@ -472,12 +465,11 @@
 							</div>
 						</div>
 						<div id="tab_bedpe_table_panel" class="tab-pane fade">
-							<div id="upload_bedpe">
-								<p>Upload a .bedpe file</p>
-								<input type="file" id="bedpe_file" />
-								This is for those large variants that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
+							<p>Please load large variants through SplitThreader, then they will appear here.</p>
+
+							<p>Large variants are those that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
 								These are shown as connections. The smaller variants can be loaded under the "Small variants" tab.
-							</div>
+								</p>
 							<div id="bedpe_table_box">
 								<p> Showing only the first 1000 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
 								<div id="bedpe_table_landing" class="scrollable_table_landing">
@@ -532,15 +524,6 @@
 </div>
 
 <div id="splitthreader-app-container" style="display: none">
-	<!-- SplitThreader starts out hidden. -->
-	<div class="row">
-		<div class="col-md-8">
-			<h1 id="title"></h1>
-		</div>
-		<div class="col-md-4">
-			<div id="user_message_splitthreader" class="alert alert-default" role="alert"></div>
-		</div>
-	</div>
 	<div id="main_body_container">
 		<ul class="nav nav-tabs">
 			<li id="nav_tab_splitthreader_setup" class="nav_tab_splitthreader active in"><a data-toggle="tab" href="#setup_tab">Setup</a></li>
@@ -553,17 +536,6 @@
 
 		<div class="tab-content">
 			<div id="setup_tab" class="tab_splitthreader tab-pane fade in active">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Examples
-						</h4>
-					</div>
-					<div class="panel-body">
-						<p>Click on an example to load it</p>
-						<div id="splitthreader_examples"></div>
-					</div>
-				</div>
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
@@ -635,6 +607,7 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 
 				<div id="right_panel_splitthreader">
 					<div class="panel-group ">
+						<div id="user_message_splitthreader"></div>
 						<div class="panel panel-default">
 							<div class="panel-heading">
 								<h4 class="panel-title">

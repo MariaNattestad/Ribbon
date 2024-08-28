@@ -4,6 +4,7 @@ import { download, exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
 import pako from "pako";
+import { user_message } from "./user_message.js";
 
 // URLs
 var URL_API_STORE = "https://api.genomeribbon.com/v0/store/";
@@ -186,6 +187,8 @@ _ribbon_static.singleread_layout_fractions = {
   features: 0.1,
   bottom_bar: 0.03,
 };
+
+const LARGE_FILE_THRESHOLD = 10000000; // Above 10 MB we throw a warning.
 
 var _ribbon_settings = {};
 _ribbon_settings.region_min_mapping_quality = 0;
@@ -2186,7 +2189,7 @@ function parse_paired_end(record) {
 
     for (var i in record.second.alignments) {
       var new_alignment = {};
-      for (key in record.second.alignments[i]) {
+      for (let key in record.second.alignments[i]) {
         new_alignment[key] = record.second.alignments[i][key];
       }
       if (_ribbon_settings.flip_second_read_in_pair) {
@@ -2758,52 +2761,6 @@ function show_bedpe_table() {
     });
 }
 
-function bed_input_changed(bed_input) {
-  var input_text = bed_input.split("\n");
-
-  _Variants = [];
-  for (var i in input_text) {
-    if (input_text[i][0] != "#") {
-      var columns = input_text[i].split(/\s+/);
-      if (columns.length > 2) {
-        var start = parseInt(columns[1]);
-        var end = parseInt(columns[2]);
-        var score = parseFloat(columns[4]);
-        if (isNaN(score)) {
-          score = 0;
-        }
-        if (isNaN(start) || isNaN(end)) {
-          user_message_ribbon(
-            "Error",
-            "Bed file must contain numbers in columns 2 and 3. Found: <pre>" +
-              columns[1] +
-              " and " +
-              columns[2] +
-              "</pre>."
-          );
-          return;
-        }
-        _Variants.push({
-          chrom: columns[0],
-          start: start,
-          end: end,
-          size: end - start,
-          name: columns[3] || "",
-          score: score,
-          strand: columns[5],
-          variant_type: columns[6] || "",
-        });
-      }
-    }
-  }
-
-  user_message_ribbon("Info", "Loaded " + _Variants.length + " bed entries");
-
-  update_variants();
-  draw_region_view();
-  refresh_ui_elements();
-}
-
 function bedpe_input_changed(bedpe_input) {
   var input_text = bedpe_input.split("\n");
   // chrom1, start1, stop1, chrom2, start2, stop2, name, score, strand1, strand2, type
@@ -2864,8 +2821,6 @@ function bedpe_input_changed(bedpe_input) {
       }
     }
   }
-
-  user_message_ribbon("Info", "Loaded " + _Bedpe.length + " bedpe entries");
 
   update_bedpe();
   draw_region_view();
@@ -2961,7 +2916,6 @@ function vcf_input_changed(vcf_input) {
     }
   }
 
-  user_message_ribbon("Info", "Loaded " + _Variants.length + " vcf entries");
   update_variants();
   draw_region_view();
   refresh_ui_elements();
@@ -3524,53 +3478,8 @@ function parse_SA_field(sa) {
   return alignments;
 }
 
-function user_message_ribbon(message_type, message) {
-  var message_style = "default";
-  switch (message_type) {
-    case "Permalink":
-      html =
-        "<strong>" +
-        message_type +
-        ': </strong><a href="' +
-        message +
-        '" target="_blank">' +
-        message +
-        "</a> <p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>";
-      message_style = "success";
-      break;
-    case "error":
-      message_style = "danger";
-      break;
-    case "Error":
-      message_style = "danger";
-      break;
-    case ("warning", "Warning"):
-      message_style = "warning";
-      break;
-    case "Instructions":
-      message_style = "info";
-      break;
-    case "Success":
-      message_style = "success";
-      break;
-    default:
-      message_style = "info";
-  }
-  let html = "<strong>" + message_type + ": </strong>" + message;
-
-  var alert = d3
-    .select("#user-message")
-    .append("div")
-    .attr("class", "alert alert-" + message_style + " alert-dismissable")
-    .attr("role", "alert");
-  alert
-    .append("a")
-    .attr("href", "#")
-    .attr("class", "close")
-    .attr("data-dismiss", "alert")
-    .attr("aria-label", "close")
-    .html("&times;");
-  alert.append("p").html(html);
+export function user_message_ribbon(message_type, message) {
+  user_message(message_type, message, "#user_message_ribbon");
 }
 
 function cigar_coords(cigar) {
@@ -5764,6 +5673,7 @@ function set_variant_info_text() {
 }
 
 export async function read_bam_urls(urls, in_background = false) {
+  console.log("urls:", urls);
   _Bams = [];
   for (let url of urls) {
     if (url.startsWith("s3://")) {
@@ -5771,7 +5681,7 @@ export async function read_bam_urls(urls, in_background = false) {
     } else if (url.startsWith("gs://")) {
       url = url.replace("gs://", "https://42basepairs.com/download/gs/");
     } else if (!url.startsWith("https://")) {
-      alert("We only support HTTPS, s3:// or gs:// paths");
+      user_message("Error", `BAM URL must be HTTPS, s3:// or gs:// paths, found "${url}"`);
       return;
     }
 
@@ -6036,9 +5946,7 @@ function read_permalink(id) {
           bedpe_input_changed(json_data["bedpe"]);
         }
 
-        if (json_data["bed"] != undefined) {
-          bed_input_changed(json_data["bed"]);
-        } else if (json_data["vcf"] != undefined) {
+        if (json_data["vcf"] != undefined) {
           vcf_input_changed(json_data["vcf"]);
         }
       }
@@ -6051,30 +5959,8 @@ function read_permalink(id) {
 
 add_user_links_to_navbar();
 
-// ===========================================================================
-// == Load bed file
-// ===========================================================================
-
-async function open_bedpe_file() {
-  if (this.files[0].size > 1000000) {
-    user_message_ribbon("Warning", "Loading large file may take a while.");
-  }
-
-  var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
-  if (file_extension == "bedpe") {
-    const raw_data = await this.files[0].text();
-    bedpe_input_changed(raw_data);
-    variants_just_loaded();
-    _ribbon_settings.variant_info_text =
-      "Bedpe from file: " + this.files[0].name;
-    set_variant_info_text();
-  } else {
-    user_message_ribbon("Error", "File extension must be .bedpe");
-  }
-}
-
 async function open_variant_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
@@ -6086,15 +5972,8 @@ async function open_variant_file() {
     _ribbon_settings.variant_info_text =
       "Variants from file: " + this.files[0].name;
     set_variant_info_text();
-  } else if (file_extension == "bed") {
-    const raw_data = await this.files[0].text();
-    bed_input_changed(raw_data);
-    variants_just_loaded();
-    _ribbon_settings.variant_info_text =
-      "Variants from file: " + this.files[0].name;
-    set_variant_info_text();
   } else {
-    user_message_ribbon("Error", "File extension must be .bed or .vcf");
+    user_message_ribbon("Error", "File extension must be .vcf");
   }
 }
 
@@ -6138,11 +6017,6 @@ function read_feature_bed(raw_data) {
     }
   }
 
-  user_message_ribbon(
-    "Info",
-    "Loaded " + _Features_for_ribbon.length + " features from bed file"
-  );
-
   update_features();
   draw_region_view();
   draw();
@@ -6152,7 +6026,7 @@ function read_feature_bed(raw_data) {
 }
 
 async function open_feature_bed_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
   }
 
@@ -6166,7 +6040,6 @@ async function open_feature_bed_file() {
 }
 
 d3.select("#variant_file").on("change", open_variant_file);
-d3.select("#bedpe_file").on("change", open_bedpe_file);
 d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 
 // ===========================================================================
@@ -6174,7 +6047,7 @@ d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 // ===========================================================================
 
 async function open_coords_file() {
-  if (this.files[0].size > 1000000) {
+  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Info", "Loading large file may take a little while.");
   }
 
@@ -6264,13 +6137,6 @@ function bam_loaded() {
   d3.select("#region_selector_panel").style("display", "block");
   d3.select("#variant_input_panel").style("display", "block");
   d3.select("#feature_input_panel").style("display", "block");
-
-  user_message_ribbon(
-    "Success",
-    "Loaded alignments from " +
-      _Whole_refs.length +
-      " reference sequences (chromosomes). Navigate to a position by pasting it above or loading some variants/features."
-  );
 
   refresh_visibility();
 }
@@ -6865,7 +6731,7 @@ function resizeWindow() {
 
 // ===========================================================================
 
-function go_to_ribbon_mode() {
+export function go_to_ribbon_mode() {
   d3.select("#ribbon-app-container").style("display", "block");
   d3.select("#splitthreader-app-container").style("display", "none");
 
@@ -6873,33 +6739,14 @@ function go_to_ribbon_mode() {
   if (window.global_variants) {
     _Bedpe = window.global_variants;
     update_bedpe();
+    draw_region_view();
+    refresh_ui_elements();
   }
 }
 d3.select("#go_to_ribbon_mode").on("click", function() {
   go_to_ribbon_mode();
   window.location.hash = '#ribbon';
 });
-
-function check_url_for_mode() {
-  const hash = window.location.hash;
-
-  if (hash === '#splitthreader') {
-    // handled in index_splitthreader.js because it needs to update variables in there.
-  } else if (hash === '#ribbon') {
-    go_to_ribbon_mode();
-  } else if (hash === '') {
-    // Do nothing
-  } else {
-    console.error('unknown hash in URL:', hash);
-  }
-}
-
-// Add event listener for hash change
-window.addEventListener('hashchange', check_url_for_mode);
-
-// Call switchMode on page load
-check_url_for_mode();
-
 
 // ===========================================================================
 // == Main
