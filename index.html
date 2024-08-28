@@ -27,41 +27,35 @@
 	<link href="css/splitthreader.css" rel="stylesheet">
 </head>
 
-<!--    NAVIGATION BAR-->
-
 <body role="document">
+	<!-- Navigation bar -->
 	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-		<div class="container">
-			
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
-			</div>
-			<!-- <div class="navbar-collapse collapse"> -->
-			<ul class="nav navbar-nav" id="navbar">
-				<li><a href="/">Ribbon</a></li>
-				<li class="dropdown" id="user_data_navbar_item" style="visibility: hidden">
-					<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
-					<ul class="dropdown-menu" role="menu" id="user_data_list">
-						<!-- Populated by add_user_links_to_navbar() in vis.js -->
-					</ul>
-				</li>
-			</ul>
-			<!-- </div> -->
-			<!--/.nav-collapse -->
-		</div>
+		<ul class="nav navbar-nav" id="navbar">
+			<li><a href="/">Ribbon</a></li>
+			<li class="dropdown" id="user_data_navbar_item" style="visibility: hidden">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown">My Ribbon data <span class="caret"></span></a>
+				<ul class="dropdown-menu" role="menu" id="user_data_list">
+					<!-- Populated by add_user_links_to_navbar() in vis.js -->
+				</ul>
+			</li>
+		</ul>
+		<ul class="nav navbar-nav navbar-right" style="margin-right: 10px;">
+			<li class="navbar-text small">
+				<small>
+					This is a beta of Ribbon 2.0
+					(<a style="padding:0; display:inline; color:#fff" href="https://github.com/MariaNattestad/Ribbon/blob/v2/docs/release_notes_v2.md" target="_blank">learn more</a>).
+					You can go <a style="padding:0; display:inline; color:#fff" href="https://v1.genomeribbon.com" target="_blank">back to v1</a>.
+				</small>
+			</li>
+		</ul>
 	</div>
-<!--            End of Navigation Bar        -->
 
-<ul class="nav nav-tabs" style="margin:10px;">
-	<li class="active"><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
-	<li><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
-	<li><a id="go_to_about_mode" data-toggle="tab" href="#start_panel">About</a></li>
-</ul>
+	<!-- Main tabs -->
+	<ul class="nav nav-tabs" style="margin:10px;">
+		<li class="active"><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
+		<li><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
+		<li><a id="go_to_about_mode" data-toggle="tab" href="#start_panel">About</a></li>
+	</ul>
 
 <div class="tab-content">
 	<div id="start_panel" class="tab-pane">
