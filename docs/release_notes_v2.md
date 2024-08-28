@@ -27,7 +27,7 @@ Previously both Ribbon and SplitThreader only supported a .bedpe file for showin
 
 ## Access files by URL
 
-Many file types in Ribbon and SplitThreader can now be loaded through a URL starting with `http://`. If you have files publicly available on AWS S3 or Google Cloud Storage, you can use [42basepairs](https://42basepairs.com) to get a `http://` link, just prepend `https://42basepairs.com/browse/` to the path. For example, go to `https://42basepairs.com/browse/s3://giab` to see the `s3://giab` bucket.
+Many file types in Ribbon and SplitThreader can now be loaded through a URL starting with `https://`, s3://, or gs://. 
 
 ## Load a session by JSON
 
