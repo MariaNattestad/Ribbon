@@ -6474,6 +6474,31 @@ function tell_user_how_many_records_loaded() {
   }
 }
 
+function parse_locus(locus_string) {
+  var locus = locus_string.split(":");
+  var chrom = locus[0];
+  var start_end = locus[1].split("-");
+  var start = parseInt(start_end[0].replace(/,/g, ""));
+  var end = start + 1;
+
+  if (start_end.length == 2) {
+    var end = parseInt(start_end[1].replace(/,/g, ""));
+  }
+  
+  return { chrom: chrom, start: start, end: end };
+}
+function go_to_locus(locus_string) {
+  show_waiting_for_bam();
+  my_fetch(chrom, start, end, use_additional_fetched_data);
+}
+
+
+d3.select("#locus_input").on("keyup", function () {
+  if (d3.event.keyCode == 13 && !_loading_bam_right_now) {
+    region_submitted();
+  }
+});
+
 function region_submitted(event) {
   var chrom = d3.select("#region_chrom").property("value");
   if (chrom == "") {
