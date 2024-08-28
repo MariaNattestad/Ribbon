@@ -41,9 +41,9 @@ var _Features_for_ribbon = [];
 var _focal_region; // {chrom,start,end}:  one region that the bam file, variants, or majority of reads from a sam entry point towards, considered the primary region for read alignment
 
 // Reading bam file
-var _automation_running = false;
 var _Bams = undefined;
 var _Ref_sizes_from_header = {};
+var _ui_done_loading_bam = false;
 
 // Selecting region
 var _region = {}; // chrom, start, end
@@ -476,7 +476,7 @@ function getUrlVars() {
   return vars;
 }
 
-function open_any_url_files() {
+function check_url_for_permalink() {
   var url_vars = getUrlVars();
   if (url_vars["perma"] != undefined) {
     read_permalink(url_vars["perma"]);
@@ -4362,21 +4362,10 @@ function organize_references_for_read() {
 function refresh_visibility() {
   if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
     d3.select("#svg2_panel").style("visibility", "visible");
+    d3.select("#left_ribbon_examples").style("display", "none");
   } else {
     d3.select("#svg2_panel").style("visibility", "hidden");
-  }
-
-  if (
-    _Chunk_alignments.length > 0 ||
-    (_ribbon_settings.automation_mode == true &&
-      _Bams != undefined &&
-      _Bedpe.length > 0)
-  ) {
-    d3.select("#region_settings_panel").style("display", "block");
-    d3.select("#data_description_panel").style("display", "block");
-  } else {
-    d3.select("#region_settings_panel").style("display", "none");
-    d3.select("#data_description_panel").style("display", "none");
+    d3.select("#left_ribbon_examples").style("display", "block");
   }
 
   if (
@@ -4385,10 +4374,8 @@ function refresh_visibility() {
       _Bams != undefined &&
       _Bedpe.length > 0)
   ) {
-    d3.select("#settings").style("display", "block");
     d3.select("#svg1_panel").style("visibility", "visible");
   } else {
-    d3.select("#settings").style("display", "none");
     d3.select("#svg1_panel").style("visibility", "hidden");
   }
   if (_Variants.length > 0 || _Bedpe.length > 0) {
@@ -5657,7 +5644,6 @@ function set_variant_info_text() {
 }
 
 export async function read_bam_urls(urls, in_background = false) {
-  console.log("urls:", urls);
   _Bams = [];
   for (let url of urls) {
     if (url.startsWith("s3://")) {
@@ -6123,6 +6109,7 @@ function bam_loaded() {
   d3.select("#feature_input_panel").style("display", "block");
 
   refresh_visibility();
+  _ui_done_loading_bam = true;
 }
 
 function record_bam_header(sq_list) {
@@ -6324,61 +6311,36 @@ function tell_user_how_many_records_loaded() {
   }
 }
 
-function region_submitted(event) {
-  var chrom = d3.select("#region_chrom").property("value");
-  if (chrom == "") {
-    user_message_ribbon("Error", "No chromosome given");
-    return;
-  }
-  var start = parseInt(
-    d3.select("#region_start").property("value").replace(/,/g, "")
-  );
-
-  if (isNaN(start) == true) {
-    user_message_ribbon(
-      "Error",
-      "start value:" +
-        d3.select("#region_start").property("value") +
-        " could not be made into a number"
-    );
-    return;
-  }
+function parse_locus(locus_string) {
+  var locus = locus_string.split(":");
+  var chrom = locus[0];
+  var start_end = locus[1].split("-");
+  var start = parseInt(start_end[0].replace(/,/g, ""));
   var end = start + 1;
 
-  var chrom_index = get_chrom_index(chrom);
-  if (chrom_index != undefined) {
-    chrom = _Whole_refs[chrom_index].chrom;
-    if (start > _Whole_refs[chrom_index].size) {
-      start = _Whole_refs[chrom_index].size;
-    }
-    if (end > _Whole_refs[chrom_index].size) {
-      end = _Whole_refs[chrom_index].size;
-    }
-    if (start < 0) {
-      start = 0;
-    }
-    if (end < 0) {
-      end = 0;
-    }
-    if (start > end) {
-      var tmp = start;
-      start = end;
-      end = tmp;
-    }
-
-    // Correct any issues with coordinates
-    d3.select("#region_chrom").property("value", chrom);
-    d3.select("#region_start").property("value", start);
-
-    flexible_bam_fetch([{ chrom: chrom, start: start, end: end }]);
-
-    // _Additional_ref_intervals = [{"chrom":chrom,"start":start,"end":end}];
-    d3.select("#text_region_output").html(
-      "Showing reads at position: " + chrom + ": " + start
-    );
-  } else {
-    user_message_ribbon("Error", "Chromosome does not exist in reference");
+  if (start_end.length == 2) {
+    var end = parseInt(start_end[1].replace(/,/g, ""));
   }
+  
+  return { chrom: chrom, start: start, end: end };
+}
+
+function go_to_locus(locus_string) {
+  let locus = parse_locus(locus_string);
+
+  d3.select("#text_region_output").html(`Showing reads at position: ${locus_string}`);
+  flexible_bam_fetch([locus]);
+}
+
+d3.select("#locus_input").on("keyup", function () {
+  if (d3.event.keyCode == 13 && !_loading_bam_right_now) {
+    region_submitted();
+  }
+});
+
+function region_submitted(event) {
+  var locus_input_text = d3.select("#locus_input").property("value");
+  go_to_locus(locus_input_text);
 }
 
 d3.select("#region_go").on("click", region_submitted);
@@ -6395,10 +6357,8 @@ d3.select("#region_start").on("keyup", function () {
 
 function submit_bam_url() {
   var url_input = d3.select("#bam_url_input").property("value");
-  console.log("url_input:", url_input);
   // Parse by comma-separated
   var urls = url_input.split(",").map((d) => d.trim());
-  console.log("urls:", urls);
   read_bam_urls(urls);
 }
 d3.select("#submit_bam_url").on("click", submit_bam_url);
@@ -6472,7 +6432,6 @@ var log_number_reads_found = [];
 
 function run_automation() {
   _variant_automation_counter = -1;
-  _automation_running = true;
 
   if (_Bam == undefined) {
     user_message_ribbon("Error", "No bam file loaded");
@@ -6539,7 +6498,6 @@ function load_next_variant() {
     );
     wait_save_and_repeat(0);
   } else {
-    _automation_running = false;
     user_message_ribbon("Success", "DONE with automation!");
   }
 }
@@ -6683,12 +6641,10 @@ d3.select("#run_automation_button").on("click", run_automation);
 
 // Resize SVG and sidebar when window size changes
 window.onresize = resizeWindow;
-// TODO: Combine resizeWindow from here and in SplitThreader.
+
 function resizeWindow() {
   resize_ribbon_views();
 }
-
-// ===========================================================================
 
 export function go_to_ribbon_mode() {
   // Grab any shared data that SplitThreader may have deposited.
@@ -6699,21 +6655,39 @@ export function go_to_ribbon_mode() {
     refresh_ui_elements();
   }
 }
-d3.select("#go_to_ribbon_mode").on("click", function() {
-  go_to_ribbon_mode();
-  window.location.hash = '#ribbon';
-});
-d3.select("#go_to_about_mode").on("click", function() {
-  window.location.hash = '#about';
-});
+
+async function waitForBams() {
+  while (!_Bams || !_Bams.every((b) => b.ready) || _ui_done_loading_bam == false) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+async function go_to_locus_when_ready(locus) {
+  await waitForBams();
+  go_to_locus(locus);
+}
+
+// Check URL for ?locus=chr1:100-200 and run go_to_locus(locus_string) on that locus string.
+function check_url_for_locus() {
+  let url = new URL(window.location.href);
+  let locus = url.searchParams.get("locus");
+  if (locus) {
+    d3.select("#locus_input").property("value", locus);
+    go_to_locus_when_ready(locus);
+  }
+}
 
 // ===========================================================================
 // == Main
 // ===========================================================================
 
 run_ribbon();
-open_any_url_files();
+check_url_for_permalink();
+check_url_for_locus();
 
-// window.addEventListener("beforeunload", function (event) {
-//   event.preventDefault();
-// });
+window.addEventListener("beforeunload", function (event) {
+  if (_Bams && _Bams.length > 0) {
+    // Check user wants to quit without saving changes, if they have a bam file loaded.
+    event.preventDefault();
+  }
+});

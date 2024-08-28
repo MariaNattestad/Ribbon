@@ -52,28 +52,45 @@
 
 	<!-- Main tabs -->
 	<ul class="nav nav-tabs" style="margin:10px;">
-		<li class="active"><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
+		<li class="active"><a id="go_to_examples_mode" data-toggle="tab" href="#examples_panel">Examples</a></li>
+		<li><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
 		<li><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
 		<li><a id="go_to_about_mode" data-toggle="tab" href="#start_panel">About</a></li>
+		
 	</ul>
 
 <div class="tab-content">
+	<div id="examples_panel" class="tab-pane active">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					Examples
+				</h4>
+			</div>
+			<div class="panel-body">
+				<h3>Example sessions</h3>
+				<div id="example_sessions"></div>
+
+				<strong>JSON specification for the selected session:</strong>
+				<textarea id="json_session_input" style="width: 100%; height: 300px;" readonly></textarea>
+
+				<h4>Ribbon-specific examples</h4>
+				<ul>
+					<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+					<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+					<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+					<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+					<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+				</ul>
+				These use the older permalink structure, giving a specific snapshot of an analysis, but they may not be connected to the original files necessary to navigate to new loci.
+			</div>
+		</div>
+	</div>
 	<div id="start_panel" class="tab-pane">
 		<h4>Getting started</h4>
 		<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
 			alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
 		<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
-
-		<!-- <p><strong>Examples:</strong></p>
-		<ul>
-			<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-			<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-			<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-			<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-			<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-		</ul> -->
-
-		<p><strong>Visualize your own alignment data:</strong></p>
 		<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
 
 		<h3>SplitThreader</h3>
@@ -94,31 +111,18 @@
 		<p>You can install Ribbon locally from Github by following the instructions here: <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
 </div>
 
-<div id="ribbon-app-container" class="tab-pane active">
+<div id="ribbon-app-container" class="tab-pane">
 	<div id="left_panel">
-		<div id="start_panel">
-			<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Examples
-						</h4>
-					</div>
-					<div class="panel-body">
-						<p>Click on an example to load it</p>
-						<div id="example_sessions"></div>
-
-						<p>More Ribbon-specific examples</p>
-						<ul>
-							<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-							<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-							<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-							<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-							<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-						</ul>
-					</div>
-				</div>
+		<div id="left_ribbon_examples">
+			<p><strong>Examples:</strong></p>
+			<ul>
+				<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+				<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+				<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+				<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+				<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+			</ul>
 		</div>
-
 		<div id="svg2_panel"></div>
 		<div id="svg1_panel"></div>
 	</div>
@@ -127,8 +131,7 @@
 		<div>
 			<div id="region_box">
 				<p>Navigate to a position:</p>
-				<input class="tiny_input" type="text" id="region_chrom" placeholder="chr1"> : 
-				<input class="small_input" type="number" id="region_start" placeholder="123456789">
+				<input type="text" id="locus_input" placeholder="chr1:123456789">
 				<button id="region_go">Go</button>
 			</div>
 			<div id='user_message_ribbon'></div>

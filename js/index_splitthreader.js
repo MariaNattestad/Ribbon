@@ -4359,11 +4359,6 @@ export function go_to_splitthreader_mode() {
     update_variants();
   }
 }
-d3.select("#go_to_splitthreader_mode").on("click", function() {
-  go_to_splitthreader_mode();
-  // Set hash to #splitthreader:
-  window.location.hash = '#splitthreader';
-});
 
 d3.select("#input_coverage_file").on("change", open_coverage_file);
 
