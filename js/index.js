@@ -128,6 +128,8 @@ function check_url_for_mode() {
     document.getElementById("go_to_ribbon_mode").click()
   } else if (hash === "#about") {
     document.getElementById("go_to_about_mode").click()
+  } else if (hash === "#examples") {
+    document.getElementById("go_to_examples_mode").click()
   } else {
     console.error("unknown hash in URL:", hash);
   }
