@@ -11,6 +11,7 @@ import {
   go_to_splitthreader_mode,
   user_message_splitthreader,
 } from "./index_splitthreader";
+import * as d3 from "d3";
 
 // Load session from URL
 async function load_session() {
@@ -111,3 +112,21 @@ check_url_for_mode();
 
 // Initialize
 check_for_session();
+
+function list_example_sessions() {
+  d3.select("#example_sessions")
+    .append("ul")
+    .selectAll("li")
+    .data(EXAMPLE_SESSIONS)
+    .enter()
+    .append("li")
+    .append("a")
+    .text(function (d) {
+      return d.description;
+    })
+    .attr("href", function (d) {
+      return `?session=example:${d.name}#splitthreader`;
+    });
+}
+
+list_example_sessions();

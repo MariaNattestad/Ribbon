@@ -65,21 +65,32 @@
 	<div id="left_panel">
 		<div id="start_panel">
 			<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							Examples
+						</h4>
+					</div>
+					<div class="panel-body">
+						<p>Click on an example to load it</p>
+						<div id="example_sessions"></div>
+
+						<p>More Ribbon-specific examples</p>
+						<ul>
+							<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
+							<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
+							<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
+							<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
+							<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
+						</ul>
+					</div>
+				</div>
+			<div class="panel panel-default">
 				<div class="panel-heading"><h3 class="panel-title">Info about Ribbon</h3></div>
 				<div class="panel-body">
 					<h3>Getting started</h3>
 					<p>Ribbon is especially useful for viewing complex alignments, like long-read sequencing around large structural variants,
 						alignments/variants that span more than one chromosome, or assembly/assembly alignments.</p>
 					<p>Start by loading a BAM file and navigating to a position. You can also load a VCF or BED file with variants or regions of interest.</p>
-
-					<p><strong>Examples:</strong></p>
-					<ul>
-						<li><a href="?perma=_ribbon/ilmn_deletion_a549" target="_blank">Illumina deletion in A549 cell line (600KB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_hg19" target="_blank">hg19 against GRCh38 (2 MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_tra" target="_blank">PacBio SKBR3 TRA chr16 to chr19 (5MB)</a></li>
-						<li><a href="?perma=_ribbon/pacb_skbr3_gene_fusion" target="_blank">PacBio SKBR3 CYTH1-EIF3H gene fusion (11MB)</a></li>
-						<li><a href="?perma=_ribbon/grch38_vs_gorilla" target="_blank">Gorilla against GRCh38 (12MB)</a></li>
-					</ul>
 
 					<p><strong>Visualize your own alignment data:</strong></p>
 					<p>Ribbon can be used for long reads, short reads, paired-end reads, and assembly/genome alignments. Instructions for each data format are available by clicking on "instructions" in each tab on the right.</p>
@@ -90,12 +101,11 @@
 					There are also some examples to get you started.
 
 					<h3>Paper and code</h3>
-					<p><strong>Please cite our paper in Bioinformatics:</strong></p>
+					<p><strong>Please cite the Ribbon paper in Bioinformatics:</strong></p>
 					<p>Ribbon: intuitive visualization for complex genomic variation: <a href="https://doi.org/10.1093/bioinformatics/btaa680" target="_blank">https://doi.org/10.1093/bioinformatics/btaa680</a></p>
 					<p>Also see the preprint on the BioRxiv for <a href="http://biorxiv.org/content/early/2016/10/20/082123" target="_blank">Ribbon.</a></p>
 					<p>And the preprint for <a href="https://www.biorxiv.org/content/10.1101/087981v1.full" target="_blank">SplitThreader</a>.</p>
 					
-
 					<p>The code is open-source at <a href="https://github.com/MariaNattestad/ribbon" target="_blank">https://github.com/MariaNattestad/Ribbon</a></p>
 					
 					<p><strong>Local installation:</strong></p>
@@ -528,17 +538,6 @@
 
 		<div class="tab-content">
 			<div id="setup_tab" class="tab_splitthreader tab-pane fade in active">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Examples
-						</h4>
-					</div>
-					<div class="panel-body">
-						<p>Click on an example to load it</p>
-						<div id="splitthreader_examples"></div>
-					</div>
-				</div>
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">

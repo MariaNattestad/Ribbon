@@ -2189,7 +2189,7 @@ function parse_paired_end(record) {
 
     for (var i in record.second.alignments) {
       var new_alignment = {};
-      for (key in record.second.alignments[i]) {
+      for (let key in record.second.alignments[i]) {
         new_alignment[key] = record.second.alignments[i][key];
       }
       if (_ribbon_settings.flip_second_read_in_pair) {
@@ -5673,6 +5673,7 @@ function set_variant_info_text() {
 }
 
 export async function read_bam_urls(urls, in_background = false) {
+  console.log("urls:", urls);
   _Bams = [];
   for (let url of urls) {
     if (url.startsWith("s3://")) {
@@ -5680,7 +5681,7 @@ export async function read_bam_urls(urls, in_background = false) {
     } else if (url.startsWith("gs://")) {
       url = url.replace("gs://", "https://42basepairs.com/download/gs/");
     } else if (!url.startsWith("https://")) {
-      alert("We only support HTTPS, s3:// or gs:// paths");
+      user_message("Error", `BAM URL must be HTTPS, s3:// or gs:// paths, found "${url}"`);
       return;
     }
 

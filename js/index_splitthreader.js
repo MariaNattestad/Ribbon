@@ -1118,6 +1118,9 @@ function draw_circos() {
 
 ///////////    Add connections to the circos plot   /////////////////////
 function draw_circos_connections() {
+  if (!_Filtered_variant_data) {
+    return;
+  }
   if (
     _Filtered_variant_data.length > _splitthreader_static.max_variants_to_show
   ) {
@@ -4349,21 +4352,6 @@ export async function load_bedpe_from_url(url) {
   }
   load_variants(variant_input.data);
 }
-
-// List examples in #splitthreader_examples:
-d3.select("#splitthreader_examples")
-  .append("ul")
-  .selectAll("li")
-  .data(EXAMPLE_SESSIONS)
-  .enter()
-  .append("li")
-  .append("a")
-  .text(function (d) {
-    return d.name;
-  })
-  .attr("href", function (d) {
-    return `?session=example:${d.name}#splitthreader`;
-  });
 
 export function go_to_splitthreader_mode() {
   d3.select("#ribbon-app-container").style("display", "none");
