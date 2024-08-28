@@ -8,14 +8,16 @@ import { user_message_ribbon } from "./index_ribbon";
 // Create Aioli (and the WebWorker in which WASM code will run).
 // Load assets locally instead of using the CDN.
 const urlPrefix = `${window.location.origin}/wasm`;
-export const CLI = await new Aioli([
+export let CLI;
+new Aioli([
   { tool: "samtools", version: "1.17", urlPrefix },
   { tool: "bcftools", version: "1.10", urlPrefix },
-]);
-
-console.log("Loaded Aioli with:")
-console.log("- samtools", await CLI.exec("samtools --version-only"));
-console.log("- bcftools", await CLI.exec("bcftools --version-only"));
+]).then(async (cli) => {
+  CLI = cli;
+  console.log("Loaded Aioli with:");
+  console.log("- samtools", await CLI.exec("samtools --version-only"));
+  console.log("- bcftools", await CLI.exec("bcftools --version-only"));
+});
 
 // =============================================================================
 // Classes for managing genomic files
