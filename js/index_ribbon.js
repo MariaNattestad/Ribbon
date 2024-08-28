@@ -5959,28 +5959,6 @@ function read_permalink(id) {
 
 add_user_links_to_navbar();
 
-// ===========================================================================
-// == Load bed file
-// ===========================================================================
-
-async function open_bedpe_file() {
-  if (this.files[0].size > LARGE_FILE_THRESHOLD) {
-    user_message_ribbon("Warning", "Loading large file may take a while.");
-  }
-
-  var file_extension = /[^.]+$/.exec(this.files[0].name)[0];
-  if (file_extension == "bedpe") {
-    const raw_data = await this.files[0].text();
-    bedpe_input_changed(raw_data);
-    variants_just_loaded();
-    _ribbon_settings.variant_info_text =
-      "Bedpe from file: " + this.files[0].name;
-    set_variant_info_text();
-  } else {
-    user_message_ribbon("Error", "File extension must be .bedpe");
-  }
-}
-
 async function open_variant_file() {
   if (this.files[0].size > LARGE_FILE_THRESHOLD) {
     user_message_ribbon("Warning", "Loading large file may take a while.");
@@ -6062,7 +6040,6 @@ async function open_feature_bed_file() {
 }
 
 d3.select("#variant_file").on("change", open_variant_file);
-d3.select("#bedpe_file").on("change", open_bedpe_file);
 d3.select("#ribbon_feature_bed_file").on("change", open_feature_bed_file);
 
 // ===========================================================================
@@ -6737,6 +6714,8 @@ export function go_to_ribbon_mode() {
   if (window.global_variants) {
     _Bedpe = window.global_variants;
     update_bedpe();
+    draw_region_view();
+    refresh_ui_elements();
   }
 }
 d3.select("#go_to_ribbon_mode").on("click", function() {

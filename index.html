@@ -466,12 +466,11 @@
 							</div>
 						</div>
 						<div id="tab_bedpe_table_panel" class="tab-pane fade">
-							<div id="upload_bedpe">
-								<p>Upload a .bedpe file</p>
-								<input type="file" id="bedpe_file" />
-								This is for those large variants that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
+							<p>Please load large variants through SplitThreader, then they will appear here.</p>
+
+							<p>Large variants are those that split reads into multiple alignments, e.g. translocations and other variants between positions more than around 1kb apart.
 								These are shown as connections. The smaller variants can be loaded under the "Small variants" tab.
-							</div>
+								</p>
 							<div id="bedpe_table_box">
 								<p> Showing only the first 1000 variants. Sort by clicking column names, and filter by typing into the text boxes for each column. For instance, type >20 or =chr2. Separate multiple filters in a single column using spaces. For bam files, click on a row in the table to fetch reads around that feature. </p>
 								<div id="bedpe_table_landing" class="scrollable_table_landing">
