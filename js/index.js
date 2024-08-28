@@ -93,11 +93,11 @@ function check_url_for_mode() {
   const hash = window.location.hash;
 
   if (hash === "#splitthreader") {
-    go_to_splitthreader_mode();
+    document.getElementById("go_to_splitthreader_mode").click()
   } else if (hash === "#ribbon") {
-    go_to_ribbon_mode();
-  } else if (hash === "") {
-    // Do nothing
+    document.getElementById("go_to_ribbon_mode").click()
+  } else if (hash === "#about") {
+    document.getElementById("go_to_about_mode").click()
   } else {
     console.error("unknown hash in URL:", hash);
   }

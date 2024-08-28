@@ -381,8 +381,6 @@ function resize_ribbon_views() {
     .style("height", _layout.total_height + "px")
     .style("visibility", "visible");
 
-  d3.select("#info_panel").style("width", _layout.svg2_width + "px");
-  d3.select("#start_panel").style("width", _layout.svg2_width + "px");
   d3.select("#advanced_settings_panel").style(
     "width",
     _layout.svg2_width + "px"
@@ -4364,10 +4362,8 @@ function organize_references_for_read() {
 function refresh_visibility() {
   if (_Whole_refs.length > 0 || _Chunk_alignments.length > 0) {
     d3.select("#svg2_panel").style("visibility", "visible");
-    d3.select("#start_panel").style("display", "none");
   } else {
     d3.select("#svg2_panel").style("visibility", "hidden");
-    d3.select("#start_panel").style("display", "block");
   }
 
   if (
@@ -5598,18 +5594,6 @@ function draw_ribbons() {
 // == Examples
 // ===========================================================================
 
-function show_getting_started_panel() {
-  if (d3.select("#start_panel").style("display") == "none") {
-    d3.select("#start_panel").style("display", "block");
-  } else {
-    d3.select("#start_panel").style("display", "none");
-  }
-}
-d3.select("#click_getting_started_link").on(
-  "click",
-  show_getting_started_panel
-);
-
 // Cookie Management (documentation: https://www.w3schools.com/js/js_cookies.asp)
 // ¯\_(ツ)_/¯
 function get_cookie() {
@@ -6707,9 +6691,6 @@ function resizeWindow() {
 // ===========================================================================
 
 export function go_to_ribbon_mode() {
-  d3.select("#ribbon-app-container").style("display", "block");
-  d3.select("#splitthreader-app-container").style("display", "none");
-
   // Grab any shared data that SplitThreader may have deposited.
   if (window.global_variants) {
     _Bedpe = window.global_variants;
@@ -6722,6 +6703,9 @@ d3.select("#go_to_ribbon_mode").on("click", function() {
   go_to_ribbon_mode();
   window.location.hash = '#ribbon';
 });
+d3.select("#go_to_about_mode").on("click", function() {
+  window.location.hash = '#about';
+});
 
 // ===========================================================================
 // == Main
@@ -6729,7 +6713,6 @@ d3.select("#go_to_ribbon_mode").on("click", function() {
 
 run_ribbon();
 open_any_url_files();
-
 
 // window.addEventListener("beforeunload", function (event) {
 //   event.preventDefault();

@@ -33,13 +33,11 @@ body {
   float: left;
 }
 
-#info_panel,
 #start_panel,
 #advanced_settings_panel {
   margin-left: 3vmin;
   margin-right: 3vmin;
 }
-#info_panel .panel-body,
 #start_panel .panel-body,
 #advanced_settings_panel .panel-body {
   padding-left: 2vmin;
@@ -147,7 +145,6 @@ text {
   font-weight: 900;
   font-family: "Lato", "Helvetica", sans-serif;
 }
-#info_panel,
 #advanced_settings_panel {
   display: none;
 }
