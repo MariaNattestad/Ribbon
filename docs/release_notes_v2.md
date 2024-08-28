@@ -60,6 +60,15 @@ annotation_id: "hg19" or "GRCh38" (currently affects SplitThreader only)
 # Use either vcf or bedpe, not both.
 ```
 
+A couple of example sessions are available from the Examples tab.
+
+## Specify a locus in the URL
+
+Set a locus like this: `&locus=chr20:100000` or `&locus=chr20:100000-100500` to navigate there in Ribbon after any BAM is loaded. This is best to combine with a session that includes a BAM file.
+
+Full example:
+https://genomeribbon.com/?session=<url_to_a_JSON_session_bam>&locus=chr20:100000#examples
+
 ## Allow loading multiple bam files by URL
 
 Multiple bams are only supported when loading them by URL, not locally. Simply comma-separate two URLs in the input field for "BAM from URL" under the "Input alignments" tab.
