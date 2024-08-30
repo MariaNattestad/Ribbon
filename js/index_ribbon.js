@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import moment from "moment"
 import { BamFile } from "./file_parsing";
-import { download, exportViz } from "./utils.js";
+import { download, exportViz, wait_for_aioli } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
 import pako from "pako";
@@ -480,7 +480,9 @@ function getUrlVars() {
 function check_url_for_permalink() {
   var url_vars = getUrlVars();
   if (url_vars["perma"] != undefined) {
-    read_permalink(url_vars["perma"]);
+    wait_for_aioli(() => {
+      read_permalink(url_vars["perma"]);
+    })
   }
 }
 

@@ -1,5 +1,4 @@
 import { EXAMPLE_SESSIONS } from "./constants";
-import { CLI } from "./file_parsing";
 import { read_bam_urls, go_to_ribbon_mode, user_message_ribbon } from "./index_ribbon";
 import {
   _splitthreader_static,
@@ -12,6 +11,7 @@ import {
   user_message_splitthreader,
 } from "./index_splitthreader";
 import * as d3 from "d3";
+import { wait_for_aioli } from "./utils";
 
 async function load_session_json(session) {
 
@@ -86,16 +86,6 @@ async function load_session_in_url() {
   await load_session_json(session);
 }
 
-// Check for session to load once Aioli is ready
-function check_for_session() {
-  if (typeof CLI !== 'undefined') {
-    load_session_in_url();
-  } else {
-    console.log("Waiting for Aioli...")
-    setTimeout(check_for_session, 1000);
-  }
-}
-
 d3.select("#go_to_ribbon_mode").on("click", function () {
   go_to_ribbon_mode();
   window.location.hash = "#ribbon";
@@ -142,7 +132,7 @@ window.addEventListener("hashchange", check_url_for_mode);
 check_url_for_mode();
 
 // Initialize
-check_for_session();
+wait_for_aioli(load_session_in_url);
 
 function list_example_sessions() {
   d3.select("#example_sessions")

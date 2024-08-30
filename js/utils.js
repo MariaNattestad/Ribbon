@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { CLI } from "./file_parsing";
 
 export function download(filename, textOrBlob) {
     const blob = textOrBlob instanceof Blob ? textOrBlob : new Blob([textOrBlob]);
@@ -54,4 +55,14 @@ export async function papaParse(file, options) {
 			error: (error) => reject(error)
 		});
 	});
+}
+
+// Wait for Aioli to be ready
+export function wait_for_aioli(callback) {
+    if (typeof CLI !== 'undefined') {
+        callback();
+    } else {
+        console.log("Waiting for Aioli...")
+        setTimeout(() => wait_for_aioli(callback), 500);
+    }
 }
