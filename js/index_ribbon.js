@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import moment from "moment"
 import { BamFile } from "./file_parsing";
 import { download, exportViz } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
@@ -5751,9 +5752,11 @@ function write_permalink() {
       ribbon: generate_permalink_data(post_data),
     }),
     success: function (data) {
+      let link = `<a href="?perma=${data.data}">${permalink_name}</a>`;
+      let message = link + "<p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>";
       user_message_ribbon(
-        "Permalink",
-        `<a href="?perma=${data.data}">${permalink_name}</a>`
+        "Success",
+        message
       );
       d3.select("#generate_permalink_button").property("disabled", false);
       d3.select("#generate_permalink_button").html("Share permalink");
