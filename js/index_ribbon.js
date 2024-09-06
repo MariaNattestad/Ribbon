@@ -6438,7 +6438,7 @@ var log_number_reads_found = [];
 function run_automation() {
   _variant_automation_counter = -1;
 
-  if (_Bam == undefined) {
+  if (_Bams == undefined) {
     user_message_ribbon("Error", "No bam file loaded");
     return;
   }
