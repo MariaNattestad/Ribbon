@@ -796,12 +796,19 @@ function apply_variant_filters() {
   let num_filtered_not_enough_other_read_evidence = 0;
   let num_filtered_too_small = 0;
 
+  let mismatched_chromosomes = new Set();
   for (var i in _Variant_data) {
     var d = _Variant_data[i];
     var variant_size = Math.abs(d.pos2 - d.pos1);
     if (_Chromosome_start_positions[d.chrom1] == undefined ||
       _Chromosome_start_positions[d.chrom2] == undefined) {
       num_filtered_bad_chromosomes++;
+      if (_Chromosome_start_positions[d.chrom1] == undefined) {
+        mismatched_chromosomes.add(d.chrom1);
+      }
+      if ( _Chromosome_start_positions[d.chrom2] == undefined) {
+        mismatched_chromosomes.add(d.chrom2);
+      }
       continue;
     }
     if (d.split < _splitthreader_settings.min_split_reads) {
@@ -826,6 +833,12 @@ function apply_variant_filters() {
   }
   if (num_filtered_bad_chromosomes > 0) {
     console.warn(`Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference chromosome names. This can happen if the coverage file has different chromosome names or if no coverage file is loaded, in which case GRCh38 is assumed.`);
+    console.warn(`Data chromosomes not found: ${Array.from(mismatched_chromosomes).join(", ")}`);
+    console.warn(`Reference chromosomes: ${Object.keys(_Chromosome_start_positions).join(", ")}`);
+    user_message_splitthreader("Warning",
+      `Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference 
+      chromosome names. This can happen if the coverage file has different chromosome names or if no 
+      coverage file is loaded, in which case GRCh38 is assumed. Data chromosomes not found: ${Array.from(mismatched_chromosomes).join(", ")}. Reference chromosomes: ${Object.keys(_Chromosome_start_positions).join(", ")}`);
   }
   if (num_filtered_not_enough_split_reads > 0) {
     console.warn(`Filtered out ${num_filtered_not_enough_split_reads} variants because they have too few split reads`);
