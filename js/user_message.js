@@ -3,17 +3,6 @@ import * as d3 from "d3";
 export function user_message(message_type, message, element_id) {
   var message_style = "default";
   switch (message_type) {
-    case "Permalink":
-      html =
-        "<strong>" +
-        message_type +
-        ': </strong><a href="' +
-        message +
-        '" target="_blank">' +
-        message +
-        "</a> <p>Permalinks recreate the current view with all the data and settings except that it only takes the current snapshot of a bam file instead of copying the whole thing.<p>";
-      message_style = "success";
-      break;
     case "error":
       message_style = "danger";
       break;

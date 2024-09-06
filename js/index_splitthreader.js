@@ -4380,7 +4380,7 @@ d3.select("#splitthreader_vcf_file").on("change", open_variants_vcf_file);
 
 function submit_vcf_url() {
   var url = d3.select("#splitthreader_vcf_url").property("value");
-  load_vcf_from_url(url);
+  load_vcf_from_urls(url.split(","));
 }
 d3.select("#splitthreader_vcf_url_button").on("click", submit_vcf_url);
 d3.select("#splitthreader_vcf_url").on("keypress", function () {
