@@ -48,11 +48,42 @@ class GenomicFile {
 
 // BAM file utilities
 export class BamFile extends GenomicFile {
+  // files = []; // [bam, index]
+  // paths = []; // [/bla/bam, /bla/index]
   format = "bam";
   header = {
     raw: "",
     sq: [],
   };
+
+  async mount() {
+    await super.mount();
+
+    // Ignore if not a URL
+    if(this.files[0] instanceof File) {
+      return;
+    }
+
+    // Download BAI in one go so it's faster than downloading it 1 MB at a time when lazy mount a URL with Aioli
+    const bam_url = this.files[0];
+    const bai_url = bam_url + ".bai";
+    let blob;
+    try {
+      blob = await fetch(bai_url).then(d => d.blob());
+    } catch (error) {
+      alert(`Could not download this URL:\n\n${bai_url}`);
+      throw new Error(error);
+    }
+
+    // Mount BAI
+    const file_name = this.paths[0].replace("/shared/data/", "") + ".bai";
+    const [bai_path] = await CLI.mount([{
+      name: file_name,
+      data: blob
+    }]);
+    this.paths[1] = bai_path;
+    console.log("Mounted index:", bai_path);
+  }
 
   async parseHeader() {
     const raw = await CLI.exec(`samtools view -H ${this.paths[0]}`);
