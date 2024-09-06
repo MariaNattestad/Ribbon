@@ -5658,7 +5658,7 @@ export async function read_bam_urls(urls, in_background = false) {
       return;
     }
 
-    let new_bam = new BamFile([url, url + ".bai"]);
+    let new_bam = new BamFile([url]);
     await new_bam.mount();
     await new_bam.parseHeader();
     _Bams.push(new_bam);
