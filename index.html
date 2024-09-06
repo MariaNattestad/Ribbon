@@ -488,7 +488,7 @@
 						<div id="tab_automation" class="tab-pane fade">
 							<h3>Automate Ribbon</h3>
 							<p>
-								Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set the settings below and in the right-side panel as you want them and click Run!
+								Make Ribbon automatically go to each variant in a bedpe file and take pictures of the multi-read view and a selection of reads. Instructions: Load a bedpe file and a bam file first, set all the settings below and in the other tabs to include any data, filters, or other settings that you want applied on all loci during automation. Then click Run below.
 							</p>
 							<table>
 								<tr>
@@ -512,12 +512,13 @@
 									<td><input type="checkbox" id="automation_pick_split_reads" checked></td>
 								</tr>
 								<tr>
+									<td>Margin for selecting reads as being "near" the variant of interest (bp). Check box above for this to take effect.</td>
+									<td><input type="number" id="automation_margin_for_split" value="1000"></td>
+								</tr>
+								<tr>
 									<td>If a region is too large for the browser to load, automatically subsample</td>
 									<td><input type="checkbox" id="automation_subsample" checked></td>
 								</tr>
-								<tr>
-									<td style="text-indent: 50px;" >Distance:</td>
-									<td><input type="number" id="automation_margin_for_split" value="1000"></td>
 								<tr>
 									<td></td>
 									<td><button class="btn btn-secondary" id="run_automation_button" type="button">Run!</button></td>

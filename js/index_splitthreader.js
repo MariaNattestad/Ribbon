@@ -796,12 +796,18 @@ function apply_variant_filters() {
   let num_filtered_not_enough_other_read_evidence = 0;
   let num_filtered_too_small = 0;
 
-  for (var i in _Variant_data) {
-    var d = _Variant_data[i];
+  let mismatched_chromosomes = new Set();
+  for (var d of _Variant_data) {
     var variant_size = Math.abs(d.pos2 - d.pos1);
     if (_Chromosome_start_positions[d.chrom1] == undefined ||
       _Chromosome_start_positions[d.chrom2] == undefined) {
       num_filtered_bad_chromosomes++;
+      if (_Chromosome_start_positions[d.chrom1] == undefined) {
+        mismatched_chromosomes.add(d.chrom1);
+      }
+      if ( _Chromosome_start_positions[d.chrom2] == undefined) {
+        mismatched_chromosomes.add(d.chrom2);
+      }
       continue;
     }
     if (d.split < _splitthreader_settings.min_split_reads) {
@@ -826,18 +832,28 @@ function apply_variant_filters() {
   }
   if (num_filtered_bad_chromosomes > 0) {
     console.warn(`Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference chromosome names. This can happen if the coverage file has different chromosome names or if no coverage file is loaded, in which case GRCh38 is assumed.`);
+    console.warn(`Data chromosomes not found: ${Array.from(mismatched_chromosomes).join(", ")}`);
+    console.warn(`Reference chromosomes: ${Object.keys(_Chromosome_start_positions).join(", ")}`);
+    user_message_splitthreader("Warning",
+      `Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference 
+      chromosome names. This can happen if the coverage file has different chromosome names or if no 
+      coverage file is loaded, in which case GRCh38 is assumed. Data chromosomes not found: ${Array.from(mismatched_chromosomes).join(", ")}. Reference chromosomes: ${Object.keys(_Chromosome_start_positions).join(", ")}`);
   }
   if (num_filtered_not_enough_split_reads > 0) {
     console.warn(`Filtered out ${num_filtered_not_enough_split_reads} variants because they have too few split reads`);
+    user_message_splitthreader("Warning", `Filtered out ${num_filtered_not_enough_split_reads} variants because they have too few split reads`);
   }
   if (num_filtered_not_enough_discordant_pairs > 0) {
     console.warn(`Filtered out ${num_filtered_not_enough_discordant_pairs} variants because they have too few discordant pairs`);
+    user_message_splitthreader("Warning", `Filtered out ${num_filtered_not_enough_discordant_pairs} variants because they have too few discordant pairs`);
   }
   if (num_filtered_not_enough_other_read_evidence > 0) {
     console.warn(`Filtered out ${num_filtered_not_enough_other_read_evidence} variants because they have too few other read evidence`);
+    user_message_splitthreader("Warning", `Filtered out ${num_filtered_not_enough_other_read_evidence} variants because they have too few other read evidence`);
   }
   if (num_filtered_too_small > 0) {
     console.warn(`Filtered out ${num_filtered_too_small} variants because they are too small (computed size < ${_splitthreader_settings.min_variant_size})`);
+    user_message_splitthreader("Warning", `Filtered out ${num_filtered_too_small} variants because they are too small (computed size < ${_splitthreader_settings.min_variant_size})`);
   }
 }
 
@@ -945,7 +961,7 @@ function mark_coverage_loaded_successfully() {
 
 function load_variants(variants_input) {
   let clean_variants = variants_input.map((d) => {
-    let chrom1 = d.chrom1 || d['#chrom1'];
+    d.chrom1 = d.chrom1 || d['#chrom1'];
     return d;
     // Skipping remove_chr for now since it messes up BAM loading. We'll instead
     // just make the user be consistent across their files.
@@ -4274,6 +4290,18 @@ async function open_coverage_file() {
   use_coverage(raw_data);
 }
 
+function bedpe_has_the_right_columns(bedpe_data) {
+  // chrom1 or #chrom1, chrom2
+  let data_columns = Object.keys(bedpe_data[0]);
+  if (!(data_columns.includes("#chrom1") || data_columns.includes("chrom1"))) {
+    return false;
+  } else if (!data_columns.includes("chrom2")) {
+    return false;
+  }
+  // TODO: List all the required columns. I think pos1 can be used instead of start1/stop1, so it's a little tricky.
+  return true;
+}
+
 async function open_variants_bedpe_file() {
   if (this.files[0].size > 100000000) {
     user_message_splitthreader(
@@ -4291,9 +4319,19 @@ async function open_variants_bedpe_file() {
   if (variant_input.errors.length > 0) {
     user_message_splitthreader(
       "Error",
-      "Error reading CSV file: " + variant_input.errors[0].message
+      "Error reading BEDPE file: " + variant_input.errors[0].message
     );
     return;
+  }
+  if (!bedpe_has_the_right_columns(variant_input.data)) {
+    user_message_splitthreader(
+      "Error",
+      `BEDPE file must have a header on the first line, like this:
+      "chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split"`
+    );
+    throw new Error(
+      'BEDPE file must have a header on the first line, like this: "chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split"'
+    );
   }
   load_variants(variant_input.data);
 }
@@ -4343,6 +4381,16 @@ export async function load_bedpe_from_url(url) {
     header: true,
     skipEmptyLines: true,
   });
+  if (!bedpe_has_the_right_columns(variant_input.data)) {
+    user_message_splitthreader(
+      "Error",
+      `BEDPE file must have a header on the first line, like this:
+      "chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split"`
+    );
+    throw new Error(
+      'BEDPE file must have a header on the first line, like this: "chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,variant_type,split"');
+  }
+
   if (variant_input.errors.length > 0) {
     user_message_splitthreader(
       "Error",
