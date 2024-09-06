@@ -6048,7 +6048,8 @@ document
   .addEventListener("change", open_bam_file, false);
 
 async function create_bam(files) {
-  var bamFile = (indexFile = null);
+  let indexFile = null;
+  let bamFile = null;
   for (var file of files) {
     var ext = file.name.substr(file.name.lastIndexOf(".") + 1);
     if (ext == "bam") bamFile = file;
