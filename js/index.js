@@ -35,7 +35,6 @@ async function load_session_json(session) {
   }
 
   if (session.bedpe) {
-    console.log("Loading BEDPE:", session.bedpe);
     // If it's a list, take the first one:
     let bedpe_url = session.bedpe;
     if (Array.isArray(session.bedpe)) {
@@ -43,6 +42,7 @@ async function load_session_json(session) {
       if (session.bedpe.length > 1) {
         user_message_splitthreader("Warning", "Multiple BEDPE files found in the session file. Only the first one will be loaded.");
         console.warn("Multiple BEDPE files found in the session file. Only the first one will be loaded.");
+      }
     }
     load_bedpe_from_url(bedpe_url);
   }
