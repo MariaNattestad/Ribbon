@@ -719,13 +719,14 @@ function draw_everything() {
 
 export function show_visualizer_tab() {
   // Switch to viz once data is ready, or e.g. when a variant is clicked in the table.
-  d3.select(".nav_tab_splitthreader").classed("active", false);
-  d3.select(".tab_splitthreader").classed("active", false);
-  d3.select(".tab_splitthreader").classed("in", false);
+  d3.selectAll(".nav_tab_splitthreader").classed("active", false);
+  d3.selectAll(".tab_splitthreader").classed("active", false);
+  d3.selectAll(".tab_splitthreader").classed("in", false);
 
   d3.select("#nav_tab_splitthreader_viz").classed("active", true);
   d3.select("#visualizer_tab").classed("active", true);
   d3.select("#visualizer_tab").classed("in", true);
+  console.log("done");
 }
 
 function run_everything_that_needs_variants() {
