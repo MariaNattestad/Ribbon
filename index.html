@@ -617,6 +617,11 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 				<div id="right_panel_splitthreader">
 					<div class="panel-group ">
 						<div id="user_message_splitthreader"></div>
+
+						<div id="variant_details_box" style="overflow: scroll;">
+							<div id="variant_detail_text">Click on a variant to show detail</div>
+							<div id="variant_detail_landing"></div>
+						</div>
 						<div class="panel panel-default">
 							<div class="panel-heading">
 								<h4 class="panel-title">
@@ -658,13 +663,9 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 
 									<!-- Variants -->
 									<div id="variant_settings" class="tab-pane fade">
-										<label>Filter variants:</label>
-										<table id="variant_type_table"></table>
-										<hr>
-										<label>Variant details:</label>
-										<div id="variant_detail_text">Click on a variant to show detail</div>
-										<div id="variant_detail_landing"></div>
-
+												<label>Filter variants:</label>
+												<table id="variant_type_table"></table>
+										
 									</div>
 									<!-- Settings -->
 										<div id="settings_splitthreader" class="tab-pane fade">

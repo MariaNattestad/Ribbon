@@ -726,7 +726,6 @@ export function show_visualizer_tab() {
   d3.select("#nav_tab_splitthreader_viz").classed("active", true);
   d3.select("#visualizer_tab").classed("active", true);
   d3.select("#visualizer_tab").classed("in", true);
-  console.log("done");
 }
 
 function run_everything_that_needs_variants() {
@@ -2265,19 +2264,19 @@ function variant_click(d) {
     SuperTable()
       .table_data([d])
       .table_header([
-        "chrom1",
-        "pos1",
-        "strand1",
-        "chrom2",
-        "pos2",
-        "strand2",
-        "variant_name",
-        "variant_type",
-        "split",
-        "size",
-        "CNV_category",
-        "category",
-        "nearby_variant_count",
+    "chrom1",
+    "pos1",
+    "strand1",
+    "chrom2",
+    "pos2",
+    "strand2",
+    "variant_name",
+    "variant_type",
+    "split",
+    "size",
+    "CNV_category",
+    "category",
+    "nearby_variant_count",
       ])
   );
 
@@ -2881,7 +2880,7 @@ function make_variant_table() {
       ])
       .num_rows_to_show(1000)
       .show_advanced_filters(true)
-      .click_function(choose_row)
+      .click_function(variant_click)
       .run_on_filtered_data_function(count_filtered_data))
   );
 
