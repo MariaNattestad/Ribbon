@@ -973,6 +973,10 @@ function load_variants(variants_input) {
   
   // To share between SplitThreader and Ribbon that are separate JS scripts, we can use the window object
   // to pass data.
+  _Filtered_variant_data.forEach((d) => {
+    d.name = d.variant_name;
+    d.type = d.variant_type;
+  });
   window.global_variants = _Filtered_variant_data;
 
   _data_ready.spansplit = true;
