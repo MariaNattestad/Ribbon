@@ -2280,7 +2280,7 @@ function variant_click(d) {
       ])
   );
 
-  // $('.nav-tabs a[href="#variant_settings"]').tab("show");
+  d3.select("#variant_detail_text").text("Selected variant:");
 }
 
 function arrow_path_generator(d, top_or_bottom) {
