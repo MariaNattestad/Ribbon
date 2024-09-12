@@ -7,7 +7,6 @@ import { exportViz, papaParse } from "./utils.js";
 import Livesearch from "./d3-livesearch.js";
 import SuperTable from "./d3-superTable.js";
 import { user_message } from "./user_message.js";
-import { EXAMPLE_SESSIONS } from "./constants.js";
 
 var _splitthreader_layout = {
   svg: { width: null, height: null },
@@ -1493,15 +1492,15 @@ function draw_zoom_plot(top_or_bottom) {
     // _plot_canvas[top_or_bottom].attr("transform", x_only_transform);
 
     let new_x_scale = transform.rescaleX(x_scale);
-    let new_domain = new_x_scale.domain();
+    // let new_domain = new_x_scale.domain();
 
     // Constrain the domain to not go below zero.
     // This fixes a weird panning bug that made the x-axis start at -73192642.
-    if (new_domain[0] < 0) {
-      const domain_width = new_domain[1] - new_domain[0];
-      new_domain = [0, domain_width];
-      new_x_scale.domain(new_domain);
-    }
+    // if (new_domain[0] < 0) {
+    //   const domain_width = new_domain[1] - new_domain[0];
+    //   new_domain = [0, domain_width];
+    //   new_x_scale.domain(new_domain);
+    // }
     _splitthreader_scales.zoom_plots[top_or_bottom].x = new_x_scale;
     gX.call(xAxis.scale(new_x_scale));
     // This redraws everything, which uses the updated scale.
@@ -1511,13 +1510,13 @@ function draw_zoom_plot(top_or_bottom) {
   _zoom_behaviors[top_or_bottom] = d3
     .zoom()
     .scaleExtent([1, 10000])
-    .translateExtent([
-      [0, 0],
-      [
-        _splitthreader_layout.zoom_plot.width,
-        _splitthreader_layout.zoom_plot.height,
-      ],
-    ])
+    // .translateExtent([
+    //   [0, 0],
+    //   [
+    //     _splitthreader_layout.zoom_plot.width,
+    //     _splitthreader_layout.zoom_plot.height,
+    //   ],
+    // ])
     .on("zoom", zoomed);
 
   // Apply the zoom behavior to the canvas
@@ -1543,7 +1542,6 @@ function find_point(coordinates, transform) {
 }
 
 function clicked_zoom_button() {
-  // ???????????????????????????????????????
   let top_or_bottom = this.getAttribute("data-plot");
 
   // Update the zoom scale.
@@ -2855,13 +2853,6 @@ function dataset_to_csv(dataset, header) {
 }
 function count_filtered_data(dataset) {
   d3.selectAll(".filtered_number_of_variants").html(dataset.length);
-  d3.select("#table_row_count").html(function () {
-    if (dataset.length < 15) {
-      return dataset.length;
-    } else {
-      return 15;
-    }
-  });
   update_filtered_variants_for_Ribbon_and_CSV(dataset);
   draw_histogram(dataset);
 }
@@ -3194,38 +3185,23 @@ function thickness_of_connections(d) {
 function jump_to_location(chrom, pos, top_or_bottom) {
   select_chrom_for_zoom_plot(chrom, top_or_bottom);
 
-  // TODO: Bring back this zooming feature.
+  let new_scale = 10;
+  if ( _Chromosome_size_lookup?.[chrom]) {
+    // Zoom in to 1Mb, i.e. so 1,000,000 bp equal the width of the plot.
+    const bp_window = 1_000_000;
+    new_scale = _Chromosome_size_lookup[chrom] / bp_window;
+  }
 
-  // var chrom_size = 0;
-  // for (var i in _Genome_data) {
-  //   if (_Genome_data[i].chromosome == chrom) {
-  //     chrom_size = _Genome_data[i].size;
-  //   }
-  // }
- 
-  // let new_center = _splitthreader_scales.zoom_plots[top_or_bottom].x(pos);
+  let new_center = _splitthreader_scales.zoom_plots[top_or_bottom].x(pos);
+  let x_move =
+    -new_center * new_scale + _splitthreader_layout.zoom_plot.width / 2;
 
-  // let newTranslate = [
-  //   100,
-  //   0
-  // ];
-  // // let newTranslate = [
-  // //   _splitthreader_layout.zoom_plot.width / 2 - new_center,
-  // //   0
-  // // ];
-  // const newScale = 100; // 2000000;
+  const newTransform = d3.zoomIdentity.translate(x_move, 0).scale(new_scale);
 
-  // const newTransform = d3.zoomIdentity
-  //   .translate(...newTranslate)
-  //   .scale(newScale);
-
-  // _zoom_behaviors[top_or_bottom].transform(_plot_canvas[top_or_bottom], newTransform);
-
-  // Apply the transformation to the zoom behavior
-  // _plot_canvas[top_or_bottom]
-  //   .transition()
-  //   .duration(200)
-  //   .call(_zoom_behaviors[top_or_bottom].transform, newTransform);
+  _zoom_behaviors[top_or_bottom].transform(
+    _plot_canvas[top_or_bottom],
+    newTransform
+  );
 }
 
 function jump_to_gene(annotation_for_new_gene, top_or_bottom) {
