@@ -64,7 +64,10 @@ _ribbon_static.read_sort_options = [
   },
   { id: "readname", description: "Read/query name (natural sort)" },
   { id: "num_alignments", description: "Number of alignments" },
+  { id: 'HP', description: 'Haplotype phasing (HP)' },
+  { id: 'bam', description: "Group by bam file" }
 ];
+
 _ribbon_static.read_orientation_options = [
   { id: "original", description: "Original strand" },
   { id: "longest", description: "Orientation of longest alignment" },
@@ -77,6 +80,7 @@ _ribbon_static.color_alignments_by_options = [
   { id: 'strand', description: 'Strand (actual strand from data)' },
   { id: 'orientation', description: 'Orientation (from "Orient reads by")' },
   { id: 'HP', description: 'Haplotype phasing (HP) (1=orange, 2=green)' },
+  { id: 'bam', description: 'Which BAM file each read came from' }
 ];
 
 _ribbon_static.color_schemes = [
@@ -269,8 +273,10 @@ _ribbon_scales.ref_color_scale = d3.scaleOrdinal()
 _ribbon_scales.variant_color_scale = d3.scaleOrdinal();
 _ribbon_scales.feature_color_scale = d3.scaleOrdinal();
 _ribbon_scales.HP_color_scale = d3.scaleOrdinal()
-  .domain(["1", "2"])
-  .range(["#ff7f0e", "#2ca02c"]); // orange, green
+  .domain(["1", "2", undefined])
+  .range(["#ff7f0e", "#2ca02c", 'gray']); // orange, green
+_ribbon_scales.which_BAM_scale = d3.scaleOrdinal()
+  .range(d3.schemeCategory10);
 
 // Show each warning only the first time it comes up in a session
 var _ribbon_warnings = {};
@@ -1577,6 +1583,31 @@ function draw_chunk_alignments() {
     chunks.sort(function (a, b) {
       return a.primary_ref_pos - b.primary_ref_pos;
     });
+  } else if (_ribbon_settings.feature_to_sort_reads == "HP") {
+    // HP can be "1", "2", undefined, and possibly other strings. Just make sure they are grouped.
+    chunks.sort(function (a, b) {
+      if (a.raw.HP === b.raw.HP) {
+        return a.index - b.index;
+      }
+      if (a.raw.HP === undefined) {
+        return 1;
+      }
+      if (b.raw.HP === undefined) {
+        return -1;
+      }
+      return a.raw.HP.localeCompare(b.raw.HP);
+    });
+  } else if (_ribbon_settings.feature_to_sort_reads == "bam") {
+    chunks.sort(function (a, b) {
+      if (a.raw.bam === b.raw.bam) {
+        return a.index - b.index;
+      }
+      return a.raw.bam - b.raw.bam;
+    });
+  } else {
+    console.error(
+      "Unknown feature to sort reads in _ribbon_settings.feature_to_sort_reads"
+    );
   }
 
   //////////////  Re-orient reads  //////////////
@@ -1627,6 +1658,12 @@ function draw_chunk_alignments() {
       let HP_color = _ribbon_scales.HP_color_scale(chunks[i].raw.HP);
       for (let alignment of chunks[i].alignments) {
         alignment.color = HP_color;
+      }
+    } else if (_ribbon_settings.color_alignments_by === "bam") {
+      // Color by BAM file
+      let BAM_color = _ribbon_scales.which_BAM_scale(chunks[i].raw.bam);
+      for (let alignment of chunks[i].alignments) {
+        alignment.color = BAM_color;
       }
     } else {
       console.error(
@@ -6210,8 +6247,10 @@ async function my_fetch(chrom, start, end, callback) {
   _num_bam_records_to_load += 1;
   // _Bam.fetch(chrom, start, end).then(callback);
   let all_bam_records = [];
-  for (let bam of _Bams) {
+  for (let i = 0; i < _Bams.length; i++) {
+    let bam = _Bams[i];
     let records = await bam.fetch(chrom, start, end);
+    records.forEach((record) => {record.bam = i;});
     all_bam_records.push(records);
   }
 
@@ -6671,6 +6710,7 @@ async function waitForBams() {
 async function go_to_locus_when_ready(locus) {
   await waitForBams();
   go_to_locus(locus);
+  go_to_ribbon_mode(); // Grab any large variants from SplitThreader.
 }
 
 // Check URL for ?locus=chr1:100-200 and run go_to_locus(locus_string) on that locus string.

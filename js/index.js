@@ -1,5 +1,5 @@
 import { EXAMPLE_SESSIONS } from "./constants";
-import { read_bam_urls, go_to_ribbon_mode, user_message_ribbon } from "./index_ribbon";
+import { read_bam_urls, go_to_ribbon_mode } from "./index_ribbon";
 import {
   _splitthreader_static,
   load_bedpe_from_url,
@@ -10,8 +10,13 @@ import {
   go_to_splitthreader_mode,
   user_message_splitthreader,
 } from "./index_splitthreader";
+import { user_message } from "./user_message.js";
 import * as d3 from "d3";
 import { wait_for_aioli } from "./utils";
+
+function user_message_session(message_type, message) {
+  user_message(message_type, message, "#session_messages");
+}
 
 async function load_session_json(session) {
 
@@ -21,7 +26,7 @@ async function load_session_json(session) {
   if (session.bedpe && session.vcf) {
     // This applies to both SplitThreader and Ribbon:
     user_message_splitthreader("Warning", "Both BEDPE and VCF are found in the session file. Only the BEDPE will be loaded.");
-    user_message_ribbon(
+    user_message_session(
       "Warning",
       "Both BEDPE and VCF are found in the session file. Only the BEDPE will be loaded."
     );
@@ -41,6 +46,10 @@ async function load_session_json(session) {
       bedpe_url = session.bedpe[0];
       if (session.bedpe.length > 1) {
         user_message_splitthreader("Warning", "Multiple BEDPE files found in the session file. Only the first one will be loaded.");
+        user_message_session(
+          "Warning",
+          "Multiple BEDPE files found in the session file. Only the first one will be loaded."
+        );
         console.warn("Multiple BEDPE files found in the session file. Only the first one will be loaded.");
       }
     }
@@ -80,7 +89,7 @@ async function load_session_in_url() {
     const example_name = session_url.split(':')[1];
     const example_id = EXAMPLE_SESSIONS.findIndex((d) => d.name == example_name);
     if (example_id == -1) {
-      user_message_splitthreader("Error", "Failed to load example session found in URL. Please choose an example from the list in Splithreader -> Setup -> Examples");
+      user_message_session("Error", "Failed to load example session found in URL. Please choose an example from the list in Splithreader -> Setup -> Examples");
       return;
     }
     session = EXAMPLE_SESSIONS[example_id];
@@ -93,6 +102,18 @@ async function load_session_in_url() {
 
   await load_session_json(session);
 }
+
+d3.select("#submit_json_session").on("click", function () {
+  const input = d3.select("#json_session_input").property("value");
+  try {
+    const session = JSON.parse(input);
+    load_session_json(session);
+  } catch (e) {
+    console.error(e);
+    user_message_session("Error",
+      `Failed to load session from JSON. ${e}. For more information, check the developer console for errors.`);
+  }
+});
 
 d3.select("#go_to_ribbon_mode").on("click", function () {
   go_to_ribbon_mode();
