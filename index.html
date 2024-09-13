@@ -53,8 +53,8 @@
 	<!-- Main tabs -->
 	<ul class="nav nav-tabs" style="margin:10px;">
 		<li class="active"><a id="go_to_examples_mode" data-toggle="tab" href="#examples_panel">Examples</a></li>
-		<li><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
-		<li><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
+		<li id="ribbon_tab"><a id="go_to_ribbon_mode" data-toggle="tab" href="#ribbon-app-container">Ribbon</a></li>
+		<li id="splitthreader_tab"><a id="go_to_splitthreader_mode" data-toggle="tab" href="#splitthreader-app-container">SplitThreader</a></li>
 		<li><a id="go_to_about_mode" data-toggle="tab" href="#start_panel">About</a></li>
 		
 	</ul>
@@ -628,9 +628,12 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 					<div class="panel-group ">
 						<div id="user_message_splitthreader"></div>
 
-						<div id="variant_details_box" style="overflow: scroll;">
-							<div id="variant_detail_text">Click on a variant to show detail</div>
+						<div id="variant_details_box" class="well" style="overflow: scroll;">
+							<span id="variant_detail_text">Click on a variant to show detail</span>
 							<div id="variant_detail_landing"></div>
+							<button id="jump_to_variant_in_ribbon" style="visibility: hidden" class="btn btn-info">
+								Jump to variant in Ribbon
+							</button>
 						</div>
 						<div class="panel panel-default">
 							<div class="panel-heading">
@@ -735,16 +738,6 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 											<p><a id="ucsc_go_top" target="_blank"  >Top: <span id="top_position"></span></a></p>
 											<p><a id="ucsc_go_bottom" target="_blank" >Bottom: <span id="bottom_position"></span></a></p>
 											<p>(change database in Genes tab under annotation)</p>
-
-											<hr>
-
-											<p><label>Open in Ribbon</label></p>
-											<div id="send_to_ribbon_panel">
-												Ribbon already has your rearrangements loaded under "Large variants".
-												If you have a BAM file, Ribbon can show the reads around the rearrangements, even if they span multiple chromosomes, you can see them in one view.
-												Just click on Ribbon in the top navigation bar to open it. Your SplitThreader view will still be right here when you click SplitThreader in the top navigation bar again.
-											</div>
-
 										</div>
 									</div>
 								</div>
@@ -888,25 +881,9 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 								"distance" is the number of basepairs in the path between the two genes. "num_variants" indicates the number of variants this path threads through in the graph. "path_chromosomes" shows all the chromosomes found along the path. 
 								If the genes have a direct connection that intersects both genes, the distance will be 0, num_variants will be 1, and path_chromosomes will be only the chromosomes the genes themselves reside on. 
 							</p>
-							<label>Export gene fusions</label>
-							<p>
-								<a class="btn btn-info" id="export_gene_fusions_to_csv">Export table as csv</a>
-							</p>
-							<p>
-								<label>Send to Ribbon to visualize alignments</label>
-							</p>
-							<p>
-								<form id="send_fusion_to_ribbon_form" method="post" target="_blank">
-									<div id="fusion_data_to_send_ribbon">
-										<!-- Hidden fields go here -->
-									</div>
-									<input class="btn btn-primary" type="submit" value="Send fusion variants to Ribbon">	
-								</form>
-							</p>
 						</div>
 					</div>
 				</div>
-
 
 				<div class="panel panel-default">
 					<div class="panel-heading">

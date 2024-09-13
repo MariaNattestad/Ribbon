@@ -6723,6 +6723,17 @@ function check_url_for_locus() {
   }
 }
 
+d3.select("#jump_to_variant_in_ribbon").on("click", function () {
+  bedpe_row_click(window.selected_variant_data);
+
+  // Open Ribbon tab.
+  d3.select("#ribbon_tab").classed("active", true);
+  d3.select("#ribbon-app-container").classed("active", true);
+  // Close SplitThreader tab.
+  d3.select("#splitthreader_tab").classed("active", false);
+  d3.select("#splitthreader-app-container").classed("active", false);
+});
+
 // ===========================================================================
 // == Main
 // ===========================================================================
