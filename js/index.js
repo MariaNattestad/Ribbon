@@ -74,6 +74,7 @@ async function load_session_json(session) {
     use_coverage(raw_text);
   }
 
+  user_message_session("Success", "Session loaded successfully. Go to the Ribbon or SplitThreader tab to view the data.");
   show_visualizer_tab();
 }
 

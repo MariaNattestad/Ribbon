@@ -448,7 +448,7 @@ d3.select("select#annotation_dropdown")
 
 export function use_annotation_at_index(index) {
   let annotation_chosen = _splitthreader_static.annotations_available[index];
-  d3.select("#ucsc_database").html(annotation_chosen.ucsc_database);
+  d3.select("#ucsc_database").html(annotation_chosen.ucsc);
   show_positions();
   // If genome data is already computed from the coverage data, we don't want to
   // overwrite it with the new annotation data. Switching annotations shouldn't
@@ -3669,7 +3669,7 @@ function Mb_format(x) {
 }
 function show_positions() {
   var options = ["top", "bottom"];
-  const ucsc_database = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ucsc_database;
+  const ucsc_database = _splitthreader_static.annotations_available[_splitthreader_settings.annotation_index].ucsc;
   for (var i in options) {
     var top_or_bottom = options[i];
     var pos = _splitthreader_scales.zoom_plots[top_or_bottom].x.domain();
@@ -3682,14 +3682,7 @@ function show_positions() {
     );
     d3.select("#ucsc_go_" + top_or_bottom).property(
       "href",
-      "https://genome.ucsc.edu/cgi-bin/hgTracks?db=" +
-        ucsc_database +
-        "&position=chr" +
-        _chosen_chromosomes["top"] +
-        "%3A" +
-        Math.floor(pos[0]) +
-        "-" +
-        Math.floor(pos[1])
+      `https://genome.ucsc.edu/cgi-bin/hgTracks?db=${ucsc_database}&position=${_chosen_chromosomes[top_or_bottom]}%3A${Math.floor(pos[0])}-${Math.floor(pos[1])}`
     );
   }
 }
