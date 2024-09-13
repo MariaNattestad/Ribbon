@@ -506,13 +506,6 @@ d3.select("#coverage_divisor").on("change", function () {
   update_coverage("bottom");
 });
 
-function set_ribbon_path(path) {
-  d3.select("#send_to_ribbon_form").property("action", path);
-  d3.select("#send_fusion_to_ribbon_form").property("action", path);
-  d3.select("#send_filtered_table_to_ribbon_form").property("action", path);
-}
-
-set_ribbon_path("https://genomeribbon.com");
 
 function update_variants() {
   analyze_variants_with_coverage();
@@ -617,12 +610,6 @@ d3.selectAll(".categorization_parameter_input").on("keyup", function () {
 });
 
 d3.select("#submit_fusion").on("click", submit_fusion);
-
-d3.select("#ribbon_path")
-  .property("value", "https://genomeribbon.com")
-  .on("change", function () {
-    set_ribbon_path(d3.event.target.value);
-  });
 
 d3.select("#max_fusion_distance").on("change", function () {
   _splitthreader_settings.max_fusion_distance = parseInt(this.value);
@@ -2917,13 +2904,6 @@ function update_fusions_for_Ribbon_and_CSV() {
       }
     }
   }
-  d3.select("#fusion_data_to_send_ribbon").html("");
-  d3.select("#fusion_data_to_send_ribbon")
-    .append("input")
-    .attr("type", "hidden")
-    .attr("name", "splitthreader")
-    .property("value", JSON.stringify(variants_for_Ribbon));
-  d3.select("#send_fusion_to_ribbon_form").style("display", "block");
 
   // Export to CSV
   var csv_content = dataset_to_csv(_Gene_fusions, [

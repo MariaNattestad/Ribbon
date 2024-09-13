@@ -888,25 +888,9 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 								"distance" is the number of basepairs in the path between the two genes. "num_variants" indicates the number of variants this path threads through in the graph. "path_chromosomes" shows all the chromosomes found along the path. 
 								If the genes have a direct connection that intersects both genes, the distance will be 0, num_variants will be 1, and path_chromosomes will be only the chromosomes the genes themselves reside on. 
 							</p>
-							<label>Export gene fusions</label>
-							<p>
-								<a class="btn btn-info" id="export_gene_fusions_to_csv">Export table as csv</a>
-							</p>
-							<p>
-								<label>Send to Ribbon to visualize alignments</label>
-							</p>
-							<p>
-								<form id="send_fusion_to_ribbon_form" method="post" target="_blank">
-									<div id="fusion_data_to_send_ribbon">
-										<!-- Hidden fields go here -->
-									</div>
-									<input class="btn btn-primary" type="submit" value="Send fusion variants to Ribbon">	
-								</form>
-							</p>
 						</div>
 					</div>
 				</div>
-
 
 				<div class="panel panel-default">
 					<div class="panel-heading">
