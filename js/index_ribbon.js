@@ -6724,15 +6724,14 @@ function check_url_for_locus() {
 }
 
 d3.select("#jump_to_variant_in_ribbon").on("click", function () {
-  let variant_data = d3.select("#selected_variant_data").text;
-  console.log("RIBBON Jump to variant", variant_data);
-  console.log("From ribbon, window.selected_variant_data:", window.selected_variant_data);
   bedpe_row_click(window.selected_variant_data);
 
+  // Open Ribbon tab.
   d3.select("#ribbon_tab").classed("active", true);
+  d3.select("#ribbon-app-container").classed("active", true);
+  // Close SplitThreader tab.
   d3.select("#splitthreader_tab").classed("active", false);
-  d3.select("#ribbon-app-container").style("display", "block");
-  d3.select("#splitthreader-app-container").style("display", "none");
+  d3.select("#splitthreader-app-container").classed("active", false);
 });
 
 // ===========================================================================

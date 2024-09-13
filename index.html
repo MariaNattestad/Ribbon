@@ -628,11 +628,12 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 					<div class="panel-group ">
 						<div id="user_message_splitthreader"></div>
 
-						<div id="variant_details_box" style="overflow: scroll;">
-							<div id="variant_detail_text">Click on a variant to show detail</div>
+						<div id="variant_details_box" class="well" style="overflow: scroll;">
+							<span id="variant_detail_text">Click on a variant to show detail</span>
 							<div id="variant_detail_landing"></div>
-							<span id="selected_variant_data" style="visibility: hidden">EMPTY</span>
-							<button id="jump_to_variant_in_ribbon">Jump to variant in Ribbon</button>
+							<button id="jump_to_variant_in_ribbon" style="visibility: hidden" class="btn btn-info">
+								Jump to variant in Ribbon
+							</button>
 						</div>
 						<div class="panel panel-default">
 							<div class="panel-heading">
@@ -737,16 +738,6 @@ chrom1,start1,stop1,chrom2,start2,stop2,variant_name,score,strand1,strand2,varia
 											<p><a id="ucsc_go_top" target="_blank"  >Top: <span id="top_position"></span></a></p>
 											<p><a id="ucsc_go_bottom" target="_blank" >Bottom: <span id="bottom_position"></span></a></p>
 											<p>(change database in Genes tab under annotation)</p>
-
-											<hr>
-
-											<p><label>Open in Ribbon</label></p>
-											<div id="send_to_ribbon_panel">
-												Ribbon already has your rearrangements loaded under "Large variants".
-												If you have a BAM file, Ribbon can show the reads around the rearrangements, even if they span multiple chromosomes, you can see them in one view.
-												Just click on Ribbon in the top navigation bar to open it. Your SplitThreader view will still be right here when you click SplitThreader in the top navigation bar again.
-											</div>
-
 										</div>
 									</div>
 								</div>

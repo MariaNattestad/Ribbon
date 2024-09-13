@@ -2273,11 +2273,10 @@ function variant_click(d) {
       ])
   );
 
+  d3.select("#jump_to_variant_in_ribbon").style('visibility', 'visible');
   d3.select("#variant_detail_text").text("Selected variant:");
 
-  // Plant variant data where Ribbon can get it, in the HTML:
-  d3.select("#selected_variant_data").text(JSON.stringify(d));
-  // And in the global window:
+  // Put variant data where Ribbon can get it:
   window.selected_variant_data = d;
 }
 
