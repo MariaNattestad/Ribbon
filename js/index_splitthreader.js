@@ -2274,6 +2274,11 @@ function variant_click(d) {
   );
 
   d3.select("#variant_detail_text").text("Selected variant:");
+
+  // Plant variant data where Ribbon can get it, in the HTML:
+  d3.select("#selected_variant_data").text(JSON.stringify(d));
+  // And in the global window:
+  window.selected_variant_data = d;
 }
 
 function arrow_path_generator(d, top_or_bottom) {
