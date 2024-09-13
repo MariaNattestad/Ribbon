@@ -978,7 +978,6 @@ function load_variants(variants_input) {
     d.type = d.variant_type;
   });
   window.global_variants = _Filtered_variant_data;
-  console.log("SplitThreader deposits window.global_variants");
 
   _data_ready.spansplit = true;
   mark_variant_loaded_successfully();
@@ -1497,10 +1496,12 @@ function draw_zoom_plot(top_or_bottom) {
     // _plot_canvas[top_or_bottom].attr("transform", x_only_transform);
 
     let new_x_scale = transform.rescaleX(x_scale);
-    // let new_domain = new_x_scale.domain();
 
+    // NOTE: This was a fix for a bug but later disappeared, but keeping the code and bug 
+    // description here in case it ever comes back. Zoom/pan is hard to get right.
     // Constrain the domain to not go below zero.
     // This fixes a weird panning bug that made the x-axis start at -73192642.
+    // let new_domain = new_x_scale.domain();
     // if (new_domain[0] < 0) {
     //   const domain_width = new_domain[1] - new_domain[0];
     //   new_domain = [0, domain_width];

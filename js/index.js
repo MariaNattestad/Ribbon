@@ -25,7 +25,7 @@ async function load_session_json(session) {
   let skip_vcf = false;
   if (session.bedpe && session.vcf) {
     // This applies to both SplitThreader and Ribbon:
-    user_message("Warning", "Both BEDPE and VCF are found in the session file. Only the BEDPE will be loaded.");
+    user_message_splitthreader("Warning", "Both BEDPE and VCF are found in the session file. Only the BEDPE will be loaded.");
     user_message_session(
       "Warning",
       "Both BEDPE and VCF are found in the session file. Only the BEDPE will be loaded."

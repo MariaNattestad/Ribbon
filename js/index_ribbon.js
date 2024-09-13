@@ -6694,7 +6694,6 @@ function resizeWindow() {
 export function go_to_ribbon_mode() {
   // Grab any shared data that SplitThreader may have deposited.
   if (window.global_variants) {
-    console.log("Ribbon takes window.global_variants");
     _Bedpe = window.global_variants;
     update_bedpe();
     draw_region_view();
