@@ -978,6 +978,7 @@ function load_variants(variants_input) {
     d.type = d.variant_type;
   });
   window.global_variants = _Filtered_variant_data;
+  console.log("SplitThreader deposits window.global_variants");
 
   _data_ready.spansplit = true;
   mark_variant_loaded_successfully();
