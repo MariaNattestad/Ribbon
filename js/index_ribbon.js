@@ -215,7 +215,7 @@ _ribbon_settings.show_only_known_references = true;
 _ribbon_settings.keep_duplicate_reads = false;
 _ribbon_settings.feature_to_sort_reads = "original";
 _ribbon_settings.orient_reads_by = "primary";
-_ribbon_settings.color_alignments_by = "strand";
+_ribbon_settings.color_alignments_by = "orientation";
 
 _ribbon_settings.current_input_type = "";
 _ribbon_settings.ref_match_chunk_ref_intervals = true;
