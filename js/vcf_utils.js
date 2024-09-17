@@ -144,7 +144,10 @@ export function convert_to_splitthreader_format(row) {
 					output.strand1 = '+';
 					output.strand2 = '+';
 				} else {
-					console.warn('INV has no INV5 or INV3, will use +- strands to call attention to this:', row);
+					console.warn(
+						'INV has no INV5 or INV3, will use +- strands to call attention to this:',
+						row
+					);
 					output.strand1 = '+';
 					output.strand2 = '-';
 				}
