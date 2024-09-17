@@ -54,7 +54,7 @@ export function convert_to_splitthreader_format(row) {
 	// };
 
 	if (!row) {
-		console.warn('Expected VCF row object but it was undefined. Skipping.');
+		// Expected VCF row object but it was undefined. Skipping.
 		return null;
 	}
 
@@ -62,7 +62,9 @@ export function convert_to_splitthreader_format(row) {
 		chrom1: row.CHROM,
 		pos1: row.POS,
 		svtype: row.INFO.SVTYPE?.[0],
-		variant_name: row.ID?.[0]
+		variant_type: row.INFO.SVTYPE?.[0],
+		variant_name: row.ID?.[0],
+		name: row.ID?.[0]
 	};
 
 	let alt = row?.ALT?.[0];
@@ -86,27 +88,74 @@ export function convert_to_splitthreader_format(row) {
 			return null;
 		}
 		if (row.ALT.length > 1) {
-			console.warn('ALT field has more than one entry:', row.ALT, 'not sure how to handle this yet. Skipping this row:', row);
+			console.warn(
+				'ALT field has more than one entry:',
+				row.ALT,
+				'not sure how to handle this yet. Skipping this row:',
+				row
+			);
 			return null;
 		}
 		// If ALT has <> characters, parse it differently.
 		if (row.ALT[0].includes('<')) {
-			console.warn('ALT field has <> characters:', row.ALT[0], 'not sure how to handle this yet. Skipping this row:', row);
-
 			if (row.ALT[0] == '<DUP:TANDEM>') {
 				// Tandem duplication.
 				output.chrom2 = output.chrom1;
 				output.strand1 = '-';
 				output.strand2 = '+';
-				if (row.INFO?.END !== undefined) {
-					output.pos2 = row.INFO?.END;
-				} else if (row.INFO?.SVLEN !== undefined) {
-					output.size = row.INFO?.SVLEN;
+				output.pos2 = row.INFO?.END?.[0];
+				output.size = row.INFO?.SVLEN?.[0];
+				if (output.pos2 === undefined) {
 					output.pos2 = output.pos1 + output.size;
-				} else {
-					console.warn('Tandem duplication, END expected in INFO field but not found:', row);
+				}
+				if (output.pos2 === undefined) {
+					console.warn(
+						'Failed to find good pos2 for Tandem duplication, END or SVLEN expected',
+						row
+					);
 					return null;
 				}
+			} else if (row.ALT[0] == '<INS>') {
+				output.chrom2 = output.chrom1;
+				output.strand1 = '+';
+				output.strand2 = '-';
+				output.pos2 = row.INFO?.END?.[0];
+				output.size = row.INFO?.SVLEN?.[0];
+				if (output.pos2 === undefined) {
+					output.pos2 = output.pos1 + 1; // Insertions are after the base. Not sure what the standard should be for pos2.
+				}
+				if (output.size === undefined) {
+					output.size = -1;
+				}
+			} else if (row.ALT[0] == '<DEL>') {
+				output.chrom2 = output.chrom1;
+				output.strand1 = '+';
+				output.strand2 = '-';
+				output.pos2 = row.INFO?.END?.[0];
+				output.size = Math.abs(row.INFO?.SVLEN?.[0]);
+			} else if (row.ALT[0] == '<INV>') {
+				output.chrom2 = output.chrom1;
+				output.pos2 = row.INFO?.END?.[0];
+				output.size = Math.abs(row.INFO?.SVLEN?.[0]);
+				if (row.INFO?.INV5) {
+					output.strand1 = '-';
+					output.strand2 = '-';
+				} else if (row.INFO?.INV3) {
+					output.strand1 = '+';
+					output.strand2 = '+';
+				} else {
+					console.warn('INV has no INV5 or INV3, will use +- strands to call attention to this:', row);
+					output.strand1 = '+';
+					output.strand2 = '-';
+				}
+			} else {
+				console.warn(
+					'Unknown ALT field with <> characters:',
+					row.ALT[0],
+					'not sure how to handle this yet. Skipping this row:',
+					row
+				);
+				return null;
 			}
 		} else {
 			// If ALT doesn't have brackets or <>, assume REF and ALT contain the actual bases.
@@ -129,7 +178,7 @@ export function convert_to_splitthreader_format(row) {
 				output.strand1 = '+';
 				output.strand2 = '-';
 			} else {
-				console.warn('This looks like a SNP with REF and ALT both the same size, skipping:', row);	
+				console.warn('This looks like a SNP with REF and ALT both the same size, skipping:', row);
 			}
 		}
 	}
@@ -145,14 +194,10 @@ export function convert_to_splitthreader_format(row) {
 		// Assuming BND_DEPTH is somewhat equivalent to how many reads support the breakend.
 		output.split = row.INFO.BND_DEPTH[0];
 		// Unclear though because MATE_BND_DEPTH differs.
-	}
-	let sv_type = row?.INFO?.SVTYPE?.[0];
-	if (sv_type !== undefined) {
-		output.variant_type = sv_type;
-	}
-	let sv_id = row?.ID?.[0];
-	if (sv_id !== undefined) {
-		output.name = sv_id;
+	} else {
+		// could parse from "SR" in sample, but there may be both normal/tumor samples, and we don't
+		// want to assume which one is which.
+		output.split = -1;
 	}
 
 	return output;
@@ -167,12 +212,12 @@ export function deduplicate_mates(records) {
 	let seen_mates = new Set();
 	let deduplicated_records = [];
 	for (let record of records) {
-		let self_key = `${record.chrom1}:${record.pos1}`;
-		let mate_key = `${record.chrom2}:${record.pos2}`;
+		let self_key = `${record.chrom1}:${record.pos1}:${record.strand1}`;
+		let mate_key = `${record.chrom2}:${record.pos2}:${record.strand2}`;
 		let my_way = `${self_key}-${mate_key}`;
 		let their_way = `${mate_key}-${self_key}`;
 		if (seen_mates.has(my_way) || seen_mates.has(their_way)) {
-			console.log('Skipping duplicate mate:', record);
+			// console.log('Skipping duplicate mate:', record);
 		} else {
 			deduplicated_records.push(record);
 			seen_mates.add(my_way);
@@ -182,16 +227,14 @@ export function deduplicate_mates(records) {
 	return deduplicated_records;
 }
 
-export function parse_and_convert_vcf(header_text, vcf_body_text, options={}) {
+export function parse_and_convert_vcf(header_text, vcf_body_text, options = {}) {
 	let vcf_records = parse_whole_vcf(header_text, vcf_body_text);
 	let rearrangement_records = vcf_records
 		.map(convert_to_splitthreader_format)
 		.filter((x) => x !== null);
 
 	if (options.deduplicate_mates) {
-		console.log('Deduplicating mates..., num records before:', rearrangement_records.length);
 		rearrangement_records = deduplicate_mates(rearrangement_records);
-		console.log('Num records after deduplication:', rearrangement_records.length);
 	}
 	if (options.remove_chr) {
 		rearrangement_records = rearrangement_records.map((record) => {
