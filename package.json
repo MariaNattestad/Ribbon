@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "vitest watch"
   },
   "author": "Maria Nattestad",
   "license": "MIT",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "vite": "^5.4.2",
-    "vite-plugin-static-copy": "^1.0.6"
+    "vite-plugin-static-copy": "^1.0.6",
+    "vitest": "^1.2.0"
   }
 }
