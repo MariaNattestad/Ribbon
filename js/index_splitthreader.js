@@ -123,7 +123,7 @@ _splitthreader_static.annotations_available = [
   }
 ];
 
-_splitthreader_static.max_variants_to_show = 10000;
+_splitthreader_static.max_variants_to_show = 100000;
 
 var _splitthreader_settings = {};
 _splitthreader_settings.show_gene_types = {};
@@ -134,7 +134,7 @@ _splitthreader_settings.color_index = 0;
 // it's just whatever the user loads.
 _splitthreader_settings.segment_copy_number = "segmented";
 _splitthreader_settings.adaptive_coverage_scaling = true;
-_splitthreader_settings.min_variant_size = -1;
+_splitthreader_settings.min_variant_size = 10000; // in bp
 _splitthreader_settings.min_split_reads = -1;
 _splitthreader_settings.min_discordant_pairs = -1;
 _splitthreader_settings.min_other_read_evidence = -1;
@@ -522,7 +522,7 @@ function update_variants() {
       "Warning",
       "Too many variants to run SplitThreader graph computations (" +
         _Filtered_variant_data.length +
-        ") Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are 5000 variants or less."
+        `) Use the 'Settings' tab to filter them down by minimum split reads and variant size, and they will be drawn when there are ${_splitthreader_static.max_variants_to_show} variants or less.`
     );
     return;
   }
@@ -757,7 +757,7 @@ function check_and_run_if_both_variants_and_coverage_loaded() {
         "Warning",
         `Too many variants to run SplitThreader graph computations (${_Filtered_variant_data.length}).
         Use the 'Settings' tab to filter them down by minimum split reads and variant size, 
-        and they will be drawn when there are 5000 variants or less.`
+        and they will be drawn when there are ${_splitthreader_static.max_variants_to_show} variants or less.`
       );
       return;
     }
@@ -816,6 +816,7 @@ function apply_variant_filters() {
     // Only if passing all those filters do we add the variant to the filtered list.
     _Filtered_variant_data.push(d);
   }
+  console.log(`Number of variants after filtering: ${_Filtered_variant_data.length}`);
   if (num_filtered_bad_chromosomes > 0) {
     console.warn(`Filtered out ${num_filtered_bad_chromosomes} variants because they don't match the reference chromosome names. This can happen if the coverage file has different chromosome names or if no coverage file is loaded, in which case GRCh38 is assumed.`);
     console.warn(`Data chromosomes not found: ${Array.from(mismatched_chromosomes).join(", ")}`);

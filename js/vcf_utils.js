@@ -20,18 +20,23 @@ export function extract_bnd_info_to_strands(alt_for_bnd) {
 	// strand1 is determined by whether the bases are shown before or after the bracketed info.
 	// strand2 is determined by which way the brackets are facing, with ] being + and [ being -.
 
-	let parsed_breakend = parseBreakend(alt_for_bnd);
-	// e.g. parsed_breakend = {
-	// 	MatePosition: 'chr5:52747359',
-	// 	Join: 'right',
-	// 	Replacement: 'G',
-	// 	MateDirection: 'left'
-	// };
-	let chrom2 = parsed_breakend.MatePosition.split(':')[0];
-	let pos2 = parseInt(parsed_breakend.MatePosition.split(':')[1]);
-	let strand1 = parsed_breakend.Join === 'right' ? '+' : '-';
-	let strand2 = parsed_breakend.MateDirection === 'left' ? '+' : '-';
-	return { chrom2, pos2, strand1, strand2 };
+	try {
+		let parsed_breakend = parseBreakend(alt_for_bnd);
+		// e.g. parsed_breakend = {
+		// 	MatePosition: 'chr5:52747359',
+		// 	Join: 'right',
+		// 	Replacement: 'G',
+		// 	MateDirection: 'left'
+		// };
+		let chrom2 = parsed_breakend.MatePosition.split(':')[0];
+		let pos2 = parseInt(parsed_breakend.MatePosition.split(':')[1]);
+		let strand1 = parsed_breakend.Join === 'right' ? '+' : '-';
+		let strand2 = parsed_breakend.MateDirection === 'left' ? '+' : '-';
+		return { chrom2, pos2, strand1, strand2 };
+	} catch (error) {
+		console.warn('Failed to parse BND ALT:', alt_for_bnd, 'Error:', error);
+		return null;
+	}
 }
 
 export function convert_to_splitthreader_format(row) {
@@ -133,6 +138,22 @@ export function convert_to_splitthreader_format(row) {
 				output.strand2 = '-';
 				output.pos2 = row.INFO?.END?.[0];
 				output.size = Math.abs(row.INFO?.SVLEN?.[0]);
+			} else if (row.ALT[0] == '<DUP>') {
+				output.chrom2 = output.chrom1;
+				output.strand1 = '-';
+				output.strand2 = '+';
+				output.pos2 = row.INFO?.END?.[0];
+				output.size = Math.abs(row.INFO?.SVLEN?.[0]);
+				if (output.pos2 === undefined) {
+					output.pos2 = output.pos1 + output.size;
+				}
+				if (output.size === undefined) {
+					console.warn(
+						'Failed to find good pos2 for DUP, END or SVLEN expected',
+						row
+					);
+					return null;
+				}
 			} else if (row.ALT[0] == '<INV>') {
 				output.chrom2 = output.chrom1;
 				output.pos2 = row.INFO?.END?.[0];
@@ -141,6 +162,16 @@ export function convert_to_splitthreader_format(row) {
 					output.strand1 = '-';
 					output.strand2 = '-';
 				} else if (row.INFO?.INV3) {
+					output.strand1 = '+';
+					output.strand2 = '+';
+				} else if (row.INFO?.CT?.[0] === '5to5') {
+					// TODO: Check this logic.
+					// 5to5 inversion, strand1 is - and strand2 is -
+					output.strand1 = '-';
+					output.strand2 = '-';
+				} else if (row.INFO?.CT?.[0] === '3to3') {
+					// TODO: Check this logic.
+					// 3to3 inversion, strand1 is + and strand2 is +
 					output.strand1 = '+';
 					output.strand2 = '+';
 				} else {
