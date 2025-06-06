@@ -8,9 +8,11 @@ Ribbon is available online at [genomeribbon.com](https://genomeribbon.com)
 
 [v2.0 release notes](docs/release_notes_v2.md)
 
-![SplitThreader to Ribbon jumping demo](images/jump_splitthreader_to_ribbon.gif)
-
 Both built by Maria Nattestad originally, we decided in 2024 to put Ribbon and SplitThreader together and give them both major updates. This was prompted by a collaboration with the Genome in a Bottle (GIAB) team at NIST to support the release of their somatic (tumor) benchmark dataset for HG008. 2024 development done by Maria Nattestad and Robert Aboukhalil.
+
+Check out this new [tutorial video](https://www.youtube.com/watch?v=TP-H9epbsTM):
+
+[![Tutorial video](https://img.youtube.com/vi/TP-H9epbsTM/0.jpg)](https://www.youtube.com/watch?v=TP-H9epbsTM "How to investigate structural variants with Ribbon and SplitThreader")
 
 ## Documentation
 
