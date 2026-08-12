@@ -66,7 +66,10 @@ export class BamFile extends GenomicFile {
 
     // Download BAI in one go so it's faster than downloading it 1 MB at a time when lazy mount a URL with Aioli
     const bam_url = this.files[0];
-    const bai_url = bam_url + ".bai";
+    // this.files[1], if present, is an explicit BAI URL (needed for signed URLs, where
+    // naively appending ".bai" to the BAM URL breaks its query-string signature and doesn't
+    // point at a validly-signed BAI object anyway - the BAI needs its own independent signature).
+    const bai_url = this.files[1] || (bam_url + ".bai");
     let blob;
     try {
       blob = await fetch(bai_url).then(d => d.blob());

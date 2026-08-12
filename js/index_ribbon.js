@@ -2288,6 +2288,14 @@ function parse_paired_end(record) {
       pair_link_positions.to["false"] - pair_link_positions.from["false"]
     )
   );
+  // "color by BAM file" (see color_alignments_by === "bam" below) reads chunks[i].raw.bam - but
+  // `record` here is {first, second}, and each of those is the object parse_bam_record() built
+  // ({alignments, raw, raw_type, readname, flag}) - the .bam index set in my_fetch() lives on
+  // the ORIGINAL record, one level deeper at .raw.bam, not directly on record.first/.second. So
+  // that field was always undefined for every paired-end chunk, making every chunk resolve to
+  // the same color regardless of which BAM it came from. Both mates of one pair always come from
+  // the same BAM file, so either one's .raw.bam is the right answer.
+  record.bam = record.first ? record.first.raw.bam : (record.second ? record.second.raw.bam : undefined);
   return {
     raw_type: "paired-end",
     readname: readname,
@@ -5685,7 +5693,11 @@ function set_variant_info_text() {
 
 export async function read_bam_urls(urls, in_background = false) {
   _Bams = [];
-  for (let url of urls) {
+  for (let url_pair of urls) {
+    // Optional "bam_url|bai_url" pairing, for signed URLs where the BAI can't be derived by
+    // just appending ".bai" to the BAM URL (that breaks the query-string signature, and the
+    // BAI needs its own independently-signed URL anyway).
+    let [url, bai_url] = url_pair.split("|");
     if (url.startsWith("s3://")) {
       url = url.replace("s3://", "https://42basepairs.com/download/s3/");
     } else if (url.startsWith("gs://")) {
@@ -5695,7 +5707,7 @@ export async function read_bam_urls(urls, in_background = false) {
       return;
     }
 
-    let new_bam = new BamFile([url]);
+    let new_bam = new BamFile(bai_url ? [url, bai_url] : [url]);
     await new_bam.mount();
     await new_bam.parseHeader();
     _Bams.push(new_bam);
